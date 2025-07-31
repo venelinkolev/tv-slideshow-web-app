@@ -50,7 +50,7 @@ export enum SortDirection {
  */
 
 /** Template categories for admin panel organization */
-export enum TemplateCategory {
+export enum TemplateCategoryEnum {
     CLASSIC = 'classic',
     MODERN = 'modern',
     MINIMAL = 'minimal',
@@ -210,7 +210,7 @@ export enum SystemHealthStatus {
 }
 
 /** Service statuses */
-export enum ServiceStatus {
+export enum ServiceStatusEnum {
     UP = 'up',
     DOWN = 'down',
     DEGRADED = 'degraded'

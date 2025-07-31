@@ -1,4 +1,5 @@
-import { Product } from "./product.interface";
+import { Product } from './product.interface';
+import { TemplateCategoryEnum } from './enums';
 
 /**
  * Core Template interface for dynamic product display templates
@@ -21,7 +22,7 @@ export interface ProductTemplate {
     previewImageUrl: string;
 
     /** Template category/style grouping */
-    category: TemplateCategory;
+    category: TemplateCategoryEnum;
 
     /** Whether template is active and selectable */
     isActive: boolean;
@@ -38,17 +39,6 @@ export interface ProductTemplate {
     /** Template metadata for filtering and sorting */
     metadata: TemplateMetadata;
 }
-
-/**
- * Template category enumeration
- */
-export type TemplateCategory =
-    | 'classic'    // Traditional retail display
-    | 'modern'     // Contemporary design with animations  
-    | 'minimal'    // Clean, text-focused layout
-    | 'bold'       // High-impact, colorful design
-    | 'premium'    // Luxury/high-end product display
-    | 'compact';   // Multiple products per slide
 
 /**
  * TV hardware and performance requirements
