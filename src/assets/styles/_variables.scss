@@ -1,0 +1,60 @@
+// TV-specific CSS variables for smart TV optimization
+
+:root {
+  // Primary TV-safe colors with high contrast
+  --tv-primary: #1565C0;
+  --tv-secondary: #FFA726;
+  --tv-background: #FFFFFF;
+  --tv-surface: #F5F5F5;
+  
+  // Text colors - WCAG AAA compliant for TV viewing
+  --tv-text-primary: #212121;
+  --tv-text-secondary: #757575;
+  --tv-error: #D32F2F;
+  --tv-success: #388E3C;
+  
+  // TV safe area margins for older TVs
+  --tv-safe-margin: max(2vw, 32px);
+  
+  // Minimum font sizes for TV viewing distance (2-4 meters)
+  --tv-min-font-size: 24px;
+  --tv-heading-font-size: clamp(2rem, 4vw, 4rem);
+  --tv-subheading-font-size: clamp(1.5rem, 3vw, 3rem);
+  
+  // Animation timings optimized for TV performance
+  --tv-transition-fast: 0.2s ease;
+  --tv-transition-normal: 0.3s ease;
+  --tv-transition-slow: 0.5s ease;
+  
+  // Z-index layers
+  --tv-z-slideshow: 1;
+  --tv-z-overlay: 10;
+  --tv-z-modal: 100;
+  --tv-z-error: 1000;
+}
+
+// TV-specific breakpoints
+$tv-breakpoints: (
+  'tv-small': 1366px,   // Older/smaller smart TVs
+  'tv-medium': 1920px,  // Full HD TVs
+  'tv-large': 3840px    // 4K TVs
+);
+
+// Mixins for TV-safe typography
+@mixin tv-text-base {
+  font-size: var(--tv-min-font-size);
+  line-height: 1.4;
+  color: var(--tv-text-primary);
+}
+
+@mixin tv-heading {
+  font-size: var(--tv-heading-font-size);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--tv-text-primary);
+}
+
+@mixin tv-safe-area {
+  padding: var(--tv-safe-margin);
+  box-sizing: border-box;
+}

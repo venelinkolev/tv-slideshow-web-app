@@ -1,0 +1,74 @@
+[
+  {
+    "id": "1",
+    "name": "Смартфон Galaxy S24",
+    "price": 1299.99,
+    "imageUrl": "/assets/images/galaxy-s24.jpg",
+    "shortDescription": "Най-новият флагман от Samsung с AI възможности",
+    "category": "Смартфони",
+    "inStock": true
+  },
+  {
+    "id": "2", 
+    "name": "Лаптоп MacBook Air M3",
+    "price": 2199.00,
+    "imageUrl": "/assets/images/macbook-air-m3.jpg",
+    "shortDescription": "Невероятна производителност с Apple M3 чип",
+    "category": "Лаптопи",
+    "inStock": true
+  },
+  {
+    "id": "3",
+    "name": "Кафемашина Nespresso",
+    "price": 349.90,
+    "imageUrl": "/assets/images/nespresso-machine.jpg",
+    "shortDescription": "Перфектно кафе с едно натискане",
+    "category": "Домашни уреди",
+    "inStock": false
+  },
+  {
+    "id": "4",
+    "name": "Телевизор Samsung 65\" QLED",
+    "price": 1899.99,
+    "imageUrl": "/assets/images/samsung-qled-65.jpg",
+    "shortDescription": "4K резолюция с Quantum Dot технология",
+    "category": "Телевизори",
+    "inStock": true
+  },
+  {
+    "id": "5",
+    "name": "Слушалки Sony WH-1000XM5",
+    "price": 399.99,
+    "imageUrl": "/assets/images/sony-wh1000xm5.jpg",
+    "shortDescription": "Водещо шумопотискане в индустрията",
+    "category": "Аудио",
+    "inStock": true
+  },
+  {
+    "id": "6",
+    "name": "Електрическа тротинетка Xiaomi",
+    "price": 449.00,
+    "imageUrl": "/assets/images/xiaomi-scooter.jpg",
+    "shortDescription": "Екологичен транспорт за града",
+    "category": "Транспорт",
+    "inStock": true
+  },
+  {
+    "id": "7",
+    "name": "Смарт часовник Apple Watch Series 9",
+    "price": 599.00,
+    "imageUrl": "/assets/images/apple-watch-s9.jpg",
+    "shortDescription": "Напреднал здравен мониторинг",
+    "category": "Носими устройства",
+    "inStock": true
+  },
+  {
+    "id": "8",
+    "name": "Прахосмукачка Dyson V15",
+    "price": 699.99,
+    "imageUrl": "/assets/images/dyson-v15.jpg",
+    "shortDescription": "Безжична мощност с лазерна детекция",
+    "category": "Домашни уреди",
+    "inStock": false
+  }
+]

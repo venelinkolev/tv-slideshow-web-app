@@ -1,1 +1,73 @@
-/* You can add global styles to this file, and also import other style files */
+// Import TV-specific variables
+@import 'assets/styles/variables';
+
+/* Reset and base styles optimized for TV viewing */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Roboto', 'Arial', sans-serif;
+  background: var(--tv-background);
+  color: var(--tv-text-primary);
+  font-size: var(--tv-min-font-size);
+  line-height: 1.4;
+  
+  // Disable text selection on TV
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  
+  // Disable context menu on TV
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  // Prevent overscroll bounce on TV browsers
+  overscroll-behavior: none;
+}
+
+// Disable scrollbars for TV viewing
+::-webkit-scrollbar {
+  display: none;
+}
+
+// High contrast focus indicators for TV remote navigation
+*:focus {
+  outline: 3px solid var(--tv-primary);
+  outline-offset: 2px;
+}
+
+// Base typography classes for TV
+.tv-heading {
+  @include tv-heading;
+}
+
+.tv-text {
+  @include tv-text-base;
+}
+
+// Utility classes
+.tv-safe-area {
+  @include tv-safe-area;
+}
+
+.tv-hidden {
+  display: none !important;
+}
+
+.tv-visible {
+  display: block !important;
+}
+
+// Loading states
+.tv-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
