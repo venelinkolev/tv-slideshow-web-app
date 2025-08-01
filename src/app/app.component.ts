@@ -2,13 +2,16 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import './test-template-registry-service';
+import { TemplateUsageExampleComponent } from './examples/template-registry-usage';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule],
+  imports: [RouterOutlet, CommonModule, TemplateUsageExampleComponent],
   template: `
     <div class="tv-app-container">
+      <app-template-usage-example></app-template-usage-example>
       <router-outlet></router-outlet>
     </div>
   `,

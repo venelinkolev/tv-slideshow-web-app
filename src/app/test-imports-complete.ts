@@ -1,5 +1,3 @@
-// COMPREHENSIVE TEST FILE FOR ALL IMPORTS - PLACE THIS IN SRC/APP
-
 // Test individual file imports (direct imports)
 import { Product, ProductBadge, ProductDiscount } from './core/models/product.interface';
 import { ProductTemplate, TemplateConfig, TemplateRenderContext } from './core/models/template.interface';
