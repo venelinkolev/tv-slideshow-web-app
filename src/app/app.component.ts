@@ -2,16 +2,18 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import './test-template-registry-service';
-import { TemplateUsageExampleComponent } from './examples/template-registry-usage';
+// import './test-template-registry-service';
+// import { TemplateUsageExampleComponent } from './examples/template-registry-usage';
+// import { PerformanceUsageExampleComponent } from './examples/performance-monitor-usage';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, TemplateUsageExampleComponent],
+  imports: [RouterOutlet, CommonModule],
   template: `
     <div class="tv-app-container">
-      <app-template-usage-example></app-template-usage-example>
+      <!-- <app-template-usage-example></app-template-usage-example> -->
+       <!-- <app-performance-usage-example></app-performance-usage-example> -->
       <router-outlet></router-outlet>
     </div>
   `,
