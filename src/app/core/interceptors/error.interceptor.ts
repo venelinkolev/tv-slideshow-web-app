@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { DOCUMENT } from '@angular/common';
-import { Observable, throwError, timer } from 'rxjs';
-import { catchError, retryWhen, concatMap, finalize } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, retry, finalize } from 'rxjs/operators';
 
 import {
     ApiError,
@@ -21,6 +21,8 @@ import {
  * - User-friendly error messages in Bulgarian
  * - Fallback mechanisms for offline operation
  * - Performance monitoring integration
+ * 
+ * FIXED: Replaced deprecated retryWhen with modern retry operator
  */
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
@@ -51,29 +53,37 @@ export class ErrorInterceptor implements HttpInterceptor {
         const startTime = performance.now();
 
         return next.handle(req).pipe(
-            // Simple retry with exponential backoff
-            retryWhen(errors =>
-                errors.pipe(
-                    concatMap((error: HttpErrorResponse, retryCount: number) => {
-                        console.log(`🔄 ErrorInterceptor: Retry attempt ${retryCount + 1} for ${req.url} (status: ${error.status})`);
+            // Modern retry with TV-optimized configuration
+            retry({
+                count: this.retryConfig.maxRetries,
+                delay: (error: HttpErrorResponse, retryIndex: number) => {
+                    console.log(`🔄 ErrorInterceptor: Retry attempt ${retryIndex + 1} for ${req.url} (status: ${error.status})`);
 
-                        // Check if error is retryable and within retry limit
-                        if (!this.isRetryableError(error) || retryCount >= this.retryConfig.maxRetries) {
-                            console.log(`❌ ErrorInterceptor: Max retries exceeded or non-retryable error`);
-                            return throwError(() => error);
-                        }
+                    // Check if error is retryable
+                    if (!this.isRetryableError(error)) {
+                        console.log(`❌ ErrorInterceptor: Error ${error.status} is not retryable`);
+                        throw error; // Stop retrying
+                    }
 
-                        // Calculate retry delay
-                        const delayTime = this.calculateRetryDelay(retryCount, error);
-                        console.log(`⏳ ErrorInterceptor: Retrying in ${delayTime}ms...`);
+                    // Calculate retry delay with exponential backoff
+                    const delayTime = this.calculateRetryDelay(retryIndex, error);
+                    console.log(`⏳ ErrorInterceptor: Retrying in ${delayTime}ms...`);
 
-                        // Log retry attempt
-                        this.logRetryAttempt(error, retryCount, delayTime, req);
+                    // Log retry attempt for debugging
+                    this.logRetryAttempt(error, retryIndex, delayTime, req);
 
-                        return timer(delayTime);
-                    })
-                )
-            ),
+                    // Return a delay observable (required by new retry API)
+                    return new Observable(subscriber => {
+                        const timeoutId = setTimeout(() => {
+                            subscriber.next(null); // Must provide a value to next()
+                            subscriber.complete();
+                        }, delayTime);
+
+                        // Cleanup function
+                        return () => clearTimeout(timeoutId);
+                    });
+                }
+            }),
             catchError((error: HttpErrorResponse) => this.handleError(error, req)),
             finalize(() => {
                 const duration = performance.now() - startTime;
@@ -157,10 +167,10 @@ export class ErrorInterceptor implements HttpInterceptor {
      * Calculate retry delay with exponential backoff and jitter for TV networks
      * @private
      */
-    private calculateRetryDelay(retryCount: number, error: HttpErrorResponse): number {
+    private calculateRetryDelay(retryIndex: number, error: HttpErrorResponse): number {
         // Base exponential backoff: 1s, 2s, 4s, 8s...
         let delay = Math.min(
-            this.retryConfig.baseDelay * Math.pow(2, retryCount),
+            this.retryConfig.baseDelay * Math.pow(2, retryIndex),
             this.retryConfig.maxDelay
         );
 
@@ -182,6 +192,44 @@ export class ErrorInterceptor implements HttpInterceptor {
         }
 
         return Math.round(delay);
+    }
+
+    /**
+     * Log retry attempt for debugging
+     * @private
+     */
+    private logRetryAttempt(
+        error: HttpErrorResponse,
+        retryIndex: number,
+        delayTime: number,
+        req: HttpRequest<any>
+    ): void {
+        const logData = {
+            timestamp: new Date().toISOString(),
+            url: req.url,
+            method: req.method,
+            errorStatus: error.status,
+            retryIndex: retryIndex + 1,
+            delayMs: delayTime,
+            isOnline: this.document.defaultView?.navigator?.onLine ?? true
+        };
+
+        console.log('🔄 ErrorInterceptor: Retry attempt logged:', logData);
+
+        // Store in localStorage for offline debugging
+        try {
+            const retryLogs = JSON.parse(localStorage.getItem('tv-slideshow-retry-logs') || '[]');
+            retryLogs.push(logData);
+
+            // Keep only last 50 retry attempts
+            if (retryLogs.length > 50) {
+                retryLogs.splice(0, retryLogs.length - 50);
+            }
+
+            localStorage.setItem('tv-slideshow-retry-logs', JSON.stringify(retryLogs));
+        } catch (e) {
+            console.warn('⚠️ ErrorInterceptor: Could not store retry log to localStorage:', e);
+        }
     }
 
     /**
@@ -225,32 +273,27 @@ export class ErrorInterceptor implements HttpInterceptor {
                 case 404:
                     errorType = ApiErrorType.NOT_FOUND_ERROR;
                     errorCode = 'NOT_FOUND';
-                    userMessage = 'Заявеният ресурс не е намерен.';
+                    userMessage = 'Търсеният ресурс не е намерен.';
                     break;
                 case 408:
                     errorType = ApiErrorType.TIMEOUT_ERROR;
                     errorCode = 'REQUEST_TIMEOUT';
-                    userMessage = 'Заявката отне твърде дълго време. Моля, опитайте отново.';
-                    break;
-                case 409:
-                    errorType = ApiErrorType.CONFLICT_ERROR;
-                    errorCode = 'CONFLICT';
-                    userMessage = 'Конфликт с текущото състояние на ресурса.';
+                    userMessage = 'Заявката отне твърде дълго време. Опитайте отново.';
                     break;
                 case 429:
-                    errorType = ApiErrorType.SERVER_ERROR;
-                    errorCode = 'RATE_LIMITED';
-                    userMessage = 'Твърде много заявки. Моля, изчакайте преди следващата заявка.';
+                    errorType = ApiErrorType.SERVER_ERROR; // Use SERVER_ERROR instead of RATE_LIMIT_ERROR
+                    errorCode = 'TOO_MANY_REQUESTS';
+                    userMessage = 'Твърде много заявки. Изчакайте преди следващия опит.';
                     break;
                 case 500:
                     errorType = ApiErrorType.SERVER_ERROR;
                     errorCode = 'INTERNAL_SERVER_ERROR';
-                    userMessage = 'Вътрешна грешка на сървъра. Моля, опитайте отново по-късно.';
+                    userMessage = 'Възникна проблем в сървъра. Опитайте отново след малко.';
                     break;
                 case 502:
                     errorType = ApiErrorType.SERVER_ERROR;
                     errorCode = 'BAD_GATEWAY';
-                    userMessage = 'Проблем с мрежовата инфраструктура. Опитайте отново.';
+                    userMessage = 'Проблем с мрежовия шлюз. Опитайте отново.';
                     break;
                 case 503:
                     errorType = ApiErrorType.SERVER_ERROR;
@@ -324,108 +367,72 @@ export class ErrorInterceptor implements HttpInterceptor {
     }
 
     /**
-     * Log detailed error information for debugging
+     * Log error details for debugging
      * @private
      */
     private logErrorDetails(error: HttpErrorResponse, req: HttpRequest<any>, apiError: ApiError): void {
         const errorDetails = {
             timestamp: new Date().toISOString(),
-            requestId: this.generateRequestId(),
-            url: req.url,
-            method: req.method,
-            httpStatus: error.status,
-            httpStatusText: error.statusText,
-            errorCode: apiError.code,
-            errorMessage: apiError.message,
+            requestInfo: {
+                url: req.url,
+                method: req.method,
+                headers: req.headers.keys().reduce((acc, key) => {
+                    acc[key] = req.headers.get(key);
+                    return acc;
+                }, {} as Record<string, string | null>)
+            },
+            errorInfo: {
+                status: error.status,
+                statusText: error.statusText,
+                message: error.message,
+                url: error.url
+            },
+            apiError,
             userAgent: this.document.defaultView?.navigator?.userAgent,
             isOnline: this.document.defaultView?.navigator?.onLine,
-            errorCount: this.errorCount,
-            headers: this.extractHeaders(error),
-            responseBody: error.error
+            connectionType: (this.document.defaultView?.navigator as any)?.connection?.effectiveType
         };
 
-        console.group('🚨 ErrorInterceptor: Detailed Error Report');
-        console.error('Request Details:', {
-            url: errorDetails.url,
-            method: errorDetails.method,
-            requestId: errorDetails.requestId
-        });
-        console.error('Error Details:', {
-            status: errorDetails.httpStatus,
-            code: errorDetails.errorCode,
-            message: errorDetails.errorMessage
-        });
-        console.error('Context:', {
-            timestamp: errorDetails.timestamp,
-            isOnline: errorDetails.isOnline,
-            errorCount: errorDetails.errorCount
-        });
-        console.error('Full Error Object:', error);
-        console.groupEnd();
+        console.error('🔍 ErrorInterceptor: Detailed error information:', errorDetails);
     }
 
     /**
-     * Store error information for offline debugging
+     * Store error for offline debugging
      * @private
      */
     private storeErrorForDebugging(error: HttpErrorResponse, req: HttpRequest<any>, apiError: ApiError): void {
         try {
             const errorLog = {
                 timestamp: new Date().toISOString(),
-                requestId: this.generateRequestId(),
                 url: req.url,
                 method: req.method,
                 status: error.status,
-                errorCode: apiError.code,
-                message: apiError.message,
-                canRetry: apiError.retryStrategy?.canRetry || false,
-                errorCount: this.errorCount
+                message: error.message,
+                apiError: apiError.code,
+                userMessage: apiError.message,
+                isOnline: this.document.defaultView?.navigator?.onLine
             };
 
-            // Get existing errors from localStorage
-            const storedErrors = JSON.parse(
-                this.document.defaultView?.localStorage?.getItem('tv-slideshow-errors') || '[]'
-            );
+            // Retrieve existing error logs
+            const existingLogs = JSON.parse(localStorage.getItem('tv-slideshow-error-logs') || '[]');
+            existingLogs.push(errorLog);
 
-            // Add new error
-            storedErrors.push(errorLog);
+            // Keep only the last 20 errors
+            if (existingLogs.length > 20) {
+                existingLogs.splice(0, existingLogs.length - 20);
+            }
 
-            // Keep only last 20 errors to prevent storage bloat
-            const recentErrors = storedErrors.slice(-20);
+            // Store back to localStorage
+            localStorage.setItem('tv-slideshow-error-logs', JSON.stringify(existingLogs));
 
-            // Save back to localStorage
-            this.document.defaultView?.localStorage?.setItem(
-                'tv-slideshow-errors',
-                JSON.stringify(recentErrors)
-            );
-
-            console.log('💾 ErrorInterceptor: Error stored for debugging');
-
+            console.log('💾 ErrorInterceptor: Error stored for offline debugging');
         } catch (storageError) {
-            console.warn('⚠️ ErrorInterceptor: Could not store error in localStorage:', storageError);
+            console.warn('⚠️ ErrorInterceptor: Could not store error to localStorage:', storageError);
         }
     }
 
     /**
-     * Log retry attempt information
-     * @private
-     */
-    private logRetryAttempt(
-        error: HttpErrorResponse,
-        retryCount: number,
-        delayTime: number,
-        req: HttpRequest<any>
-    ): void {
-        console.group(`🔄 ErrorInterceptor: Retry Attempt ${retryCount + 1}`);
-        console.log('Request:', `${req.method} ${req.url}`);
-        console.log('Error:', `${error.status} ${error.statusText}`);
-        console.log('Delay:', `${delayTime}ms`);
-        console.log('Retry Strategy:', error.status === 0 ? 'Network Error' : 'Server Error');
-        console.groupEnd();
-    }
-
-    /**
-     * Update error tracking for analytics
+     * Update error tracking statistics
      * @private
      */
     private updateErrorTracking(): void {
@@ -436,61 +443,26 @@ export class ErrorInterceptor implements HttpInterceptor {
     }
 
     /**
-     * Extract relevant headers from error response
-     * @private
-     */
-    private extractHeaders(error: HttpErrorResponse): Record<string, string | null> {
-        const headers: Record<string, string | null> = {};
-
-        if (error.headers) {
-            // Extract common debugging headers
-            const debugHeaders = [
-                'content-type', 'content-length', 'date', 'server',
-                'x-request-id', 'x-correlation-id', 'retry-after'
-            ];
-
-            debugHeaders.forEach(headerName => {
-                headers[headerName] = error.headers.get(headerName);
-            });
-        }
-
-        return headers;
-    }
-
-    /**
-     * Generate unique request ID for debugging
+     * Generate unique request ID for error correlation
      * @private
      */
     private generateRequestId(): string {
-        return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `tv-slideshow-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
     }
 
     /**
-     * Get error statistics for monitoring
-     * @returns Error statistics object
+     * Get error statistics (for monitoring/admin purposes)
+     * @returns Object with error statistics
      */
-    getErrorStatistics(): {
-        totalErrors: number;
-        lastErrorTime: number | null;
-        averageErrorsPerMinute: number;
-    } {
-        const now = Date.now();
-        const oneMinute = 60 * 1000;
-
-        let averageErrorsPerMinute = 0;
-        if (this.lastErrorTime && now - this.lastErrorTime < oneMinute) {
-            averageErrorsPerMinute = this.errorCount;
-        }
-
+    getErrorStatistics(): { errorCount: number; lastErrorTime: number | null } {
         return {
-            totalErrors: this.errorCount,
-            lastErrorTime: this.lastErrorTime,
-            averageErrorsPerMinute
+            errorCount: this.errorCount,
+            lastErrorTime: this.lastErrorTime
         };
     }
 
     /**
-     * Clear error statistics (for testing)
+     * Clear error statistics (for reset/maintenance)
      */
     clearErrorStatistics(): void {
         this.errorCount = 0;

@@ -1,8 +1,33 @@
-// HTTP Interceptors Index - Task I.1: ErrorInterceptor
-// Path: src/app/core/interceptors/index.ts
+/**
+ * Barrel export for all HTTP interceptors
+ * Provides clean imports for the application
+ * 
+ * Usage:
+ * import { ErrorInterceptor, TimeoutInterceptor } from '@core/interceptors';
+ */
 
-// Complete implementations
-export * from './error.interceptor';        // Task I.1 ✅
+export * from './error.interceptor';
 
-// Placeholder exports for remaining interceptors (to be implemented in next task)
-// export * from './timeout.interceptor';   // Task I.2
+export * from './timeout.interceptor';
+
+/**
+ * All interceptors are now implemented with TV-specific optimizations:
+ * 
+ * ErrorInterceptor:
+ * - Modern retry logic (no deprecated operators)
+ * - TV-specific error handling and Bulgarian messages
+ * - Smart retry strategies based on error type
+ * - Comprehensive logging and debugging features
+ * 
+ * TimeoutInterceptor:
+ * - Dynamic timeout configuration by request type
+ * - TV network-optimized timeout values
+ * - Performance monitoring integration
+ * - Request type detection (API, images, assets)
+ * 
+ * Both interceptors include:
+ * - localStorage debugging support
+ * - Statistics tracking for admin dashboard
+ * - TV hardware compatibility considerations
+ * - Angular 18 patterns (inject() function)
+ */
