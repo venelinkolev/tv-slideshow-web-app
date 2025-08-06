@@ -2,7 +2,9 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import './test-interceptors-completed'; // Importing test interceptors for debugging
+import { TestInterceptorsComponent } from './test-interceptors.component';
+
+// import './test-interceptors-completed'; // Importing test interceptors for debugging
 // import './test-error-interceptor';
 // import './test-template-registry-service';
 // import { TemplateUsageExampleComponent } from './examples/template-registry-usage';
@@ -12,13 +14,14 @@ import './test-interceptors-completed'; // Importing test interceptors for debug
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule,],
+  imports: [RouterOutlet, CommonModule, TestInterceptorsComponent],
   template: `
     <div class="tv-app-container">
       <!-- <app-template-usage-example></app-template-usage-example> -->
        <!-- <app-performance-usage-example></app-performance-usage-example> -->
       <!-- <app-error-interceptor-usage-example></app-error-interceptor-usage-example> -->
-       <router-outlet></router-outlet>
+      <app-test-interceptors></app-test-interceptors>
+       <!-- <router-outlet></router-outlet> -->
     </div>
   `,
   styles: [`
