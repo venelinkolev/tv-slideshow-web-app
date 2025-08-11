@@ -1,7 +1,8 @@
-// Import TV-specific variables
+// Import TV-специфични променливи и миксини
 @import 'assets/styles/variables';
+@import 'assets/styles/tv-utils';
 
-/* Reset and base styles optimized for TV viewing */
+/* Reset и основни стилове оптимизирани за TV визуализация */
 * {
   margin: 0;
   padding: 0;
@@ -10,52 +11,129 @@
 
 html, body {
   height: 100%;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   font-family: 'Roboto', 'Arial', sans-serif;
-  background: var(--tv-background);
+  background-color: var(--tv-background);
   color: var(--tv-text-primary);
   font-size: var(--tv-min-font-size);
   line-height: 1.4;
   
-  // Disable text selection on TV
+  // Забрана на селекция на текст на TV
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   
-  // Disable context menu on TV
+  // Забрана на контекстно меню на TV
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
-  margin: 0;
-  // Prevent overscroll bounce on TV browsers
-  overscroll-behavior: none;
-}
-
-// Disable scrollbars for TV viewing
+// Премахване на скролбарове за TV визуализация
 ::-webkit-scrollbar {
   display: none;
 }
 
-// High contrast focus indicators for TV remote navigation
+// Премахване на подчертаване на линкове
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+// Висок контраст focus индикатори за TV навигация
 *:focus {
   outline: 3px solid var(--tv-primary);
   outline-offset: 2px;
 }
 
-// Base typography classes for TV
-.tv-heading {
-  @include tv-heading;
+// Основни typography класове за TV
+h1, h2, h3, h4, h5, h6 {
+  font-size: var(--tv-heading-font-size);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
 }
 
-.tv-text {
-  @include tv-text-base;
+p, span, div {
+  font-size: var(--tv-min-font-size);
+  line-height: 1.4;
 }
 
-// Utility classes
-.tv-safe-area {
-  @include tv-safe-area;
+// Класове за позициониране на TV
+.tv-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.tv-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+// Utility класове за TV layout
+.tv-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.tv-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-spacer {
+  flex: 1 1 auto;
+}
+
+// TV-специфични transition класове
+.tv-fade {
+  transition: opacity 0.3s ease-out;
+}
+
+.tv-scale {
+  transition: transform 0.3s ease-out;
+}
+
+// Utility класове за TV-safe маргини
+.tv-margin {
+  margin: var(--tv-safe-margin);
+}
+
+.tv-padding {
+  padding: var(--tv-safe-margin);
+}
+
+// Адаптивен font-size на базата на TV резолюция
+@media screen and (min-width: 1920px) {
+  html {
+    font-size: calc(var(--tv-min-font-size) * 1.2);
+  }
+}
+
+@media screen and (min-width: 3840px) {
+  html {
+    font-size: calc(var(--tv-min-font-size) * 2);
+  }
+}
+
+// Стейт класове за TV
+.tv-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.tv-disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .tv-hidden {
@@ -66,8 +144,97 @@ body {
   display: block !important;
 }
 
-// Loading states
-.tv-loading {
-  opacity: 0.7;
-  pointer-events: none;
+// Достъпни цветове за TV
+.tv-primary {
+  color: var(--tv-primary);
+}
+
+.tv-secondary {
+  color: var(--tv-secondary);
+}
+
+.tv-error {
+  color: var(--tv-error);
+}
+
+.tv-success {
+  color: var(--tv-success);
+}
+
+// TV-оптимизирани бутони с подходящ размер
+button, 
+.tv-button {
+  min-width: 64px;
+  min-height: 64px;
+  font-size: var(--tv-min-font-size);
+  padding: 12px 24px;
+  border-radius: 8px;
+  background-color: var(--tv-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+// Съобщения за грешка
+.tv-error-message {
+  background-color: var(--tv-error);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: calc(var(--tv-min-font-size) * 1.2);
+  text-align: center;
+  margin: var(--tv-safe-margin);
+}
+
+// Loader
+.tv-loader {
+  width: 60px;
+  height: 60px;
+  border: 6px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--tv-primary);
+  animation: tv-spin 1s infinite linear;
+}
+
+@keyframes tv-spin {
+  to { transform: rotate(360deg); }
+}
+
+// Анимации оптимизирани за TV производителност
+.tv-fade-in {
+  animation: tv-fade-in 0.5s ease-out forwards;
+}
+
+.tv-slide-in {
+  animation: tv-slide-in-right 0.5s ease-out forwards;
+}
+
+.tv-scale-in {
+  animation: tv-scale-in 0.5s ease-out forwards;
+}
+
+@keyframes tv-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tv-slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes tv-slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes tv-scale-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+// TV Safe area стилове
+.tv-safe-area {
+  padding: 5%;
+  box-sizing: border-box;
 }

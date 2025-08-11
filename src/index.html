@@ -1,13 +1,116 @@
 <!doctype html>
-<html lang="en">
+<html lang="bg">
+
 <head>
   <meta charset="utf-8">
-  <title>TvSlideshowApp</title>
+  <title>TV Slideshow</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- TV-оптимизирани мета тагове -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Предотвратяване на увеличаване/намаляване на мащаба -->
+  <meta name="HandheldFriendly" content="true">
+
+  <!-- Предотвратяване на кеширане на страницата за по-лесна разработка -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Икона -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- TV-оптимизирани стилове -->
+  <style>
+    /* Стилове за първоначално зареждане преди Angular */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000000;
+      color: #FFFFFF;
+      font-family: 'Roboto', 'Arial', sans-serif;
+      min-height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+
+      /* Забрана на селекция */
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .tv-loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .tv-loading-screen h1 {
+      font-size: 48px;
+      margin-bottom: 24px;
+    }
+
+    .tv-loading-spinner {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 8px solid rgba(255, 255, 255, 0.2);
+      border-top: 8px solid #FFFFFF;
+      animation: tv-spin 1s linear infinite;
+    }
+
+    @keyframes tv-spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <!-- Показва се само при зареждане на Angular -->
+  <div class="tv-loading-screen" id="tv-loading">
+    <h1>TV Slideshow</h1>
+    <div class="tv-loading-spinner"></div>
+  </div>
+
+  <!-- Angular app root -->
   <app-root></app-root>
+
+  <!-- Скрипт за премахване на loading екрана след зареждане -->
+  <script>
+    window.addEventListener('load', function () {
+      // Скриваме loading екрана след кратко забавяне
+      setTimeout(function () {
+        var loadingEl = document.getElementById('tv-loading');
+        if (loadingEl) {
+          loadingEl.style.display = 'none';
+        }
+      }, 1000);
+    });
+
+    // Предотвратяване на контекстно меню
+    window.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+    });
+
+    // Предотвратяване на скролиране
+    window.addEventListener('scroll', function (e) {
+      window.scrollTo(0, 0);
+    });
+  </script>
 </body>
+
 </html>
