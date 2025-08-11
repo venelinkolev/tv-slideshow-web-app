@@ -1,0 +1,157 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none; /* Предотвратява селектиране на текст на TV */
+}
+
+.slideshow-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background-color: #000;
+  color: #fff;
+  
+  /* TV-safe zone margins - предотвратява обрязване на съдържание */
+  padding: 2vh 3vw;
+  box-sizing: border-box;
+  
+  /* TV-specific optimizations */
+  cursor: none; /* Скрива курсора на мишката */
+  touch-action: none; /* Предотвратява touch взаимодействие */
+}
+
+.slideshow-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slideshow-placeholder {
+  text-align: center;
+  font-size: 5vh; /* Използване на vh за TV-friendly sizing */
+  
+  h2 {
+    font-size: 7vh;
+    margin-bottom: 3vh;
+  }
+  
+  p {
+    font-size: 4vh;
+    margin-bottom: 2vh;
+  }
+  
+  .tv-info {
+    font-size: 3vh;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+/* Стилове за индикатор на зареждане */
+.loading-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 100;
+}
+
+.loading-spinner {
+  width: 10vh;
+  height: 10vh;
+  border: 1vh solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 3vh;
+}
+
+.loading-text {
+  font-size: 4vh;
+  color: #fff;
+}
+
+/* Стилове за съобщение за грешка */
+.error-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 100;
+}
+
+.error-icon {
+  width: 10vh;
+  height: 10vh;
+  border-radius: 50%;
+  background-color: #e74c3c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8vh;
+  margin-bottom: 3vh;
+}
+
+.error-message {
+  font-size: 4vh;
+  color: #fff;
+  text-align: center;
+  max-width: 80%;
+}
+
+/* Анимация за спинер */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* TV-specific optimizations */
+@media screen and (min-width: 1920px) {
+  .slideshow-container {
+    /* 4K TV оптимизации */
+    padding: 4vh 5vw;
+  }
+  
+  .loading-spinner {
+    width: 15vh;
+    height: 15vh;
+    border-width: 1.5vh;
+  }
+  
+  .error-icon {
+    width: 15vh;
+    height: 15vh;
+    font-size: 12vh;
+  }
+}
+
+/* Оптимизации за по-малки TV (720p) */
+@media screen and (max-width: 1280px) {
+  .slideshow-container {
+    padding: 1.5vh 2vw;
+  }
+  
+  .slideshow-placeholder h2 {
+    font-size: 5vh;
+  }
+  
+  .slideshow-placeholder p {
+    font-size: 3vh;
+  }
+}
