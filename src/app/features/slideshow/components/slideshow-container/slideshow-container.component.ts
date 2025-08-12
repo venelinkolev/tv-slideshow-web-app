@@ -10,6 +10,7 @@ import { ConfigService } from '@core/services/config.service';
 import { TemplateRegistryService } from '@core/services/template-registry.service';
 import { PerformanceMonitorService } from '@core/services/performance-monitor.service';
 import { PerformanceLevel } from '@core/models/enums';
+import { SlideShowService } from '../../services/slideshow.service';
 
 /**
  * Main container component for the slideshow feature.
@@ -30,6 +31,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     private configService = inject(ConfigService);
     private templateRegistry = inject(TemplateRegistryService);
     private performanceMonitor = inject(PerformanceMonitorService);
+    private slideShowService = inject(SlideShowService);
 
     // Signals for reactive state management
     protected isLoading = signal<boolean>(true);
@@ -39,6 +41,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     protected activeTemplate = signal<ProductTemplate | null>(null);
     protected config = signal<SlideshowConfig | null>(null);
     protected performanceLevel = signal<PerformanceLevel>(PerformanceLevel.STANDARD);
+    protected currentSlideIndex = signal<number>(0);
+    protected isAutoPlaying = signal<boolean>(false);
+    protected progress = signal<number>(0);
 
     // Cleanup subject for subscription management
     private destroy$ = new Subject<void>();
@@ -97,13 +102,16 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         this.isLoading.set(true);
         this.hasError.set(false);
 
-        this.productApiService.getProducts()
+        this.slideShowService.loadProducts()
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (products) => {
                     this.products.set(products);
                     this.isLoading.set(false);
                     this.setupTemplate();
+
+                    // Инициализируем слайдшоу после загрузки продуктов
+                    this.initializeSlideShow();
                 },
                 error: (error) => {
                     this.isLoading.set(false);
@@ -112,6 +120,78 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
                     console.error('Error loading products:', error);
                 }
             });
+    }
+
+    /**
+     * Инициализирует слайдшоу после загрузки продуктов и шаблонов
+     */
+    private initializeSlideShow(): void {
+        // Настройка автоматического воспроизведения если включено в конфигурации
+        if (this.slideShowService.shouldAutoRotate()) {
+            this.startSlideShow();
+        }
+
+        // Подписываемся на изменения текущего слайда
+        this.slideShowService.currentSlideIndex$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(index => {
+                this.currentSlideIndex.set(index);
+                this.updateProgress();
+            });
+
+        // Подписываемся на статус воспроизведения
+        this.slideShowService.isRunning$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(isRunning => {
+                this.isAutoPlaying.set(isRunning);
+            });
+    }
+
+    /**
+     * Обновляет индикатор прогресса
+     */
+    private updateProgress(): void {
+        const totalSlides = this.products().length;
+        const currentIndex = this.currentSlideIndex();
+        const progress = this.slideShowService.calculateProgress(currentIndex, totalSlides);
+        this.progress.set(progress);
+    }
+
+    /**
+     * Запускает автоматическое слайдшоу
+     */
+    protected startSlideShow(): void {
+        this.slideShowService.startSlideShow();
+    }
+
+    /**
+     * Останавливает автоматическое слайдшоу
+     */
+    protected stopSlideShow(): void {
+        this.slideShowService.stopSlideShow();
+    }
+
+    /**
+     * Переходит к следующему слайду
+     */
+    protected nextSlide(): void {
+        const totalSlides = this.products().length;
+        this.slideShowService.nextSlide(totalSlides);
+    }
+
+    /**
+     * Переходит к предыдущему слайду
+     */
+    protected previousSlide(): void {
+        const totalSlides = this.products().length;
+        this.slideShowService.previousSlide(totalSlides);
+    }
+
+    /**
+     * Обновляет данные продуктов и шаблонов
+     */
+    protected refreshData(): void {
+        this.loadProducts();
     }
 
     /**

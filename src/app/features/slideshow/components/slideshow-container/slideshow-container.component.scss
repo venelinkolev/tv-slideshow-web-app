@@ -93,13 +93,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   
   .template-container {
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: relative;
     
     // Apply performance-based optimizations
     &.performance-level-1 {
@@ -117,24 +120,167 @@
     }
   }
   
-  .placeholder-template {
+  // Current product display
+  .current-product {
     width: 100%;
-    height: 100%;
+    height: 80%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    text-align: center;
+    justify-content: space-between;
+    gap: 48px;
     
-    .product-title {
-      font-size: var(--tv-xlarge-font-size, 48px);
-      margin-bottom: 24px;
+    .product-info {
+      flex: 1;
+      padding: 32px;
+      
+      .product-title {
+        font-size: var(--tv-xlarge-font-size, 48px);
+        margin-bottom: 24px;
+        color: var(--tv-primary-text-color, #ffffff);
+      }
+      
+      .product-description {
+        font-size: var(--tv-medium-font-size, 28px);
+        margin-bottom: 32px;
+        color: var(--tv-secondary-text-color, #e0e0e0);
+        line-height: 1.5;
+      }
+      
+      .product-price {
+        font-size: var(--tv-large-font-size, 32px);
+        font-weight: bold;
+        color: var(--tv-accent-color, #3498db);
+      }
     }
     
-    .template-info, 
-    .products-info {
-      font-size: var(--tv-medium-font-size, 28px);
-      margin-bottom: 16px;
+    .product-image {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      img {
+        max-width: 100%;
+        max-height: 500px;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+    }
+  }
+  
+  // Progress indicator
+  .progress-container {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    
+    .progress-bar {
+      width: 300px;
+      height: 6px;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+      
+      .progress-fill {
+        height: 100%;
+        background-color: var(--tv-accent-color, #3498db);
+        transition: width 0.3s ease-out;
+      }
+    }
+    
+    .slide-counter {
+      font-size: var(--tv-small-font-size, 20px);
+      color: var(--tv-secondary-text-color, #e0e0e0);
+      min-width: 60px;
+      text-align: center;
+    }
+  }
+  
+  // Controls
+  .controls {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 32px;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+    
+    &:hover {
+      opacity: 1;
+    }
+    
+    .control-button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.2);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+      
+      .arrow {
+        width: 20px;
+        height: 20px;
+        border-top: 3px solid white;
+        border-right: 3px solid white;
+        
+        &.left {
+          transform: rotate(-135deg);
+        }
+        
+        &.right {
+          transform: rotate(45deg);
+        }
+      }
+      
+      .icon {
+        width: 20px;
+        height: 20px;
+        position: relative;
+        
+        &.play::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          border-top: 10px solid transparent;
+          border-bottom: 10px solid transparent;
+          border-left: 20px solid white;
+        }
+        
+        &.pause::before,
+        &.pause::after {
+          content: '';
+          position: absolute;
+          width: 6px;
+          height: 20px;
+          background-color: white;
+        }
+        
+        &.pause::before {
+          left: 2px;
+        }
+        
+        &.pause::after {
+          right: 2px;
+        }
+      }
     }
   }
   
@@ -151,6 +297,7 @@
 // Empty state
 .empty-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
@@ -158,6 +305,37 @@
   .empty-message {
     font-size: var(--tv-large-font-size, 32px);
     text-align: center;
+    margin-bottom: 32px;
+  }
+  
+  .retry-button {
+    padding: 16px 48px;
+    font-size: var(--tv-medium-font-size, 28px);
+    background-color: var(--tv-accent-color, #3498db);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+}
+
+// Debug info
+.debug-info {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: monospace;
+  z-index: 1000;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+  
+  &:hover {
+    opacity: 1;
   }
 }
 
@@ -165,4 +343,98 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+// TV-specific responsive adjustments
+@media (min-width: 1920px) {
+  .content-container .current-product {
+    gap: 60px;
+    
+    .product-info {
+      padding: 40px;
+      
+      .product-title {
+        font-size: 56px;
+      }
+      
+      .product-description {
+        font-size: 32px;
+      }
+    }
+    
+    .product-image img {
+      max-height: 600px;
+    }
+  }
+  
+  .progress-container {
+    bottom: 60px;
+    
+    .progress-bar {
+      width: 400px;
+      height: 8px;
+    }
+    
+    .slide-counter {
+      font-size: 24px;
+    }
+  }
+  
+  .controls {
+    bottom: 120px;
+    
+    .control-button {
+      width: 70px;
+      height: 70px;
+    }
+  }
+}
+
+@media (min-width: 3840px) {
+  .content-container .current-product {
+    gap: 80px;
+    
+    .product-info {
+      padding: 60px;
+      
+      .product-title {
+        font-size: 72px;
+      }
+      
+      .product-description {
+        font-size: 42px;
+      }
+      
+      .product-price {
+        font-size: 48px;
+      }
+    }
+    
+    .product-image img {
+      max-height: 800px;
+    }
+  }
+  
+  .progress-container {
+    bottom: 80px;
+    
+    .progress-bar {
+      width: 500px;
+      height: 10px;
+    }
+    
+    .slide-counter {
+      font-size: 28px;
+    }
+  }
+  
+  .controls {
+    bottom: 160px;
+    gap: 48px;
+    
+    .control-button {
+      width: 90px;
+      height: 90px;
+    }
+  }
 }

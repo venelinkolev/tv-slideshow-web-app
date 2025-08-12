@@ -9,23 +9,47 @@
     <div *ngIf="hasError()" class="error-container">
         <div class="error-icon">!</div>
         <p class="error-message">{{ errorMessage() }}</p>
-        <button class="retry-button">Опитайте отново</button>
+        <button class="retry-button" (click)="refreshData()">Опитайте отново</button>
     </div>
 
     <!-- Content State -->
     <div *ngIf="!isLoading() && !hasError() && products().length > 0" class="content-container">
-        <!-- Template Content Placeholder -->
+        <!-- Template Content -->
         <div class="template-container" [ngClass]="'performance-level-' + performanceLevel()">
             <ng-container *ngIf="activeTemplate(); else noTemplate">
-                <!-- Dynamic template will be loaded here in next phase -->
-                <div class="placeholder-template">
-                    <h2 class="product-title">Слайдшоу Съдържание</h2>
-                    <p class="template-info">
-                        Шаблон: {{ activeTemplate()?.name }}
-                    </p>
-                    <p class="products-info">
-                        Брой продукти: {{ products().length }}
-                    </p>
+                <!-- Показваем текущий продукт -->
+                <div class="current-product">
+                    <div class="product-info">
+                        <h2 class="product-title">{{ products()[currentSlideIndex()].name }}</h2>
+                        <p class="product-description">{{ products()[currentSlideIndex()].shortDescription }}</p>
+                        <p class="product-price">{{ products()[currentSlideIndex()].price |
+                            currency:'BGN':'symbol':'1.2-2' }}</p>
+                    </div>
+                    <div class="product-image">
+                        <img [src]="products()[currentSlideIndex()].imageUrl"
+                            [alt]="products()[currentSlideIndex()].name" />
+                    </div>
+                </div>
+
+                <!-- Индикатор прогресса -->
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="progress()"></div>
+                    </div>
+                    <div class="slide-counter">{{ currentSlideIndex() + 1 }} / {{ products().length }}</div>
+                </div>
+
+                <!-- Контроли управления -->
+                <div class="controls">
+                    <button class="control-button prev" (click)="previousSlide()">
+                        <span class="arrow left"></span>
+                    </button>
+                    <button class="control-button" (click)="isAutoPlaying() ? stopSlideShow() : startSlideShow()">
+                        <span class="icon" [ngClass]="{'play': !isAutoPlaying(), 'pause': isAutoPlaying()}"></span>
+                    </button>
+                    <button class="control-button next" (click)="nextSlide()">
+                        <span class="arrow right"></span>
+                    </button>
                 </div>
             </ng-container>
 
@@ -40,5 +64,14 @@
     <!-- No Products State -->
     <div *ngIf="!isLoading() && !hasError() && products().length === 0" class="empty-container">
         <p class="empty-message">Няма намерени продукти за показване.</p>
+        <button class="retry-button" (click)="refreshData()">Опитайте отново</button>
+    </div>
+
+    <!-- Debug info - Performance Status -->
+    <div *ngIf="!isLoading() && products().length > 0" class="debug-info">
+        <div>Performance: {{ performanceLevel() }}</div>
+        <div>Template: {{ activeTemplate()?.name }}</div>
+        <div>Products: {{ products().length }}</div>
+        <div>Current: {{ currentSlideIndex() + 1 }}</div>
     </div>
 </div>
