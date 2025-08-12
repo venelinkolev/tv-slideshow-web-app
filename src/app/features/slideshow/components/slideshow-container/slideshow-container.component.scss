@@ -1,0 +1,168 @@
+// Import TV-specific variables
+@import 'src/assets/styles/variables';
+
+// TV-safe zone mixin
+@mixin tv-safe-area {
+  padding: var(--tv-safe-area-padding, 5%);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+}
+
+// Main container
+.slideshow-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--tv-background-color, #000);
+  color: var(--tv-text-color, #fff);
+  position: relative;
+  
+  // Apply TV safe zone
+  &.tv-safe-zone {
+    @include tv-safe-area;
+  }
+}
+
+// Loading state
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  
+  .loading-spinner {
+    width: 80px;
+    height: 80px;
+    border: 8px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--tv-accent-color, #3498db);
+    animation: spin 1.5s linear infinite;
+  }
+  
+  .loading-text {
+    margin-top: 32px;
+    font-size: var(--tv-large-font-size, 32px);
+    font-weight: 500;
+  }
+}
+
+// Error state
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  
+  .error-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: var(--tv-error-color, #e74c3c);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 72px;
+    margin-bottom: 32px;
+  }
+  
+  .error-message {
+    font-size: var(--tv-large-font-size, 32px);
+    text-align: center;
+    max-width: 80%;
+    margin-bottom: 32px;
+  }
+  
+  .retry-button {
+    padding: 16px 48px;
+    font-size: var(--tv-medium-font-size, 28px);
+    background-color: var(--tv-accent-color, #3498db);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+}
+
+// Content state
+.content-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .template-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    // Apply performance-based optimizations
+    &.performance-level-1 {
+      // Reduce animations and effects for low-performance TVs
+      animation: none;
+      transition: none;
+    }
+    
+    &.performance-level-3 {
+      // Standard effects for medium-performance TVs
+    }
+    
+    &.performance-level-5 {
+      // Full effects for high-performance TVs
+    }
+  }
+  
+  .placeholder-template {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    
+    .product-title {
+      font-size: var(--tv-xlarge-font-size, 48px);
+      margin-bottom: 24px;
+    }
+    
+    .template-info, 
+    .products-info {
+      font-size: var(--tv-medium-font-size, 28px);
+      margin-bottom: 16px;
+    }
+  }
+  
+  .no-template-warning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: var(--tv-large-font-size, 32px);
+    color: var(--tv-warning-color, #f39c12);
+  }
+}
+
+// Empty state
+.empty-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  
+  .empty-message {
+    font-size: var(--tv-large-font-size, 32px);
+    text-align: center;
+  }
+}
+
+// Animations
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

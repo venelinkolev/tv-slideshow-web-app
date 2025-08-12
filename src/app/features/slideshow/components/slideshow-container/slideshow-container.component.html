@@ -1,0 +1,44 @@
+<div class="slideshow-container tv-safe-zone">
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Зареждане на продуктите...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="hasError()" class="error-container">
+        <div class="error-icon">!</div>
+        <p class="error-message">{{ errorMessage() }}</p>
+        <button class="retry-button">Опитайте отново</button>
+    </div>
+
+    <!-- Content State -->
+    <div *ngIf="!isLoading() && !hasError() && products().length > 0" class="content-container">
+        <!-- Template Content Placeholder -->
+        <div class="template-container" [ngClass]="'performance-level-' + performanceLevel()">
+            <ng-container *ngIf="activeTemplate(); else noTemplate">
+                <!-- Dynamic template will be loaded here in next phase -->
+                <div class="placeholder-template">
+                    <h2 class="product-title">Слайдшоу Съдържание</h2>
+                    <p class="template-info">
+                        Шаблон: {{ activeTemplate()?.name }}
+                    </p>
+                    <p class="products-info">
+                        Брой продукти: {{ products().length }}
+                    </p>
+                </div>
+            </ng-container>
+
+            <ng-template #noTemplate>
+                <div class="no-template-warning">
+                    <p>Не е намерен подходящ шаблон.</p>
+                </div>
+            </ng-template>
+        </div>
+    </div>
+
+    <!-- No Products State -->
+    <div *ngIf="!isLoading() && !hasError() && products().length === 0" class="empty-container">
+        <p class="empty-message">Няма намерени продукти за показване.</p>
+    </div>
+</div>
