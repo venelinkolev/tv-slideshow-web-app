@@ -1,369 +1,696 @@
-// Добавяне на категории филтри
-.category-filters {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  z-index: 5;
-  
-  .category-filter-button {
-    padding: 8px 16px;
-    font-size: var(--tv-small-font-size, 20px);
-    background-color: rgba(255, 255, 255, 0.2);
-    color: var(--tv-text-color, #fff);
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.3);
-    }
-    
-    &.active {
-      background-color: var(--tv-primary, #1565C0);
-      color: white;
-    }
-  }
-}// Import TV-specific variables
-@import 'src/assets/styles/variables';
+// TV-оптимизирани стилове за SlideShowContainer компонент
+// Използва TV-специфични переменни от _variables.scss
 
-// TV-safe zone mixin
-@mixin tv-safe-area {
-  padding: var(--tv-safe-area-padding, 5%);
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
+// Import TV variables
+@import '@assets/styles/variables';
+
+// TV Performance Mixins
+@mixin tv-safe-text {
+  font-family: var(--tv-font-family, 'Roboto', 'Arial', sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-// Main container
+@mixin tv-safe-animations($enabled: true) {
+  @if $enabled {
+    transition: all 0.3s ease-in-out;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  } @else {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@mixin tv-button-reset {
+  border: none;
+  background: none;
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  &:focus-visible {
+    outline: 3px solid var(--tv-accent, #FFA726);
+    outline-offset: 2px;
+  }
+}
+
+// Main Container
 .slideshow-container {
+  position: relative;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: var(--tv-background-color, #000);
-  color: var(--tv-text-color, #fff);
-  position: relative;
-  
-  // Apply TV safe zone
-  &.tv-safe-zone {
-    @include tv-safe-area;
+  background: var(--tv-background, #000000);
+  color: var(--tv-text-color, #FFFFFF);
+  @include tv-safe-text;
+
+  // TV Device Specific Styles
+  &.tv-device {
+    // Prevent text selection and context menu
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    
+    // Disable system UI
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    
+    // Hardware acceleration
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+  }
+
+  // Safe Area Support
+  &.safe-area-enabled {
+    // Default safe area margins
+    padding: var(--tv-safe-margin, 32px);
+    
+    @media (min-width: 1920px) {
+      padding: calc(var(--tv-safe-margin, 32px) * 1.2);
+    }
+    
+    @media (min-width: 3840px) {
+      padding: calc(var(--tv-safe-margin, 32px) * 1.5);
+    }
+  }
+
+  // Performance Level Adaptations
+  &.low-performance {
+    * {
+      transition: none !important;
+      animation: none !important;
+      transform: none !important;
+      filter: none !important;
+    }
+  }
+
+  &.basic-performance {
+    .loading-spinner {
+      animation-duration: 2s; // Slower animation
+    }
+    
+    .progress-fill {
+      transition-duration: 0.8s; // Slower transitions
+    }
+  }
+
+  &.standard-performance {
+    // Full animation support
+    .slides-container {
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
   }
 }
 
-// Loading state
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  
-  .loading-spinner {
-    width: 80px;
-    height: 80px;
-    border: 8px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: var(--tv-accent-color, #3498db);
-    animation: spin 1.5s linear infinite;
-  }
-  
-  .loading-text {
-    margin-top: 32px;
-    font-size: var(--tv-large-font-size, 32px);
-    font-weight: 500;
-  }
-}
-
-// Error state
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  
-  .error-icon {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: var(--tv-error-color, #e74c3c);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 72px;
-    margin-bottom: 32px;
-  }
-  
-  .error-message {
-    font-size: var(--tv-large-font-size, 32px);
-    text-align: center;
-    max-width: 80%;
-    margin-bottom: 32px;
-  }
-  
-  .retry-button {
-    padding: 16px 48px;
-    font-size: var(--tv-medium-font-size, 28px);
-    background-color: var(--tv-accent-color, #3498db);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-}
-
-// Content state
-.content-container {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  
-  .template-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    
-    // Apply performance-based optimizations
-    &.performance-level-1 {
-      // Reduce animations and effects for low-performance TVs
-      animation: none;
-      transition: none;
-    }
-    
-    &.performance-level-3 {
-      // Standard effects for medium-performance TVs
-    }
-    
-    &.performance-level-5 {
-      // Full effects for high-performance TVs
-    }
-  }
-  
-  // Current product display
-  .current-product {
-    width: 100%;
-    height: 80%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 48px;
-    
-    .product-info {
-      flex: 1;
-      padding: 32px;
-      
-      .product-title {
-        font-size: var(--tv-xlarge-font-size, 48px);
-        margin-bottom: 24px;
-        color: var(--tv-primary-text-color, #ffffff);
-      }
-      
-      .product-description {
-        font-size: var(--tv-medium-font-size, 28px);
-        margin-bottom: 32px;
-        color: var(--tv-secondary-text-color, #e0e0e0);
-        line-height: 1.5;
-      }
-      
-      .product-price {
-        font-size: var(--tv-large-font-size, 32px);
-        font-weight: bold;
-        color: var(--tv-accent-color, #3498db);
-      }
-    }
-    
-    .product-image {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      
-      img {
-        max-width: 100%;
-        max-height: 500px;
-        object-fit: contain;
-        border-radius: 8px;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-      }
-    }
-  }
-  
-  // Progress indicator
-  .progress-container {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 16px;
-    
-    .progress-bar {
-      width: 300px;
-      height: 6px;
-      background-color: rgba(255, 255, 255, 0.2);
-      border-radius: 3px;
-      overflow: hidden;
-      
-      .progress-fill {
-        height: 100%;
-        background-color: var(--tv-accent-color, #3498db);
-        transition: width 0.3s ease-out;
-      }
-    }
-    
-    .slide-counter {
-      font-size: var(--tv-small-font-size, 20px);
-      color: var(--tv-secondary-text-color, #e0e0e0);
-      min-width: 60px;
-      text-align: center;
-    }
-  }
-  
-  // Controls
-  .controls {
-    position: absolute;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 32px;
-    opacity: 0.4;
-    transition: opacity 0.3s ease;
-    
-    &:hover {
-      opacity: 1;
-    }
-    
-    .control-button {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background-color: rgba(255, 255, 255, 0.2);
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-      }
-      
-      .arrow {
-        width: 20px;
-        height: 20px;
-        border-top: 3px solid white;
-        border-right: 3px solid white;
-        
-        &.left {
-          transform: rotate(-135deg);
-        }
-        
-        &.right {
-          transform: rotate(45deg);
-        }
-      }
-      
-      .icon {
-        width: 20px;
-        height: 20px;
-        position: relative;
-        
-        &.play::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          border-top: 10px solid transparent;
-          border-bottom: 10px solid transparent;
-          border-left: 20px solid white;
-        }
-        
-        &.pause::before,
-        &.pause::after {
-          content: '';
-          position: absolute;
-          width: 6px;
-          height: 20px;
-          background-color: white;
-        }
-        
-        &.pause::before {
-          left: 2px;
-        }
-        
-        &.pause::after {
-          right: 2px;
-        }
-      }
-    }
-  }
-  
-  .no-template-warning {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    font-size: var(--tv-large-font-size, 32px);
-    color: var(--tv-warning-color, #f39c12);
-  }
-}
-
-// Empty state
-.empty-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  
-  .empty-message {
-    font-size: var(--tv-large-font-size, 32px);
-    text-align: center;
-    margin-bottom: 32px;
-  }
-  
-  .retry-button {
-    padding: 16px 48px;
-    font-size: var(--tv-medium-font-size, 28px);
-    background-color: var(--tv-accent-color, #3498db);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-}
-
-// Debug info
-.debug-info {
+// Loading Overlay
+.loading-overlay {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: monospace;
-  z-index: 1000;
-  opacity: 0.5;
-  transition: opacity 0.3s ease;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tv-background, #000000);
+  z-index: 100;
+}
+
+.loading-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.loading-spinner {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 2rem;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-left: 4px solid var(--tv-accent, #FFA726);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
   
-  &:hover {
+  &.animations-disabled {
+    animation: none;
+    border: 4px solid var(--tv-accent, #FFA726);
+  }
+}
+
+.loading-text {
+  font-size: var(--tv-heading-size, 2.5rem);
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--tv-text-color, #FFFFFF);
+}
+
+.loading-subtext {
+  font-size: var(--tv-body-size, 1.5rem);
+  opacity: 0.8;
+  margin: 0;
+  color: var(--tv-text-muted, #CCCCCC);
+}
+
+// Error Overlay
+.error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tv-background, #000000);
+  z-index: 100;
+}
+
+.error-content {
+  text-align: center;
+  max-width: 600px;
+  padding: 2rem;
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-title {
+  font-size: var(--tv-heading-size, 2.5rem);
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--tv-error, #FF5252);
+}
+
+.error-message {
+  font-size: var(--tv-body-size, 1.5rem);
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+  color: var(--tv-text-muted, #CCCCCC);
+}
+
+.retry-button {
+  @include tv-button-reset;
+  font-size: var(--tv-body-size, 1.5rem);
+  padding: 1rem 2rem;
+  background: var(--tv-accent, #FFA726);
+  color: var(--tv-background, #000000);
+  border-radius: 8px;
+  font-weight: 600;
+  @include tv-safe-animations(true);
+
+  &:hover, &:focus {
+    background: #ffb74d;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Slideshow Content
+.slideshow-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+// Slides Container
+.slides-container {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  border-radius: var(--tv-border-radius, 12px);
+  background: var(--tv-surface, #1A1A1A);
+}
+
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  @include tv-safe-animations(true);
+  
+  &.active {
+    opacity: 1;
+    z-index: 10;
+  }
+  
+  &.preloaded .product-image {
+    filter: none;
+  }
+}
+
+// Product Content
+.product-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  height: 100%;
+  padding: 2rem;
+  align-items: center;
+
+  @media (max-width: 1366px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60% 40%;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+}
+
+.product-image-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tv-surface-variant, #2A2A2A);
+  border-radius: var(--tv-border-radius, 12px);
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.product-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  @include tv-safe-animations(true);
+  
+  &.loading {
+    filter: blur(2px);
+    opacity: 0.5;
+  }
+}
+
+.product-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: var(--tv-small-size, 1rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  &.badge-new {
+    background: var(--tv-success, #4CAF50);
+    color: white;
+  }
+  
+  &.badge-sale {
+    background: var(--tv-error, #FF5252);
+    color: white;
+  }
+  
+  &.badge-hot {
+    background: var(--tv-warning, #FF9800);
+    color: white;
+  }
+  
+  &.badge-limited {
+    background: var(--tv-accent, #FFA726);
+    color: black;
+  }
+}
+
+.product-info {
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.product-name {
+  font-size: var(--tv-heading-size, 2.5rem);
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+  color: var(--tv-text-color, #FFFFFF);
+  
+  @media (max-width: 1366px) {
+    font-size: var(--tv-heading-mobile, 2rem);
+  }
+}
+
+.product-description {
+  font-size: var(--tv-body-size, 1.5rem);
+  line-height: 1.5;
+  margin: 0 0 2rem 0;
+  color: var(--tv-text-muted, #CCCCCC);
+  
+  @media (max-width: 1366px) {
+    font-size: var(--tv-body-mobile, 1.25rem);
+    margin-bottom: 1.5rem;
+  }
+}
+
+.product-pricing {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.current-price {
+  font-size: var(--tv-price-size, 3rem);
+  font-weight: 700;
+  color: var(--tv-accent, #FFA726);
+  
+  @media (max-width: 1366px) {
+    font-size: var(--tv-price-mobile, 2.5rem);
+  }
+}
+
+.original-price {
+  font-size: var(--tv-body-size, 1.5rem);
+  color: var(--tv-text-muted, #CCCCCC);
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.discount-badge {
+  background: var(--tv-error, #FF5252);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: var(--tv-small-size, 1rem);
+  font-weight: 600;
+}
+
+// Progress Indicator
+.slide-progress {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 20;
+  
+  @media (min-width: 1920px) {
+    bottom: 3rem;
+  }
+  
+  @media (min-width: 3840px) {
+    bottom: 4rem;
+  }
+}
+
+.progress-bar {
+  width: 300px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  
+  @media (min-width: 1920px) {
+    width: 400px;
+    height: 8px;
+  }
+  
+  @media (min-width: 3840px) {
+    width: 500px;
+    height: 10px;
+  }
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tv-accent, #FFA726), #ffb74d);
+  background-size: 200% 100%;
+  animation: progressGlow 2s ease-in-out infinite;
+  @include tv-safe-animations(true);
+  
+  &.animations-disabled {
+    animation: none;
+    background: var(--tv-accent, #FFA726);
+  }
+}
+
+.slide-counter {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: var(--tv-small-size, 1rem);
+  font-weight: 600;
+  color: white;
+  backdrop-filter: blur(10px);
+  
+  @media (min-width: 1920px) {
+    font-size: var(--tv-body-size, 1.5rem);
+    padding: 0.75rem 1.25rem;
+  }
+}
+
+// Navigation Controls
+.navigation-controls {
+  position: absolute;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  opacity: 0;
+  @include tv-safe-animations(true);
+  z-index: 25;
+  
+  &.visible {
     opacity: 1;
   }
+  
+  @media (min-width: 1920px) {
+    bottom: 8rem;
+    gap: 1.5rem;
+  }
+}
+
+.nav-button {
+  @include tv-button-reset;
+  width: 60px;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  @include tv-safe-animations(true);
+  
+  &:hover, &:focus {
+    background: var(--tv-accent, #FFA726);
+    color: black;
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      transform: none;
+    }
+  }
+  
+  @media (min-width: 1920px) {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+  }
+}
+
+// Remote Control Help
+.remote-help {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.95);
+  padding: 2rem;
+  border-radius: var(--tv-border-radius, 12px);
+  backdrop-filter: blur(20px);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  @include tv-safe-animations(true);
+  
+  &.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  h3 {
+    font-size: var(--tv-heading-size, 2.5rem);
+    margin: 0 0 1.5rem 0;
+    text-align: center;
+    color: var(--tv-accent, #FFA726);
+  }
+}
+
+.help-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.help-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  
+  .key {
+    background: var(--tv-surface, #1A1A1A);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-family: monospace;
+    font-weight: 600;
+    min-width: 80px;
+    text-align: center;
+    border: 2px solid var(--tv-accent, #FFA726);
+  }
+  
+  .action {
+    font-size: var(--tv-body-size, 1.5rem);
+  }
+}
+
+// Empty State
+.empty-state {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tv-background, #000000);
+}
+
+.empty-content {
+  text-align: center;
+  max-width: 500px;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.empty-title {
+  font-size: var(--tv-heading-size, 2.5rem);
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--tv-text-color, #FFFFFF);
+}
+
+.empty-message {
+  font-size: var(--tv-body-size, 1.5rem);
+  margin: 0;
+  color: var(--tv-text-muted, #CCCCCC);
+  line-height: 1.5;
+}
+
+// Performance Monitor (Development)
+.performance-info {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.875rem;
+  z-index: 30;
+  backdrop-filter: blur(10px);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.perf-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  
+  .label {
+    opacity: 0.8;
+  }
+  
+  .value {
+    font-weight: 600;
+    
+    &.warning {
+      color: var(--tv-warning, #FF9800);
+    }
+  }
+}
+
+// TV Status Indicators
+.tv-status-indicators {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 30;
+}
+
+.status-indicator {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  backdrop-filter: blur(10px);
+  
+  &.performance {
+    &.perf-low {
+      border: 2px solid var(--tv-error, #FF5252);
+    }
+    
+    &.perf-basic {
+      border: 2px solid var(--tv-warning, #FF9800);
+    }
+    
+    &.perf-standard {
+      border: 2px solid var(--tv-success, #4CAF50);
+    }
+  }
+}
+
+// Accessibility
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 // Animations
@@ -372,96 +699,74 @@
   100% { transform: rotate(360deg); }
 }
 
-// TV-specific responsive adjustments
-@media (min-width: 1920px) {
-  .content-container .current-product {
-    gap: 60px;
-    
-    .product-info {
-      padding: 40px;
-      
-      .product-title {
-        font-size: 56px;
-      }
-      
-      .product-description {
-        font-size: 32px;
-      }
-    }
-    
-    .product-image img {
-      max-height: 600px;
-    }
+@keyframes progressGlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+// TV-specific media queries
+@media (min-width: 1366px) and (max-width: 1919px) {
+  // Standard HD TVs
+  .slideshow-container {
+    --tv-heading-size: 2rem;
+    --tv-body-size: 1.25rem;
+    --tv-price-size: 2.5rem;
   }
-  
-  .progress-container {
-    bottom: 60px;
-    
-    .progress-bar {
-      width: 400px;
-      height: 8px;
-    }
-    
-    .slide-counter {
-      font-size: 24px;
-    }
-  }
-  
-  .controls {
-    bottom: 120px;
-    
-    .control-button {
-      width: 70px;
-      height: 70px;
-    }
+}
+
+@media (min-width: 1920px) and (max-width: 3839px) {
+  // Full HD and 2K TVs
+  .slideshow-container {
+    --tv-heading-size: 2.5rem;
+    --tv-body-size: 1.5rem;
+    --tv-price-size: 3rem;
   }
 }
 
 @media (min-width: 3840px) {
-  .content-container .current-product {
-    gap: 80px;
-    
-    .product-info {
-      padding: 60px;
-      
-      .product-title {
-        font-size: 72px;
-      }
-      
-      .product-description {
-        font-size: 42px;
-      }
-      
-      .product-price {
-        font-size: 48px;
-      }
-    }
-    
-    .product-image img {
-      max-height: 800px;
-    }
+  // 4K TVs
+  .slideshow-container {
+    --tv-heading-size: 3rem;
+    --tv-body-size: 1.75rem;
+    --tv-price-size: 3.5rem;
+    --tv-small-size: 1.25rem;
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
   
-  .progress-container {
-    bottom: 80px;
-    
-    .progress-bar {
-      width: 500px;
-      height: 10px;
-    }
-    
-    .slide-counter {
-      font-size: 28px;
-    }
+  .loading-spinner {
+    animation: none;
+    border: 4px solid var(--tv-accent, #FFA726);
   }
   
-  .controls {
-    bottom: 160px;
-    gap: 48px;
-    
-    .control-button {
-      width: 90px;
-      height: 90px;
-    }
+  .progress-fill {
+    animation: none;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .slideshow-container {
+    --tv-text-color: #FFFFFF;
+    --tv-background: #000000;
+    --tv-accent: #FFFF00;
+    --tv-surface: #1A1A1A;
+  }
+  
+  .product-image {
+    filter: contrast(1.2);
+  }
+  
+  .nav-button, .retry-button {
+    border: 2px solid var(--tv-accent, #FFFF00);
   }
 }

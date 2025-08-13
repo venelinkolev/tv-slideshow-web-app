@@ -1,77 +1,194 @@
-<div class="slideshow-container tv-safe-zone">
-    <!-- Loading State -->
-    <div *ngIf="isLoading()" class="loading-container">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">Зареждане на продуктите...</p>
-    </div>
+<!-- TV-оптимизиран slideshow контейнер с пълна функционалност -->
+<div class="slideshow-container" [class.tv-device]="isTvDevice()" [class.safe-area-enabled]="safeAreaEnabled()"
+    [class.low-performance]="performanceLevel() != null && performanceLevel() <= 1"
+    [class.basic-performance]="performanceLevel() != null && performanceLevel() === 2"
+    [class.standard-performance]="performanceLevel() != null && performanceLevel() >= 3" [ngStyle]="safeAreaStyles()">
 
-    <!-- Error State -->
-    <div *ngIf="hasError()" class="error-container">
-        <div class="error-icon">!</div>
-        <p class="error-message">{{ errorMessage() }}</p>
-        <button class="retry-button" (click)="refreshData()">Опитайте отново</button>
-    </div>
-
-    <!-- Content State -->
-    <div *ngIf="!isLoading() && !hasError() && products().length > 0" class="content-container">
-        <!-- Template Content -->
-        <div class="template-container" [ngClass]="'performance-level-' + performanceLevel()">
-            <ng-container *ngIf="activeTemplate(); else noTemplate">
-                <!-- Показваем текущий продукт -->
-                <div class="current-product">
-                    <div class="product-info">
-                        <h2 class="product-title">{{ products()[currentSlideIndex()].name }}</h2>
-                        <p class="product-description">{{ products()[currentSlideIndex()].shortDescription }}</p>
-                        <p class="product-price">{{ products()[currentSlideIndex()].price |
-                            currency:'BGN':'symbol':'1.2-2' }}</p>
-                    </div>
-                    <div class="product-image">
-                        <img [src]="products()[currentSlideIndex()].imageUrl"
-                            [alt]="products()[currentSlideIndex()].name" />
-                    </div>
-                </div>
-
-                <!-- Индикатор прогресса -->
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" [style.width.%]="progress()"></div>
-                    </div>
-                    <div class="slide-counter">{{ currentSlideIndex() + 1 }} / {{ products().length }}</div>
-                </div>
-
-                <!-- Контроли управления -->
-                <div class="controls">
-                    <button class="control-button prev" (click)="previousSlide()">
-                        <span class="arrow left"></span>
-                    </button>
-                    <button class="control-button" (click)="isAutoPlaying() ? stopSlideShow() : startSlideShow()">
-                        <span class="icon" [ngClass]="{'play': !isAutoPlaying(), 'pause': isAutoPlaying()}"></span>
-                    </button>
-                    <button class="control-button next" (click)="nextSlide()">
-                        <span class="arrow right"></span>
-                    </button>
-                </div>
-            </ng-container>
-
-            <ng-template #noTemplate>
-                <div class="no-template-warning">
-                    <p>Не е намерен подходящ шаблон.</p>
-                </div>
-            </ng-template>
+    <!-- Loading State с TV-подходящ дизайн -->
+    <div class="loading-overlay" *ngIf="isLoading()">
+        <div class="loading-content">
+            <div class="loading-spinner" [class.animations-disabled]="!animationsEnabled()">
+            </div>
+            <h2 class="loading-text">Зареждане на продукти...</h2>
+            <p class="loading-subtext">Моля изчакайте</p>
         </div>
     </div>
 
-    <!-- No Products State -->
-    <div *ngIf="!isLoading() && !hasError() && products().length === 0" class="empty-container">
-        <p class="empty-message">Няма намерени продукти за показване.</p>
-        <button class="retry-button" (click)="refreshData()">Опитайте отново</button>
+    <!-- Error State с възможност за retry -->
+    <div class="error-overlay" *ngIf="hasError()">
+        <div class="error-content">
+            <div class="error-icon">⚠️</div>
+            <h2 class="error-title">Възникна грешка</h2>
+            <p class="error-message">{{ errorMessage() }}</p>
+            <button class="retry-button tv-button" (click)="loadProducts()" [attr.aria-label]="'Опитай отново'">
+                Опитай отново
+            </button>
+        </div>
     </div>
 
-    <!-- Debug info - Performance Status -->
-    <div *ngIf="!isLoading() && products().length > 0" class="debug-info">
-        <div>Performance: {{ performanceLevel() }}</div>
-        <div>Template: {{ activeTemplate()?.name }}</div>
-        <div>Products: {{ products().length }}</div>
-        <div>Current: {{ currentSlideIndex() + 1 }}</div>
+    <!-- Main Slideshow Content -->
+    <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
+
+        <!-- Product Slides -->
+        <div class="slides-container">
+            <div class="slide" *ngFor="let product of products(); trackBy: trackByProductId; let i = index"
+                [class.active]="i === currentSlideIndex()"
+                [class.preloaded]="product.imageUrl && preloadedImages.has(product.imageUrl)"
+                [attr.aria-hidden]="i !== currentSlideIndex()" [attr.data-slide-index]="i">
+
+                <!-- Product Content - ще се замени с динамични темплейти -->
+                <div class="product-content">
+                    <div class="product-image-container">
+                        <img [src]="product.imageUrl" [alt]="product.name" class="product-image"
+                            [class.loading]="product.imageUrl && !preloadedImages.has(product.imageUrl)" loading="lazy"
+                            [attr.aria-label]="'Изображение на ' + product.name">
+
+                        <!-- Product Badge -->
+                        <div class="product-badge" *ngIf="product.badge?.text"
+                            [class]="'badge-' + (product.badge?.color || 'primary')">
+                            {{ product.badge?.text }}
+                        </div>
+                    </div>
+
+                    <div class="product-info">
+                        <h1 class="product-name">{{ product.name || 'Unknown Product' }}</h1>
+                        <p class="product-description" *ngIf="product.shortDescription">
+                            {{ product.shortDescription }}
+                        </p>
+
+                        <div class="product-pricing">
+                            <span class="current-price">{{ product.price | currency:'BGN':'symbol':'1.2-2' }}</span>
+                            <span class="original-price"
+                                *ngIf="product.discount?.originalPrice && product.discount?.originalPrice !== product.price">
+                                {{ product.discount?.originalPrice | currency:'BGN':'symbol':'1.2-2' }}
+                            </span>
+                            <span class="discount-badge" *ngIf="product.discount?.percentage">
+                                -{{ product.discount?.percentage }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide Progress Indicator -->
+        <div class="slide-progress" *ngIf="products() && products().length > 1"
+            [attr.aria-label]="'Слайд ' + (currentSlideIndex() + 1) + ' от ' + products().length">
+
+            <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="progress() || 0"
+                    [class.animations-disabled]="!animationsEnabled()">
+                </div>
+            </div>
+
+            <div class="slide-counter">
+                <span class="current">{{ (currentSlideIndex() || 0) + 1 }}</span>
+                <span class="separator">/</span>
+                <span class="total">{{ products().length || 0 }}</span>
+            </div>
+        </div>
+
+        <!-- Navigation Controls (скрити по подразбиране, показват се при remote control) -->
+        <div class="navigation-controls" *ngIf="remoteControlEnabled()" [class.visible]="!isAutoPlaying()">
+
+            <button class="nav-button prev-button tv-button" (click)="previousSlide()"
+                [attr.aria-label]="'Предишен слайд'" [disabled]="!products() || products().length <= 1">
+                ←
+            </button>
+
+            <button class="nav-button play-pause-button tv-button" (click)="toggleAutoPlay()"
+                [attr.aria-label]="isAutoPlaying() ? 'Пауза' : 'Възпроизвеждане'">
+                {{ isAutoPlaying() ? '⏸️' : '▶️' }}
+            </button>
+
+            <button class="nav-button next-button tv-button" (click)="nextSlide()" [attr.aria-label]="'Следващ слайд'"
+                [disabled]="!products() || products().length <= 1">
+                →
+            </button>
+
+            <button class="nav-button fullscreen-button tv-button" (click)="requestFullscreen()"
+                [attr.aria-label]="'Цял екран'">
+                ⛶
+            </button>
+        </div>
+
+        <!-- Remote Control Help (показва се временно при натискане на клавиш) -->
+        <div class="remote-help" *ngIf="remoteControlEnabled()" [class.visible]="false">
+            <h3>Управление с дистанционно</h3>
+            <div class="help-items">
+                <div class="help-item">
+                    <span class="key">← →</span>
+                    <span class="action">Предишен/Следващ слайд</span>
+                </div>
+                <div class="help-item">
+                    <span class="key">Space</span>
+                    <span class="action">Пауза/Възпроизвеждане</span>
+                </div>
+                <div class="help-item">
+                    <span class="key">Home</span>
+                    <span class="action">Рестарт</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && !hasError() && (!products() || products().length === 0)">
+        <div class="empty-content">
+            <div class="empty-icon">📦</div>
+            <h2 class="empty-title">Няма налични продукти</h2>
+            <p class="empty-message">Моля, добавете продукти в администрацията</p>
+        </div>
+    </div>
+
+    <!-- Performance Monitor (само за development/debugging) -->
+    <div class="performance-info" *ngIf="isTvDevice() && false" [attr.aria-hidden]="true">
+        <div class="perf-item">
+            <span class="label">FPS:</span>
+            <span class="value" [class.warning]="currentFPS() < 25">{{ currentFPS() }}</span>
+        </div>
+        <div class="perf-item">
+            <span class="label">Memory:</span>
+            <span class="value" [class.warning]="memoryUsage() > 80">{{ memoryUsage() }}MB</span>
+        </div>
+        <div class="perf-item" *ngIf="performanceLevel() != null">
+            <span class="label">Level:</span>
+            <span class="value">{{ getPerformanceLevelName(performanceLevel()) }}</span>
+        </div>
+        <div class="perf-item">
+            <span class="label">Platform:</span>
+            <span class="value">{{ tvPlatform() || 'Unknown' }}</span>
+        </div>
+    </div>
+
+    <!-- TV Status Indicators -->
+    <div class="tv-status-indicators" *ngIf="isTvDevice()" [attr.aria-hidden]="true">
+
+        <!-- Sleep Prevention Active -->
+        <div class="status-indicator sleep-prevention" *ngIf="sleepPreventionActive()" title="Sleep prevention active">
+            🛡️
+        </div>
+
+        <!-- Fullscreen Status -->
+        <div class="status-indicator fullscreen" *ngIf="isFullscreen()" title="Fullscreen mode">
+            ⛶
+        </div>
+
+        <!-- Performance Level -->
+        <div class="status-indicator performance" *ngIf="performanceLevel() != null"
+            [class]="'perf-' + getPerformanceLevelName(performanceLevel()).toLowerCase()"
+            [title]="'Performance level: ' + getPerformanceLevelName(performanceLevel())">
+            {{ performanceLevel() >= 3 ? '🟢' :
+            performanceLevel() === 2 ? '🟡' : '🔴' }}
+        </div>
+    </div>
+
+    <!-- Accessibility Announcements -->
+    <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        <span *ngIf="isLoading()">Зареждане на продукти</span>
+        <span *ngIf="hasError()">Възникна грешка при зареждането</span>
+        <span *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
+            Показване на {{ products().length }} продукта
+        </span>
     </div>
 </div>
