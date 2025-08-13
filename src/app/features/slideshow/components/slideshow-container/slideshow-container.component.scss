@@ -1,4 +1,31 @@
-// Import TV-specific variables
+// Добавяне на категории филтри
+.category-filters {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  z-index: 5;
+  
+  .category-filter-button {
+    padding: 8px 16px;
+    font-size: var(--tv-small-font-size, 20px);
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--tv-text-color, #fff);
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    &.active {
+      background-color: var(--tv-primary, #1565C0);
+      color: white;
+    }
+  }
+}// Import TV-specific variables
 @import 'src/assets/styles/variables';
 
 // TV-safe zone mixin
