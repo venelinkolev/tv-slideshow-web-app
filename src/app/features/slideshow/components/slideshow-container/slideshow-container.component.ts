@@ -26,6 +26,7 @@ import { TemplateRegistryService } from '@core/services/template-registry.servic
 import { PerformanceMonitorService } from '@core/services/performance-monitor.service';
 import { TvOptimizationsService } from '@core/services/tv-optimizations.service';
 import { SlideShowService } from '../../services/slideshow.service';
+import { ProductSlideComponent } from '../product-slide';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -43,7 +44,7 @@ import { SlideShowService } from '../../services/slideshow.service';
 @Component({
     selector: 'app-slideshow-container',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, ProductSlideComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -146,6 +147,12 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     protected trackByProductId = (index: number, product: Product): string => {
         return product.id || `product-${index}`;
     };
+
+    readonly currentProduct = computed(() => {
+        const products = this.products(); // или съответния signal с продукти
+        const index = this.currentSlideIndex(); // или съответния signal с индекс
+        return products.length > 0 ? products[index] : null;
+    });
 
     ngOnInit(): void {
         console.log('SlideShowContainerComponent: Initializing with TV optimizations');
@@ -611,5 +618,32 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
             // Update performance level based on metrics
             this.updatePerformanceLevel(metrics.fps, metrics.memoryUsageMB);
         }, 5000);
+    }
+
+    handleSlideReady(event: { product: Product; success: boolean }): void {
+        console.log('SlideShowContainerComponent.handleSlideReady()', event);
+
+        if (event.success) {
+            console.log(`Slide ready for product: ${event.product.name}`);
+        } else {
+            console.warn(`Slide failed for product: ${event.product.name}`);
+        }
+    }
+
+    /**
+ * Handle image loading errors
+ */
+
+    handleImageError(event: { product: Product; error: Event }): void {
+        console.warn('SlideShowContainerComponent.handleImageError()', event);
+
+        const { product, error } = event;
+        const img = error.target as HTMLImageElement;
+
+        console.warn(`Failed to load image for product: ${product.name}`, img?.src);
+
+        if (img && img.src !== '/assets/images/product-placeholder.jpg') {
+            img.src = '/assets/images/product-placeholder.jpg';
+        }
     }
 }

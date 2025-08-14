@@ -7,11 +7,12 @@ import { PerformanceMonitorService } from '@core/services/performance-monitor.se
 import { Product } from '@core/models/product.interface';
 import { SlideshowConfig } from '@core/models/slideshow-config.interface';
 import { Subject, takeUntil } from 'rxjs';
+import { SlideShowContainerComponent } from "../slideshow-container/slideshow-container.component";
 
 @Component({
     selector: 'app-slideshow',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, SlideShowContainerComponent,],
     templateUrl: './slideshow.component.html',
     styleUrls: ['./slideshow.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -30,7 +31,7 @@ export class SlideshowComponent implements OnInit, OnDestroy {
     slideshowConfig?: SlideshowConfig;
 
     // Флаг за зареждане
-    isLoading = true;
+    isLoading = false;
 
     // Флаг за грешка
     hasError = false;

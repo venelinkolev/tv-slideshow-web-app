@@ -12,8 +12,8 @@ export const SLIDESHOW_ROUTES: Routes = [
   {
     path: '',
     component: SlideshowComponent,
-    canActivate: [slideshowGuard],
-    canDeactivate: [slideshowDeactivateGuard],
+    // canActivate: [slideshowGuard],
+    // canDeactivate: [slideshowDeactivateGuard],
     providers: [
       ...CONFIG_PROVIDERS // Предоставяме конфигурация на route ниво
     ],

@@ -14,10 +14,11 @@
     <!-- Основен контейнер за слайдшоу - ще бъде заменен с карусел -->
     <div *ngIf="!isLoading && !hasError" class="slideshow-content">
         <!-- Тук ще бъде добавен carousel компонента в следващите задачи -->
-        <div class="slideshow-placeholder">
+        <app-slideshow-container />
+        <!-- <div class="slideshow-placeholder">
             <h2>TV Slideshow</h2>
             <p>Подготвен за {{products.length}} продукта</p>
             <p class="tv-info">Оптимизирано за телевизионни дисплеи</p>
-        </div>
+        </div> -->
     </div>
 </div>
