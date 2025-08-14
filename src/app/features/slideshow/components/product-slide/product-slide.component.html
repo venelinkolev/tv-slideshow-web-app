@@ -1,0 +1,123 @@
+<!-- ProductSlideComponent Template - Simplified Version -->
+<div class="product-slide" [class]="slideClasses()" [attr.data-product-id]="product().id"
+    [attr.data-template]="templateName()" role="img"
+    [attr.aria-label]="'Продукт ' + product().name + ', цена ' + displayPrice()">
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <div class="product-slide__loading">
+        <div class="product-slide__loading-spinner" aria-hidden="true">
+            <div class="spinner"></div>
+        </div>
+        <p class="product-slide__loading-text">
+            Зареждане на {{ product().name }}...
+        </p>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError() && !isLoading()) {
+    <div class="product-slide__error">
+        <div class="product-slide__error-icon" aria-hidden="true">⚠️</div>
+        <h3 class="product-slide__error-title">Грешка при зареждане</h3>
+        <p class="product-slide__error-message">{{ errorMessage() }}</p>
+
+        <div class="product-slide__error-details">
+            <p><strong>Продукт:</strong> {{ product().name }}</p>
+            <p><strong>Template:</strong> {{ templateName() }}</p>
+        </div>
+
+        <button class="product-slide__retry-button" (click)="retryLoad()"
+            aria-label="Опитай отново да заредиш продукта">
+            🔄 Опитай отново
+        </button>
+    </div>
+    }
+
+    <!-- Main Product Display -->
+    @if (isReady() && !hasError()) {
+    <div class="product-slide__content">
+
+        <!-- Product Image Section -->
+        <div class="product-slide__image-section">
+            <div class="product-slide__image-container">
+                <img [src]="product().imageUrl" [alt]="product().name" class="product-slide__image" loading="eager"
+                    (error)="onImageError($event)" (load)="onImageLoad($event)" />
+
+                <!-- Image overlay for better text readability -->
+                <div class="product-slide__image-overlay"></div>
+            </div>
+        </div>
+
+        <!-- Product Information Section -->
+        <div class="product-slide__info-section">
+
+            <!-- Product Title -->
+            <h1 class="product-slide__title">{{ product().name }}</h1>
+
+            <!-- Product Price -->
+            <div class="product-slide__price">{{ displayPrice() }}</div>
+
+            <!-- Product Description -->
+            @if (truncatedDescription()) {
+            <p class="product-slide__description">{{ truncatedDescription() }}</p>
+            }
+
+            <!-- Product Category -->
+            @if (product().category) {
+            <div class="product-slide__category">
+                <span class="category-label">Категория:</span>
+                <span class="category-value">{{ product().category }}</span>
+            </div>
+            }
+
+            <!-- Stock Status -->
+            <div class="product-slide__stock" [class]="getStockStatusClass()">
+                <span class="stock-indicator" aria-hidden="true">
+                    {{ getStockStatusIcon() }}
+                </span>
+                <span class="stock-text">
+                    {{ getStockStatusText() }}
+                </span>
+            </div>
+
+            <!-- Template Badge (показва кой template се използва) -->
+            <div class="product-slide__template-badge">
+                <span class="template-name">{{ templateName() }}</span>
+            </div>
+
+        </div>
+
+    </div>
+    }
+
+    <!-- Loading Placeholder за image -->
+    @if (isLoading()) {
+    <div class="product-slide__placeholder">
+        <div class="placeholder-image">
+            <div class="placeholder-shimmer"></div>
+        </div>
+        <div class="placeholder-content">
+            <div class="placeholder-line placeholder-line--title"></div>
+            <div class="placeholder-line placeholder-line--price"></div>
+            <div class="placeholder-line placeholder-line--description"></div>
+        </div>
+    </div>
+    }
+
+    <!-- Debug Information (Development Only) -->
+    @if (!isLoading() && !hasError()) {
+    <!-- Скрито по default, може да се покаже за debugging -->
+    <div class="product-slide__debug" style="display: none;">
+        <small>
+            ID: {{ product().id }} |
+            Template: {{ templateName() }} |
+            Quality: {{ imageQuality() }} |
+            Animations: {{ enableAnimations() ? 'ON' : 'OFF' }} |
+            Ready: {{ isReady() ? 'YES' : 'NO' }} |
+            Image: {{ isImageLoaded() ? 'LOADED' : 'LOADING' }}
+        </small>
+    </div>
+    }
+
+</div>
