@@ -27,6 +27,7 @@ import { PerformanceMonitorService } from '@core/services/performance-monitor.se
 import { TvOptimizationsService } from '@core/services/tv-optimizations.service';
 import { SlideShowService } from '../../services/slideshow.service';
 import { ProductSlideComponent } from '../product-slide';
+import { SlideProgressComponent } from '../slide-progress';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -44,7 +45,7 @@ import { ProductSlideComponent } from '../product-slide';
 @Component({
     selector: 'app-slideshow-container',
     standalone: true,
-    imports: [CommonModule, ProductSlideComponent],
+    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -620,6 +621,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         }, 5000);
     }
 
+    // Event handlers for slide events
     handleSlideReady(event: { product: Product; success: boolean }): void {
         console.log('SlideShowContainerComponent.handleSlideReady()', event);
 
@@ -645,5 +647,17 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         if (img && img.src !== '/assets/images/product-placeholder.jpg') {
             img.src = '/assets/images/product-placeholder.jpg';
         }
+    }
+
+    // Метод за handling на progress events:
+    handleProgressComplete(event: { currentIndex: number; totalSlides: number }): void {
+        console.log('Progress complete:', event);
+        // Може да triggeriра auto-advance към следващия slide
+    }
+
+    handleProgressClick(event: { targetIndex: number; percentage: number }): void {
+        console.log('Progress clicked:', event);
+        // Навигирай към конкретния slide
+        this.currentSlideIndex.set(event.targetIndex);
     }
 }

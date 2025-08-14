@@ -1,0 +1,517 @@
+// SlideProgressComponent Styles - TV Optimized
+// ============================================
+
+// TV-safe variables
+:host {
+  --tv-safe-margin: 32px;
+  --tv-min-font-size: 20px;
+  --tv-progress-height: 8px;
+  --tv-progress-height-large: 12px;
+  
+  // Progress colors
+  --progress-bg: rgba(255, 255, 255, 0.2);
+  --progress-fill: #FFA726;
+  --progress-fill-gradient: linear-gradient(90deg, #FF9800, #FFA726, #FFB74D);
+  --progress-marker: #FFFFFF;
+  --progress-text: #FFFFFF;
+  --progress-shadow: rgba(0, 0, 0, 0.3);
+  
+  // Animation settings
+  --transition-fast: 0.2s ease-out;
+  --transition-normal: 0.4s ease-out;
+  --transition-slow: 0.8s ease-out;
+  
+  // Z-index
+  --progress-z-index: 20;
+  --controls-z-index: 25;
+}
+
+// Main container
+.slide-progress-container {
+  position: fixed;
+  bottom: var(--tv-safe-margin);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--progress-z-index);
+  
+  // Responsive width
+  width: min(80vw, 600px);
+  max-width: calc(100vw - (var(--tv-safe-margin) * 2));
+  
+  // Base styling
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  padding: 16px 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px var(--progress-shadow);
+  
+  // Transitions
+  transition: var(--transition-normal);
+  opacity: 1;
+  visibility: visible;
+
+  // State modifiers
+  &.slide-progress--hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(10px);
+  }
+
+  &.slide-progress--hovered {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateX(-50%) scale(1.02);
+    box-shadow: 0 6px 30px var(--progress-shadow);
+  }
+
+  &.slide-progress--animated {
+    .slide-progress__bar-fill,
+    .slide-progress__slide-progress {
+      transition: width var(--transition-normal);
+    }
+  }
+
+  &.slide-progress--auto-hide {
+    transition: var(--transition-slow);
+  }
+
+  &.slide-progress--single-slide {
+    .slide-progress__bar-section {
+      display: none;
+    }
+  }
+}
+
+// Main content layout
+.slide-progress__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+// Progress Bar Section
+.slide-progress__bar-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide-progress__bar-container {
+  position: relative;
+  width: 100%;
+  height: var(--tv-progress-height);
+  cursor: pointer;
+  border-radius: calc(var(--tv-progress-height) / 2);
+  
+  &:hover {
+    height: var(--tv-progress-height-large);
+    
+    .slide-progress__bar-background {
+      height: var(--tv-progress-height-large);
+    }
+  }
+
+  &:focus {
+    outline: 2px solid var(--progress-fill);
+    outline-offset: 4px;
+  }
+}
+
+.slide-progress__bar-background {
+  width: 100%;
+  height: var(--tv-progress-height);
+  background: var(--progress-bg);
+  border-radius: calc(var(--tv-progress-height) / 2);
+  overflow: hidden;
+  position: relative;
+  transition: var(--transition-fast);
+}
+
+.slide-progress__bar-fill {
+  height: 100%;
+  background: var(--progress-fill-gradient);
+  background-size: 200% 100%;
+  border-radius: inherit;
+  position: relative;
+  min-width: 2px; // Осигурява минимална видимост
+  
+  // Animated gradient flow
+  animation: progressFlow 3s ease-in-out infinite;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
+    border-radius: 0 inherit inherit 0;
+  }
+}
+
+.slide-progress__bar-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1), 
+    rgba(255, 255, 255, 0.3), 
+    rgba(255, 255, 255, 0.1)
+  );
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.slide-progress__slide-progress {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: inherit;
+  transition: var(--transition-fast);
+}
+
+.slide-progress__progress-dot {
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+// Progress Markers
+.slide-progress__markers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.slide-progress__marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  transition: var(--transition-fast);
+
+  &--active {
+    background: var(--progress-marker);
+    width: 6px;
+    height: 6px;
+  }
+
+  &--current {
+    background: #FFFFFF;
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  }
+}
+
+// Progress Bar Labels
+.slide-progress__bar-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 4px;
+}
+
+.slide-progress__label {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+}
+
+// Counter Section
+.slide-progress__counter-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+}
+
+.slide-progress__counter {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: 'Roboto', monospace;
+  font-weight: 600;
+  color: var(--progress-text);
+}
+
+.slide-progress__counter-current {
+  font-size: clamp(var(--tv-min-font-size), 3vw, 32px);
+  color: var(--progress-fill);
+  text-shadow: 1px 1px 2px var(--progress-shadow);
+}
+
+.slide-progress__counter-separator {
+  font-size: clamp(18px, 2.5vw, 24px);
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 2px;
+}
+
+.slide-progress__counter-total {
+  font-size: clamp(18px, 2.5vw, 24px);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.slide-progress__percentage {
+  font-size: clamp(16px, 2vw, 20px);
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Roboto', monospace;
+}
+
+// Special States
+.slide-progress__empty,
+.slide-progress__single {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: clamp(16px, 2vw, 20px);
+  padding: 8px;
+}
+
+.slide-progress__single-text {
+  background: rgba(255, 167, 38, 0.2);
+  padding: 4px 12px;
+  border-radius: 4px;
+  color: var(--progress-fill);
+}
+
+// Hover Controls
+.slide-progress__hover-controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: var(--controls-z-index);
+}
+
+.slide-progress__nav-button {
+  background: rgba(0, 0, 0, 0.8);
+  color: #FFFFFF;
+  border: 2px solid var(--progress-fill);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: var(--transition-fast);
+  
+  &:hover:not(:disabled) {
+    background: var(--progress-fill);
+    color: #000000;
+    transform: scale(1.1);
+  }
+  
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  &--prev {
+    transform: translateX(-50%);
+  }
+
+  &--next {
+    transform: translateX(50%);
+  }
+}
+
+// Screen Reader Only
+.slide-progress__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Debug Information
+.slide-progress__debug {
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  
+  small {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+// Animations
+@keyframes progressFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: translateY(-50%) scale(1); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: translateY(-50%) scale(1.3); 
+    opacity: 0.7; 
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// Responsive Design за различни TV резолюции
+// ========================================
+
+// HD TVs (1366x768)
+@media (max-width: 1366px) {
+  :host {
+    --tv-safe-margin: 24px;
+    --tv-min-font-size: 18px;
+    --tv-progress-height: 6px;
+    --tv-progress-height-large: 10px;
+  }
+
+  .slide-progress-container {
+    width: min(85vw, 500px);
+    padding: 12px 16px;
+  }
+
+  .slide-progress__nav-button {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+}
+
+// Full HD TVs (1920x1080) - Default styles apply
+
+// 4K TVs (3840x2160)
+@media (min-width: 3840px) {
+  :host {
+    --tv-safe-margin: 64px;
+    --tv-min-font-size: 28px;
+    --tv-progress-height: 12px;
+    --tv-progress-height-large: 16px;
+  }
+
+  .slide-progress-container {
+    width: min(70vw, 800px);
+    padding: 24px 32px;
+  }
+
+  .slide-progress__nav-button {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+}
+
+// 8K TVs (7680x4320)
+@media (min-width: 7680px) {
+  :host {
+    --tv-safe-margin: 80px;
+    --tv-min-font-size: 36px;
+    --tv-progress-height: 16px;
+    --tv-progress-height-large: 20px;
+  }
+}
+
+// Accessibility Improvements
+// ==========================
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .slide-progress-container {
+    &.slide-progress--animated {
+      .slide-progress__bar-fill,
+      .slide-progress__slide-progress {
+        transition: none;
+      }
+    }
+  }
+
+  .slide-progress__bar-fill {
+    animation: none;
+  }
+
+  .slide-progress__bar-gradient {
+    animation: none;
+  }
+
+  .slide-progress__progress-dot {
+    animation: none;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  :host {
+    --progress-fill: #FFD700;
+    --progress-marker: #FFFFFF;
+    --progress-text: #FFFFFF;
+    --progress-bg: rgba(0, 0, 0, 0.8);
+  }
+}
+
+// Focus styling за accessibility
+button:focus,
+.slide-progress__bar-container:focus {
+  outline: 3px solid var(--progress-fill);
+  outline-offset: 2px;
+}
+
+// Loading animation
+.slide-progress-container {
+  animation: fadeInUp 0.6s ease-out;
+}

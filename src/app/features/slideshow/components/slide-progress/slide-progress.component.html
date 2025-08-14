@@ -1,0 +1,143 @@
+<!-- SlideProgressComponent Template -->
+<div class="slide-progress-container" [class]="progressBarClasses()" [attr.aria-label]="ariaLabel()"
+    [attr.aria-hidden]="!isVisible()" role="progressbar" [attr.aria-valuenow]="round(overallProgress())"
+    [attr.aria-valuemin]="0" [attr.aria-valuemax]="100" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
+
+    <!-- Main Progress Content -->
+    @if (shouldShowProgressBar() || shouldShowCounter()) {
+    <div class="slide-progress__content">
+
+        <!-- Progress Bar Section -->
+        @if (shouldShowProgressBar()) {
+        <div class="slide-progress__bar-section">
+
+            <!-- Progress Bar Container -->
+            <div class="slide-progress__bar-container" (click)="onProgressBarClick($event)"
+                [attr.aria-label]="'Прогрес бар, кликнете за навигация'" role="slider" tabindex="0">
+
+                <!-- Background Bar -->
+                <div class="slide-progress__bar-background">
+
+                    <!-- Overall Progress Fill -->
+                    <div class="slide-progress__bar-fill" [style.width.%]="overallProgress()"
+                        [attr.aria-label]="'Общ прогрес ' + round(overallProgress()) + '%'">
+                        <!-- Progress Gradient Overlay -->
+                        <div class="slide-progress__bar-gradient"></div>
+                    </div>
+
+                    <!-- Current Slide Progress (thin overlay) -->
+                    @if (animationEnabled()) {
+                    <div class="slide-progress__slide-progress" [style.width.%]="slideProgress()"
+                        [style.left.%]="(currentIndex() / totalSlides()) * 100">
+                        <!-- Animated progress dot -->
+                        <div class="slide-progress__progress-dot"></div>
+                    </div>
+                    }
+
+                </div>
+
+                <!-- Progress Markers (за multiple slides) -->
+                @if (totalSlides() > 1 && totalSlides() <= 10) { <div class="slide-progress__markers">
+                    @for (marker of slideMarkers(); track $index) {
+                    <div class="slide-progress__marker"
+                        [class.slide-progress__marker--active]="$index <= currentIndex()"
+                        [class.slide-progress__marker--current]="$index === currentIndex()"
+                        [style.left.%]="($index / (totalSlides() - 1)) * 100"
+                        [attr.aria-label]="'Слайд ' + ($index + 1)"></div>
+                    }
+            </div>
+            }
+
+        </div>
+
+        <!-- Progress Bar Labels -->
+        @if (totalSlides() > 1) {
+        <div class="slide-progress__bar-labels">
+            <span class="slide-progress__label slide-progress__label--start">1</span>
+            <span class="slide-progress__label slide-progress__label--end">{{ totalSlides() }}</span>
+        </div>
+        }
+
+    </div>
+    }
+
+    <!-- Counter Section -->
+    @if (shouldShowCounter()) {
+    <div class="slide-progress__counter-section">
+
+        <!-- Current/Total Counter -->
+        <div class="slide-progress__counter">
+            <span class="slide-progress__counter-current">{{ displayCurrentIndex() }}</span>
+            <span class="slide-progress__counter-separator">/</span>
+            <span class="slide-progress__counter-total">{{ totalSlides() }}</span>
+        </div>
+
+        <!-- Progress Percentage -->
+        @if (showProgressBar()) {
+        <div class="slide-progress__percentage">
+            {{ round(overallProgress()) }}%
+        </div>
+        }
+
+    </div>
+    }
+
+</div>
+}
+
+<!-- Progress Status Text (за screen readers) -->
+<div class="slide-progress__sr-only" aria-live="polite">
+    {{ getProgressStatus() }}
+</div>
+
+<!-- Empty State (when no slides) -->
+@if (totalSlides() === 0) {
+<div class="slide-progress__empty">
+    <span class="slide-progress__empty-text">Няма слайдове</span>
+</div>
+}
+
+<!-- Single Slide State -->
+@if (totalSlides() === 1 && shouldShowCounter()) {
+<div class="slide-progress__single">
+    <span class="slide-progress__single-text">1 слайд</span>
+</div>
+}
+
+<!-- Hover Controls (показват се при hover) -->
+@if (isHovered() && totalSlides() > 1) {
+<div class="slide-progress__hover-controls">
+
+    <!-- Previous Button -->
+    <button class="slide-progress__nav-button slide-progress__nav-button--prev" [disabled]="currentIndex() === 0"
+        (click)="progressClick.emit({ targetIndex: Math.max(0, currentIndex() - 1), percentage: 0 })"
+        aria-label="Предишен слайд">
+        ◀
+    </button>
+
+    <!-- Next Button -->
+    <button class="slide-progress__nav-button slide-progress__nav-button--next"
+        [disabled]="currentIndex() >= totalSlides() - 1"
+        (click)="progressClick.emit({ targetIndex: Math.min(totalSlides() - 1, currentIndex() + 1), percentage: 0 })"
+        aria-label="Следващ слайд">
+        ▶
+    </button>
+
+</div>
+}
+
+<!-- Debug Information (Development Only) -->
+@if (false) { <!-- Скрито по default -->
+<div class="slide-progress__debug">
+    <small>
+        Index: {{ currentIndex() }} |
+        Total: {{ totalSlides() }} |
+        Overall: {{ round(overallProgress()) }}% |
+        Slide: {{ round(slideProgress()) }}% |
+        Visible: {{ isVisible() ? 'YES' : 'NO' }} |
+        Animated: {{ animationEnabled() ? 'ON' : 'OFF' }}
+    </small>
+</div>
+}
+
+</div>

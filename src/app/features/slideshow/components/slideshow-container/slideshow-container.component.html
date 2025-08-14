@@ -30,7 +30,12 @@
     <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
 
         <!-- Product Slides -->
-        <div class="slides-container">
+        <app-product-slide [product]="currentProduct()!" [templateName]="'classic'" [imageQuality]="'medium'"
+            [enableAnimations]="true" (imageError)="handleImageError($event)"
+            (slideReady)="handleSlideReady($event)"></app-product-slide>
+
+        <!-- Test Product Slides -->
+        <div *ngIf="false" class="slides-container">
             <div class="slide" *ngFor="let product of products(); trackBy: trackByProductId; let i = index"
                 [class.active]="i === currentSlideIndex()"
                 [class.preloaded]="product.imageUrl && preloadedImages.has(product.imageUrl)"
@@ -72,7 +77,16 @@
         </div>
 
         <!-- Slide Progress Indicator -->
-        <div class="slide-progress" *ngIf="products() && products().length > 1"
+        <!-- След product slide content -->
+        @if (products().length > 0) {
+        <app-slide-progress [currentIndex]="currentSlideIndex()" [totalSlides]="products().length"
+            [slideInterval]="20000" [showCounter]="true" [showProgressBar]="true" [autoHide]="false"
+            [animationEnabled]="true" (progressComplete)="handleProgressComplete($event)"
+            (progressClick)="handleProgressClick($event)"></app-slide-progress>
+        }
+
+        <!-- Test Slide Progress -->
+        <!-- <div class="slide-progress" *ngIf="products() && products().length > 1"
             [attr.aria-label]="'Слайд ' + (currentSlideIndex() + 1) + ' от ' + products().length">
 
             <div class="progress-bar">
@@ -86,7 +100,7 @@
                 <span class="separator">/</span>
                 <span class="total">{{ products().length || 0 }}</span>
             </div>
-        </div>
+        </div> -->
 
         <!-- Navigation Controls (скрити по подразбиране, показват се при remote control) -->
         <div class="navigation-controls" *ngIf="remoteControlEnabled()" [class.visible]="!isAutoPlaying()">
