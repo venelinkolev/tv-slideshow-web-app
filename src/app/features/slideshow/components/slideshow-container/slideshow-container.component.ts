@@ -649,15 +649,38 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         }
     }
 
-    // Метод за handling на progress events:
+    /**
+     * Handle progress complete event from SlideProgressComponent
+     * ТОВА Е КЛЮЧОВАТА ПРОМЯНА - сега прави реална навигация!
+     */
     handleProgressComplete(event: { currentIndex: number; totalSlides: number }): void {
-        console.log('Progress complete:', event);
-        // Може да triggeriра auto-advance към следващия slide
+        console.log('SlideShowContainerComponent.handleProgressComplete() - Auto advancing to next slide', event);
+
+        const products = this.products();
+        if (products.length === 0) {
+            console.warn('No products available for slide advancement');
+            return;
+        }
+
+        // Навигирай към следващия slide
+        this.nextSlide();
+
+        console.log(`Auto-advanced from slide ${event.currentIndex + 1} to next slide`);
     }
 
+    /**
+     * Handle progress click event from SlideProgressComponent
+     * Навигира директно към кликнатия slide
+     */
     handleProgressClick(event: { targetIndex: number; percentage: number }): void {
-        console.log('Progress clicked:', event);
-        // Навигирай към конкретния slide
-        this.currentSlideIndex.set(event.targetIndex);
+        console.log('SlideShowContainerComponent.handleProgressClick() - Manual navigation', event);
+
+        const products = this.products();
+        const targetIndex = Math.max(0, Math.min(event.targetIndex, products.length - 1));
+
+        // Навигирай към target slide
+        this.currentSlideIndex.set(targetIndex);
+
+        console.log(`Manually navigated to slide ${targetIndex + 1}/${products.length}`);
     }
 }

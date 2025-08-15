@@ -30,9 +30,12 @@
     <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
 
         <!-- Product Slides -->
-        <app-product-slide [product]="currentProduct()!" [templateName]="'classic'" [imageQuality]="'medium'"
-            [enableAnimations]="true" (imageError)="handleImageError($event)"
-            (slideReady)="handleSlideReady($event)"></app-product-slide>
+        @if (currentProduct() && config(); as currentConfig) {
+        <app-product-slide [product]="currentProduct()!"
+            [templateName]="currentConfig?.templates?.selectedTemplateId || 'classic'" [imageQuality]="'medium'"
+            [enableAnimations]="currentConfig?.timing?.transitionType !== 'none'"
+            (slideReady)="handleSlideReady($event)" (imageError)="handleImageError($event)" />
+        }
 
         <!-- Test Product Slides -->
         <div *ngIf="false" class="slides-container">
@@ -77,12 +80,12 @@
         </div>
 
         <!-- Slide Progress Indicator -->
-        <!-- След product slide content -->
-        @if (products().length > 0) {
+        @if (config(); as currentConfig) {
         <app-slide-progress [currentIndex]="currentSlideIndex()" [totalSlides]="products().length"
-            [slideInterval]="20000" [showCounter]="true" [showProgressBar]="true" [autoHide]="false"
-            [animationEnabled]="true" (progressComplete)="handleProgressComplete($event)"
-            (progressClick)="handleProgressClick($event)"></app-slide-progress>
+            [slideInterval]="currentConfig?.timing?.baseSlideDuration || 20000" [showCounter]="true"
+            [showProgressBar]="true" [autoHide]="false"
+            [animationEnabled]="currentConfig?.timing?.transitionType !== 'none'"
+            (progressComplete)="handleProgressComplete($event)" (progressClick)="handleProgressClick($event)" />
         }
 
         <!-- Test Slide Progress -->
