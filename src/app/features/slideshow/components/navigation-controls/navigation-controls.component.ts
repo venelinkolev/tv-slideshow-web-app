@@ -59,10 +59,18 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     readonly isHelpVisible = this.isHelpVisibleSignal.asReadonly();
     readonly isHovered = this.isHoveredSignal.asReadonly();
 
-    // ✅ Computed signals
+    // ✅ Computed signals  
     readonly shouldShowControls = computed(() => {
-        return this.remoteControlEnabled() &&
-            (this.isVisible() || this.isHovered() || !this.isAutoPlaying());
+        const remoteEnabled = this.remoteControlEnabled();
+        const visible = this.isVisible();
+        const hovered = this.isHovered();
+        const paused = !this.isAutoPlaying();
+
+        // Show controls if remote is enabled AND (manually shown OR hovered OR paused)
+        const shouldShow = remoteEnabled && (visible || hovered || paused);
+
+        console.log(`shouldShowControls: remote=${remoteEnabled}, visible=${visible}, hovered=${hovered}, paused=${paused} => ${shouldShow}`);
+        return shouldShow;
     });
 
     readonly controlsClasses = computed(() => {
@@ -93,7 +101,10 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         console.log('NavigationControlsComponent.ngOnInit() - TV remote controls ready');
-        this.setupAutoHide();
+        console.log(`Initial state: remoteEnabled=${this.remoteControlEnabled()}, autoPlaying=${this.isAutoPlaying()}, hasProducts=${this.hasProducts()}`);
+
+        // Don't start auto-hide immediately - wait for user interaction
+        // this.setupAutoHide();
     }
 
     ngOnDestroy(): void {
@@ -146,7 +157,13 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
      */
     showControls(): void {
         console.log('NavigationControlsComponent.showControls() - Showing controls');
+        console.log(`Current state: visible=${this.isVisible()}, autoPlaying=${this.isAutoPlaying()}, remoteEnabled=${this.remoteControlEnabled()}`);
+
         this.isVisibleSignal.set(true);
+
+        // Log after setting
+        console.log(`After setting visible: shouldShow=${this.shouldShowControls()}`);
+
         this.resetAutoHideTimer();
     }
 
@@ -222,6 +239,7 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
             case 'F':
                 event.preventDefault();
                 this.onRequestFullscreen();
+                this.showControls(); // ✅ ДОБАВЕНО - show controls при fullscreen
                 break;
             case 'h':
             case 'H':
@@ -238,26 +256,21 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Setup auto-hide behavior
-     * @private
-     */
-    private setupAutoHide(): void {
-        console.log('NavigationControlsComponent: Setting up auto-hide behavior');
-        this.resetAutoHideTimer();
-    }
-
-    /**
      * Reset auto-hide timer
      * @private
      */
     private resetAutoHideTimer(): void {
         this.clearAutoHideTimer();
 
-        if (this.isAutoPlaying()) {
+        // Only start auto-hide if controls are visible and auto-playing
+        if (this.isVisible() && this.isAutoPlaying()) {
             this.autoHideTimer = window.setTimeout(() => {
-                if (!this.isHovered() && this.isAutoPlaying()) {
+                // Double-check conditions before hiding
+                if (this.isVisible() && this.isAutoPlaying() && !this.isHovered()) {
+                    console.log('NavigationControlsComponent: Auto-hide timer expired, hiding controls');
                     this.isVisibleSignal.set(false);
-                    console.log('NavigationControlsComponent: Auto-hide activated');
+                } else {
+                    console.log('NavigationControlsComponent: Auto-hide timer expired but conditions changed, keeping visible');
                 }
             }, this.autoHideDelay());
         }
@@ -303,5 +316,14 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
             default:
                 return false;
         }
+    }
+
+    /**
+     * Force show controls (за debugging)
+     */
+    forceShowControls(): void {
+        console.log('NavigationControlsComponent.forceShowControls() - DEBUG: Forcing controls visible');
+        this.isVisibleSignal.set(true);
+        console.log(`After force show: shouldShowControls=${this.shouldShowControls()}`);
     }
 }

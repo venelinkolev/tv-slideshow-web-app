@@ -165,14 +165,16 @@
 </div>
 
 <!-- Debug Info (Development Only) -->
-@if (false) {
+@if (true) { <!-- Временно включено за debug -->
 <div class="debug-controls">
     <small>
         Controls: {{ shouldShowControls() ? 'Visible' : 'Hidden' }} |
         Auto: {{ isAutoPlaying() ? 'ON' : 'OFF' }} |
         Products: {{ productsCount() }} |
         Remote: {{ remoteControlEnabled() ? 'ON' : 'OFF' }} |
-        Help: {{ isHelpVisible() ? 'Shown' : 'Hidden' }}
+        Help: {{ isHelpVisible() ? 'Shown' : 'Hidden' }} |
+        isVisible: {{ isVisible() ? 'TRUE' : 'FALSE' }} |
+        isHovered: {{ isHovered() ? 'TRUE' : 'FALSE' }}
     </small>
 </div>
 }
