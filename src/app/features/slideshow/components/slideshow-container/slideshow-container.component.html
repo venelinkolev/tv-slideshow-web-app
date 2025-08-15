@@ -106,7 +106,14 @@
         </div> -->
 
         <!-- Navigation Controls (скрити по подразбиране, показват се при remote control) -->
-        <div class="navigation-controls" *ngIf="remoteControlEnabled()" [class.visible]="!isAutoPlaying()">
+        <app-navigation-controls [isAutoPlaying]="isAutoPlaying()" [remoteControlEnabled]="remoteControlEnabled()"
+            [hasProducts]="hasProducts()" [productsCount]="products().length" [showHelp]="false" [autoHideDelay]="5000"
+            (nextSlide)="nextSlide()" (previousSlide)="previousSlide()" (toggleAutoPlay)="toggleAutoPlay()"
+            (requestFullscreen)="requestFullscreen()" (helpToggle)="onHelpToggle($event)">
+        </app-navigation-controls>
+
+        <!-- Test Navigation Control -->
+        <!-- <div class="navigation-controls" *ngIf="remoteControlEnabled()" [class.visible]="!isAutoPlaying()">
 
             <button class="nav-button prev-button tv-button" (click)="previousSlide()"
                 [attr.aria-label]="'Предишен слайд'" [disabled]="!products() || products().length <= 1">
@@ -127,10 +134,10 @@
                 [attr.aria-label]="'Цял екран'">
                 ⛶
             </button>
-        </div>
+        </div> -->
 
         <!-- Remote Control Help (показва се временно при натискане на клавиш) -->
-        <div class="remote-help" *ngIf="remoteControlEnabled()" [class.visible]="false">
+        <!-- <div class="remote-help" *ngIf="remoteControlEnabled()" [class.visible]="false">
             <h3>Управление с дистанционно</h3>
             <div class="help-items">
                 <div class="help-item">
@@ -146,7 +153,7 @@
                     <span class="action">Рестарт</span>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <!-- Empty State -->

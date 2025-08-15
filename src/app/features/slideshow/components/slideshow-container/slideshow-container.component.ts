@@ -28,6 +28,7 @@ import { TvOptimizationsService } from '@core/services/tv-optimizations.service'
 import { SlideShowService } from '../../services/slideshow.service';
 import { ProductSlideComponent } from '../product-slide';
 import { SlideProgressComponent } from '../slide-progress';
+import { NavigationControlsComponent } from '../navigation-controls';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -45,7 +46,7 @@ import { SlideProgressComponent } from '../slide-progress';
 @Component({
     selector: 'app-slideshow-container',
     standalone: true,
-    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent],
+    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent, NavigationControlsComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -86,7 +87,11 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     // Computed values for TV optimizations
     protected readonly tvSettings = computed(() => this.config()?.tvOptimizations);
     protected readonly safeAreaEnabled = computed(() => this.tvSettings()?.safeArea?.enabled ?? true);
-    protected readonly remoteControlEnabled = computed(() => this.tvSettings()?.remoteControl?.enabled ?? true);
+    // protected readonly remoteControlEnabled = computed(() => this.tvSettings()?.remoteControl?.enabled ?? true);
+    protected readonly remoteControlEnabled = computed(() => {
+        const config = this.config();
+        return config?.tvOptimizations?.remoteControl?.enabled || false;
+    });
     protected readonly memoryCleanupEnabled = computed(() => this.tvSettings()?.performance?.memoryCleanup ?? true);
     protected readonly preloadCount = computed(() => {
         const performanceLevel = this.performanceLevel();
@@ -682,5 +687,16 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         this.currentSlideIndex.set(targetIndex);
 
         console.log(`Manually navigated to slide ${targetIndex + 1}/${products.length}`);
+    }
+
+    // Handle help toggle from navigation controls
+    onHelpToggle(helpVisible: boolean): void {
+        console.log(`SlideShowContainerComponent.onHelpToggle(${helpVisible}) - Help overlay toggled`);
+        // Optional: could track help usage statistics
+    }
+
+    // Enhanced methods за по-добра интеграция
+    hasProducts(): boolean {
+        return this.products().length > 0;
     }
 }

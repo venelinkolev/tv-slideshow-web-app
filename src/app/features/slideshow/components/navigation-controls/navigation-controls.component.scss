@@ -1,0 +1,534 @@
+// NavigationControlsComponent Styles - TV Optimized
+
+// TV-safe variables
+:host {
+  --tv-safe-margin: 32px;
+  --tv-button-size: 56px;
+  --tv-button-size-large: 72px;
+  --tv-min-font-size: 20px;
+  
+  // Control colors
+  --controls-bg: rgba(0, 0, 0, 0.8);
+  --controls-bg-hover: rgba(0, 0, 0, 0.9);
+  --controls-border: rgba(255, 255, 255, 0.2);
+  --controls-text: #FFFFFF;
+  --controls-primary: #FFA726;
+  --controls-primary-hover: #FF9800;
+  --controls-disabled: rgba(255, 255, 255, 0.3);
+  --controls-shadow: rgba(0, 0, 0, 0.5);
+  
+  // Animation settings
+  --transition-fast: 0.2s ease-out;
+  --transition-normal: 0.4s ease-out;
+  --transition-slow: 0.8s ease-out;
+  
+  // Z-index layers
+  --controls-z-index: 30;
+  --help-z-index: 50;
+}
+
+// Main Navigation Controls Container
+.navigation-controls {
+  position: fixed;
+  bottom: calc(var(--tv-safe-margin) + 80px); // Above progress bar
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--controls-z-index);
+  
+  // Initial hidden state
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(20px);
+  transition: var(--transition-normal);
+  
+  // Visible state
+  &.navigation-controls--visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+  }
+  
+  // Hovered state
+  &.navigation-controls--hovered {
+    transform: translateX(-50%) translateY(-5px) scale(1.02);
+  }
+  
+  // Auto-playing state (more subtle)
+  &.navigation-controls--auto-playing {
+    .controls-container {
+      background: rgba(0, 0, 0, 0.6);
+    }
+  }
+  
+  // Disabled state
+  &.navigation-controls--disabled {
+    .nav-button {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Controls Container
+.controls-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  
+  background: var(--controls-bg);
+  border: 2px solid var(--controls-border);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  
+  box-shadow: 
+    0 8px 32px var(--controls-shadow),
+    0 4px 16px rgba(0, 0, 0, 0.3);
+  
+  transition: var(--transition-fast);
+  
+  &:hover {
+    background: var(--controls-bg-hover);
+    border-color: var(--controls-primary);
+    transform: scale(1.02);
+  }
+}
+
+// Navigation Buttons
+.nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  width: var(--tv-button-size);
+  height: var(--tv-button-size);
+  
+  background: transparent;
+  border: 2px solid var(--controls-border);
+  border-radius: 12px;
+  color: var(--controls-text);
+  
+  font-size: var(--tv-min-font-size);
+  font-weight: 600;
+  cursor: pointer;
+  
+  transition: var(--transition-fast);
+  outline: none;
+  
+  // Focus styles for accessibility
+  &:focus-visible {
+    border-color: var(--controls-primary);
+    box-shadow: 0 0 0 4px rgba(255, 167, 38, 0.3);
+  }
+  
+  // Hover effects
+  &:hover:not(:disabled) {
+    background: var(--controls-primary);
+    border-color: var(--controls-primary);
+    color: #000000;
+    transform: scale(1.1);
+    
+    .button-icon {
+      transform: scale(1.1);
+    }
+  }
+  
+  // Active state
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+  
+  // Disabled state
+  &:disabled {
+    background: transparent;
+    border-color: var(--controls-disabled);
+    color: var(--controls-disabled);
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  // Button variants
+  &.nav-button--play-pause {
+    width: var(--tv-button-size-large);
+    background: var(--controls-primary);
+    border-color: var(--controls-primary);
+    color: #000000;
+    
+    &:hover:not(:disabled) {
+      background: var(--controls-primary-hover);
+      border-color: var(--controls-primary-hover);
+    }
+    
+    &.nav-button--playing {
+      .button-icon {
+        animation: pulse 2s infinite;
+      }
+    }
+  }
+  
+  &.nav-button--help {
+    &.nav-button--active {
+      background: var(--controls-primary);
+      border-color: var(--controls-primary);
+      color: #000000;
+    }
+  }
+}
+
+// Button Icons
+.button-icon {
+  font-size: 1.2em;
+  line-height: 1;
+  transition: var(--transition-fast);
+}
+
+// Button Text (Screen Reader Only)
+.button-text {
+  &.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+// Controls Hint (когато controls са скрити)
+.controls-hint {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  color: var(--controls-text);
+  font-size: 14px;
+  
+  opacity: 0.7;
+  animation: fadeInOut 3s infinite;
+  
+  .hint-icon {
+    font-size: 16px;
+  }
+  
+  .hint-text.sr-only {
+    @extend .button-text.sr-only;
+  }
+}
+
+// Remote Control Help Overlay
+.remote-help-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--help-z-index);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition-normal);
+  
+  &.remote-help-overlay--visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// Help Modal Background
+.help-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+// Help Modal Container
+.help-modal {
+  position: relative;
+  max-width: min(90vw, 600px);
+  max-height: min(90vh, 700px);
+  
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.3);
+  
+  color: #212121;
+  overflow: hidden;
+  
+  transform: scale(0.9) translateY(20px);
+  transition: var(--transition-normal);
+  
+  .remote-help-overlay--visible & {
+    transform: scale(1) translateY(0);
+  }
+}
+
+// Help Header
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  
+  background: linear-gradient(135deg, #1976D2, #2196F3);
+  color: #FFFFFF;
+  
+  .help-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .help-close {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    color: #FFFFFF;
+    font-size: 18px;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+// Help Content
+.help-content {
+  padding: 32px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+// Help Sections
+.help-section {
+  margin-bottom: 32px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  .help-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #1976D2;
+  }
+}
+
+// Help Items
+.help-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.help-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  
+  .help-keys {
+    display: flex;
+    gap: 8px;
+    min-width: 120px;
+  }
+  
+  .help-action {
+    color: #424242;
+    font-size: 16px;
+  }
+}
+
+// Help Keys
+.help-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  
+  background: #F5F5F5;
+  border: 2px solid #E0E0E0;
+  border-bottom: 4px solid #BDBDBD;
+  border-radius: 6px;
+  
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: #424242;
+  text-align: center;
+  
+  transition: var(--transition-fast);
+  
+  &:hover {
+    background: #EEEEEE;
+    border-color: #D0D0D0;
+    border-bottom-color: #AAAAAA;
+  }
+}
+
+// Help Footer
+.help-footer {
+  padding: 20px 32px;
+  background: #F8F9FA;
+  border-top: 1px solid #E0E0E0;
+  
+  .help-note {
+    color: #666666;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+// Screen Reader Only Utility
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// Debug Controls (Development Only)
+.debug-controls {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+// Animations
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Responsive Breakpoints
+@media (max-width: 1366px) {
+  :host {
+    --tv-button-size: 48px;
+    --tv-button-size-large: 60px;
+    --tv-safe-margin: 24px;
+  }
+  
+  .controls-container {
+    gap: 8px;
+    padding: 12px 20px;
+  }
+  
+  .help-modal {
+    max-width: 95vw;
+  }
+  
+  .help-content {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :host {
+    --tv-button-size: 44px;
+    --tv-button-size-large: 56px;
+  }
+  
+  .help-header {
+    padding: 20px 24px;
+    
+    .help-title {
+      font-size: 20px;
+    }
+  }
+  
+  .help-content {
+    padding: 20px;
+  }
+}
+
+// High Resolution Displays (4K+)
+@media (min-width: 3840px) {
+  :host {
+    --tv-button-size: 72px;
+    --tv-button-size-large: 96px;
+    --tv-min-font-size: 28px;
+    --tv-safe-margin: 48px;
+  }
+  
+  .controls-container {
+    gap: 16px;
+    padding: 20px 32px;
+    border-radius: 20px;
+  }
+  
+  .help-modal {
+    max-width: 800px;
+  }
+  
+  .help-header .help-title {
+    font-size: 32px;
+  }
+  
+  .help-section .help-section-title {
+    font-size: 24px;
+  }
+}

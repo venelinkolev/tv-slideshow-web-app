@@ -1,0 +1,178 @@
+<!-- NavigationControlsComponent Template -->
+
+<!-- Main Navigation Controls Container -->
+<div [class]="controlsClasses()" [attr.aria-hidden]="!shouldShowControls()"
+    [attr.aria-label]="'Контроли за навигация в слайдшоу'" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
+
+    <!-- Navigation Buttons Container -->
+    @if (shouldShowControls()) {
+    <div class="controls-container" role="toolbar" aria-label="Контроли за слайдшоу">
+
+        <!-- Previous Button -->
+        <button class="nav-button nav-button--previous tv-button" [disabled]="isButtonDisabled('previous')"
+            [attr.aria-label]="getButtonDescription('previous')" [attr.title]="getButtonDescription('previous')"
+            (click)="onPreviousSlide()" type="button">
+            <span class="button-icon" aria-hidden="true">←</span>
+            <span class="button-text sr-only">Предишен</span>
+        </button>
+
+        <!-- Play/Pause Button -->
+        <button class="nav-button nav-button--play-pause tv-button" [class.nav-button--playing]="isAutoPlaying()"
+            [attr.aria-label]="getButtonDescription('play-pause')" [attr.title]="getButtonDescription('play-pause')"
+            [attr.aria-pressed]="isAutoPlaying()" (click)="onToggleAutoPlay()" type="button">
+            <span class="button-icon" aria-hidden="true">{{ playPauseIcon() }}</span>
+            <span class="button-text sr-only">{{ playPauseLabel() }}</span>
+        </button>
+
+        <!-- Next Button -->
+        <button class="nav-button nav-button--next tv-button" [disabled]="isButtonDisabled('next')"
+            [attr.aria-label]="getButtonDescription('next')" [attr.title]="getButtonDescription('next')"
+            (click)="onNextSlide()" type="button">
+            <span class="button-icon" aria-hidden="true">→</span>
+            <span class="button-text sr-only">Следващ</span>
+        </button>
+
+        <!-- Fullscreen Button -->
+        <button class="nav-button nav-button--fullscreen tv-button"
+            [attr.aria-label]="getButtonDescription('fullscreen')" [attr.title]="getButtonDescription('fullscreen')"
+            (click)="onRequestFullscreen()" type="button">
+            <span class="button-icon" aria-hidden="true">⛶</span>
+            <span class="button-text sr-only">Цял екран</span>
+        </button>
+
+        <!-- Help Button -->
+        <button class="nav-button nav-button--help tv-button" [class.nav-button--active]="isHelpVisible()"
+            [attr.aria-label]="'Показване на помощ за клавишни комбинации'" [attr.title]="'Помощ (H)'"
+            [attr.aria-pressed]="isHelpVisible()" (click)="toggleHelp()" type="button">
+            <span class="button-icon" aria-hidden="true">?</span>
+            <span class="button-text sr-only">Помощ</span>
+        </button>
+
+    </div>
+    }
+
+    <!-- Controls Status Indicator -->
+    @if (remoteControlEnabled() && !shouldShowControls()) {
+    <div class="controls-hint" [attr.aria-label]="'Натиснете произволен клавиш за показване на контролите'"
+        role="status">
+        <span class="hint-icon" aria-hidden="true">⌨️</span>
+        <span class="hint-text sr-only">Натиснете клавиш за контроли</span>
+    </div>
+    }
+
+</div>
+
+<!-- Remote Control Help Overlay -->
+@if (isHelpVisible() && remoteControlEnabled()) {
+<div class="remote-help-overlay" [attr.aria-labelledby]="'help-title'" [attr.aria-describedby]="'help-description'"
+    role="dialog" aria-modal="true">
+
+    <!-- Help Modal Container -->
+    <div class="help-modal" (click)="$event.stopPropagation()">
+
+        <!-- Help Header -->
+        <div class="help-header">
+            <h3 id="help-title" class="help-title">
+                Управление с дистанционно
+            </h3>
+            <button class="help-close tv-button" [attr.aria-label]="'Затваряне на помощта'" (click)="toggleHelp()"
+                type="button">
+                <span aria-hidden="true">✕</span>
+            </button>
+        </div>
+
+        <!-- Help Content -->
+        <div id="help-description" class="help-content">
+            <div class="help-section">
+                <h4 class="help-section-title">Навигация</h4>
+                <div class="help-items">
+                    <div class="help-item">
+                        <div class="help-keys">
+                            <kbd class="help-key" aria-label="Лява стрелка">←</kbd>
+                            <kbd class="help-key" aria-label="Дясна стрелка">→</kbd>
+                        </div>
+                        <span class="help-action">Предишен / Следващ слайд</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h4 class="help-section-title">Възпроизвеждане</h4>
+                <div class="help-items">
+                    <div class="help-item">
+                        <div class="help-keys">
+                            <kbd class="help-key" aria-label="Интервал">Space</kbd>
+                        </div>
+                        <span class="help-action">Пауза / Възпроизвеждане</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h4 class="help-section-title">Екран</h4>
+                <div class="help-items">
+                    <div class="help-item">
+                        <div class="help-keys">
+                            <kbd class="help-key" aria-label="F клавиш">F</kbd>
+                        </div>
+                        <span class="help-action">Цял екран</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h4 class="help-section-title">Помощ</h4>
+                <div class="help-items">
+                    <div class="help-item">
+                        <div class="help-keys">
+                            <kbd class="help-key" aria-label="H клавиш">H</kbd>
+                        </div>
+                        <span class="help-action">Показване / скриване на тази помощ</span>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-keys">
+                            <kbd class="help-key" aria-label="Escape клавиш">Esc</kbd>
+                        </div>
+                        <span class="help-action">Затваряне на помощта</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Footer -->
+        <div class="help-footer">
+            <small class="help-note">
+                Контролите се скриват автоматично след {{ autoHideDelay() / 1000 }} секунди при автоматично
+                възпроизвеждане
+            </small>
+        </div>
+
+    </div>
+
+    <!-- Help Overlay Background -->
+    <div class="help-backdrop" (click)="toggleHelp()" aria-hidden="true"></div>
+
+</div>
+}
+
+<!-- Screen Reader Status Updates -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+    @if (isAutoPlaying()) {
+    <span>Слайдшоу се възпроизвежда автоматично</span>
+    } @else {
+    <span>Слайдшоу е на пауза</span>
+    }
+</div>
+
+<!-- Debug Info (Development Only) -->
+@if (false) {
+<div class="debug-controls">
+    <small>
+        Controls: {{ shouldShowControls() ? 'Visible' : 'Hidden' }} |
+        Auto: {{ isAutoPlaying() ? 'ON' : 'OFF' }} |
+        Products: {{ productsCount() }} |
+        Remote: {{ remoteControlEnabled() ? 'ON' : 'OFF' }} |
+        Help: {{ isHelpVisible() ? 'Shown' : 'Hidden' }}
+    </small>
+</div>
+}
