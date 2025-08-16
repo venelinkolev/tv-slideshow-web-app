@@ -1,0 +1,404 @@
+// LoadingStateComponent - TV-Optimized SCSS Styles
+// =====================================================
+
+// CSS Custom Properties for TV-safe theming
+:host {
+  --loading-primary-color: #1976d2;
+  --loading-secondary-color: #42a5f5;
+  --loading-accent-color: #ffa726;
+  --loading-text-primary: #212121;
+  --loading-text-secondary: #757575;
+  --loading-background: rgba(255, 255, 255, 0.95);
+  --loading-backdrop: rgba(0, 0, 0, 0.1);
+  
+  // TV-safe spacing and sizing
+  --tv-safe-margin: max(2vw, 32px);
+  --spinner-base-size: 48px;
+  --loading-text-base: max(18px, 1.2vw);
+  
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+// Main Loading Container
+.loading-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  background: var(--loading-background);
+  backdrop-filter: blur(8px);
+  
+  // TV safe area enforcement
+  padding: var(--tv-safe-margin);
+  box-sizing: border-box;
+  
+  // Z-index for overlay behavior
+  z-index: 1000;
+  
+  // Smooth entrance animation
+  animation: fadeIn 0.3s ease-in-out;
+  
+  &.animations-enabled {
+    .spinner {
+      animation-play-state: running;
+    }
+  }
+  
+  &:not(.animations-enabled) {
+    .spinner {
+      animation-play-state: paused;
+    }
+  }
+}
+
+// Loading Spinner Wrapper
+.loading-spinner-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  
+  // TV-safe minimum touch area
+  min-width: var(--spinner-base-size);
+  min-height: var(--spinner-base-size);
+}
+
+// Base Spinner Styles
+.spinner {
+  position: relative;
+  display: inline-block;
+  
+  // Size variants
+  &--small {
+    width: 32px;
+    height: 32px;
+    --spinner-stroke-width: 3px;
+  }
+  
+  &--medium {
+    width: 48px;
+    height: 48px;
+    --spinner-stroke-width: 4px;
+  }
+  
+  &--large {
+    width: 64px;
+    height: 64px;
+    --spinner-stroke-width: 5px;
+  }
+  
+  &--extra-large {
+    width: 80px;
+    height: 80px;
+    --spinner-stroke-width: 6px;
+  }
+}
+
+// Standard Spinner (STANDARD Performance)
+.spinner--standard {
+  .spinner__circle {
+    width: 100%;
+    height: 100%;
+    border: var(--spinner-stroke-width, 4px) solid var(--loading-backdrop);
+    border-top-color: var(--loading-primary-color);
+    border-radius: 50%;
+    
+    animation: spin 1.2s linear infinite;
+    animation-play-state: inherit;
+  }
+}
+
+// Detailed Spinner (HIGH/PREMIUM Performance)
+.spinner--detailed {
+  .spinner__layer {
+    position: absolute;
+    border-radius: 50%;
+    border-style: solid;
+    animation-play-state: inherit;
+    
+    &--outer {
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-width: var(--spinner-stroke-width, 4px);
+      border-color: transparent var(--loading-primary-color) transparent transparent;
+      animation: spin 2s linear infinite;
+    }
+    
+    &--middle {
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      border-width: calc(var(--spinner-stroke-width, 4px) * 0.75);
+      border-color: transparent transparent var(--loading-secondary-color) transparent;
+      animation: spin 1.5s linear infinite reverse;
+    }
+    
+    &--inner {
+      top: 20%;
+      left: 20%;
+      width: 60%;
+      height: 60%;
+      border-width: calc(var(--spinner-stroke-width, 4px) * 0.5);
+      border-color: var(--loading-accent-color) transparent transparent transparent;
+      animation: spin 1s linear infinite;
+    }
+  }
+  
+  .spinner__center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12%;
+    height: 12%;
+    background: var(--loading-primary-color);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    
+    animation: pulse 2s ease-in-out infinite;
+    animation-play-state: inherit;
+  }
+}
+
+// Static Spinner (LOW Performance)
+.spinner--static {
+  .spinner__static-icon {
+    font-size: calc(var(--spinner-base-size) * 0.6);
+    text-align: center;
+    line-height: 1;
+    
+    // Subtle non-animated indicator
+    opacity: 0.8;
+    
+    // Very gentle pulsing for low-performance devices
+    animation: gentlePulse 3s ease-in-out infinite;
+    animation-play-state: inherit;
+  }
+}
+
+// Loading Messages Section
+.loading-messages {
+  text-align: center;
+  max-width: 600px; // TV-safe readable width
+  margin: 0 auto;
+}
+
+.loading-text {
+  margin: 0 0 1rem 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--loading-text-primary);
+  line-height: 1.4;
+  
+  // TV-optimized text sizing
+  &--primary {
+    font-size: max(24px, 2vw);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  &--detailed {
+    font-size: max(18px, 1.5vw);
+    font-weight: 400;
+    color: var(--loading-text-secondary);
+    margin-bottom: 1.5rem;
+  }
+}
+
+// Progress Bar Section
+.progress-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 1.5rem auto 0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--loading-backdrop);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  
+  // TV-safe larger size on big screens
+  @media (min-width: 1920px) {
+    height: 10px;
+  }
+  
+  @media (min-width: 3840px) {
+    height: 12px;
+  }
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--loading-primary-color), var(--loading-secondary-color));
+  border-radius: inherit;
+  transition: width 0.3s ease-out;
+  
+  // Animated progress indicator
+  background-size: 200% 100%;
+  animation: progressShimmer 2s linear infinite;
+}
+
+.progress-percentage {
+  display: block;
+  font-size: max(16px, 1.2vw);
+  font-weight: 500;
+  color: var(--loading-text-secondary);
+  text-align: center;
+}
+
+// Debug Information (Development)
+.debug-info {
+  position: absolute;
+  bottom: var(--tv-safe-margin);
+  right: var(--tv-safe-margin);
+  
+  .debug-text {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--loading-text-secondary);
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+}
+
+// TV Safe Area Indicator (Development Helper)
+.tv-safe-area-indicator {
+  position: absolute;
+  top: var(--tv-safe-margin);
+  left: var(--tv-safe-margin);
+  right: var(--tv-safe-margin);
+  bottom: var(--tv-safe-margin);
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  z-index: -1;
+  
+  // Hide in production
+  @media (prefers-reduced-motion: no-preference) {
+    display: none;
+  }
+}
+
+// Accessibility: Screen Reader Only
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// Animations
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: translate(-50%, -50%) scale(1.2); 
+    opacity: 0.8; 
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes progressShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+// TV-Specific Responsive Design
+@media (min-width: 1920px) {
+  :host {
+    --spinner-base-size: 56px;
+    --loading-text-base: max(20px, 1.4vw);
+  }
+  
+  .loading-container {
+    padding: calc(var(--tv-safe-margin) * 1.2);
+  }
+}
+
+@media (min-width: 3840px) {
+  :host {
+    --spinner-base-size: 72px;
+    --loading-text-base: max(24px, 1.6vw);
+  }
+  
+  .loading-container {
+    padding: calc(var(--tv-safe-margin) * 1.5);
+  }
+  
+  .loading-text--primary {
+    font-size: max(32px, 2.4vw);
+  }
+  
+  .loading-text--detailed {
+    font-size: max(24px, 1.8vw);
+  }
+}
+
+// Accessibility: Reduced Motion Support
+@media (prefers-reduced-motion: reduce) {
+  .spinner__layer,
+  .spinner__circle,
+  .spinner__center,
+  .progress-fill {
+    animation: none !important;
+  }
+  
+  .spinner--static .spinner__static-icon {
+    animation: none !important;
+  }
+  
+  .loading-container {
+    animation: none !important;
+  }
+}
+
+// High Contrast Mode Support
+@media (prefers-contrast: high) {
+  :host {
+    --loading-primary-color: #000000;
+    --loading-secondary-color: #333333;
+    --loading-accent-color: #666666;
+    --loading-text-primary: #000000;
+    --loading-background: #ffffff;
+  }
+}

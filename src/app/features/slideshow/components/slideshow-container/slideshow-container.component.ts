@@ -29,6 +29,7 @@ import { SlideShowService } from '../../services/slideshow.service';
 import { ProductSlideComponent } from '../product-slide';
 import { SlideProgressComponent } from '../slide-progress';
 import { NavigationControlsComponent } from '../navigation-controls';
+import { LoadingStateComponent } from '../loading-state';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -46,7 +47,7 @@ import { NavigationControlsComponent } from '../navigation-controls';
 @Component({
     selector: 'app-slideshow-container',
     standalone: true,
-    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent, NavigationControlsComponent],
+    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -158,6 +159,73 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         const products = this.products(); // или съответния signal с продукти
         const index = this.currentSlideIndex(); // или съответния signal с индекс
         return products.length > 0 ? products[index] : null;
+    });
+
+    // ✅ NEW: Additional computed signals for LoadingStateComponent integration
+    readonly loadingProgress = computed(() => {
+        const products = this.products();
+        const isLoading = this.isLoading();
+
+        if (!isLoading || products.length === 0) {
+            return 0;
+        }
+
+        // Calculate loading progress based on API response and preloaded images
+        const totalExpected = this.config()?.products?.maxProducts || 10;
+        const currentLoaded = products.length;
+
+        return Math.min((currentLoaded / totalExpected) * 100, 100);
+    });
+
+    readonly loadingMessage = computed(() => {
+        const isLoading = this.isLoading();
+        const hasError = this.hasError();
+        const products = this.products();
+
+        if (hasError) {
+            return 'Възникна грешка при зареждането...';
+        }
+
+        if (!isLoading) {
+            return '';
+        }
+
+        if (products.length === 0) {
+            return 'Свързване със сървъра...';
+        }
+
+        return `Зареждане на продукти (${products.length}/${this.config()?.products?.maxProducts || 10})...`;
+    });
+
+    readonly shouldShowLoadingProgress = computed(() => {
+        const isLoading = this.isLoading();
+        const products = this.products();
+        const performanceLevel = this.performanceLevel();
+
+        // Show progress only for STANDARD and higher performance levels
+        return isLoading && products.length > 0 && performanceLevel >= PerformanceLevel.STANDARD;
+    });
+
+    readonly enableDetailedLoadingMessages = computed(() => {
+        const performanceLevel = this.performanceLevel();
+        // Enable detailed messages for HIGH and PREMIUM levels
+        return performanceLevel >= PerformanceLevel.HIGH;
+    });
+
+    // ✅ НОВИ: Правилни computed signals
+    readonly currentSlideInterval = computed(() => {
+        const config = this.config();
+        return config?.timing?.baseSlideDuration || 20000;
+    });
+
+    readonly currentTemplate = computed(() => {
+        const config = this.config();
+        return config?.templates?.selectedTemplateId || 'classic';
+    });
+
+    readonly showProgressIndicators = computed(() => {
+        const config = this.config();
+        return config?.general?.showProgressIndicators || false;
     });
 
     ngOnInit(): void {

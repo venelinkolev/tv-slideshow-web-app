@@ -1,0 +1,100 @@
+<!-- LoadingStateComponent Template -->
+<!-- TV-optimized loading indicator with performance-based animations -->
+
+@if (isVisible()) {
+<div class="loading-container" [class.animations-enabled]="shouldShowAnimations()"
+    [class.detailed-spinner]="shouldShowDetailedSpinner()" [attr.aria-label]="accessibilityLabel()" role="status"
+    aria-live="polite">
+
+    <!-- Main Loading Spinner -->
+    <div class="loading-spinner-wrapper">
+
+        <!-- Performance-Based Spinner -->
+        @if (shouldShowAnimations()) {
+        <!-- Advanced Animated Spinner for High Performance -->
+        @if (shouldShowDetailedSpinner()) {
+        <div class="spinner spinner--detailed" [class.spinner--small]="spinnerSize() === 'small'"
+            [class.spinner--medium]="spinnerSize() === 'medium'" [class.spinner--large]="spinnerSize() === 'large'"
+            [class.spinner--extra-large]="spinnerSize() === 'extra-large'">
+
+            <!-- Multi-layer spinner for premium experience -->
+            <div class="spinner__layer spinner__layer--outer"></div>
+            <div class="spinner__layer spinner__layer--middle"></div>
+            <div class="spinner__layer spinner__layer--inner"></div>
+
+            <!-- Central dot -->
+            <div class="spinner__center"></div>
+        </div>
+        } @else {
+        <!-- Standard Spinner for Normal Performance -->
+        <div class="spinner spinner--standard" [class.spinner--small]="spinnerSize() === 'small'"
+            [class.spinner--medium]="spinnerSize() === 'medium'" [class.spinner--large]="spinnerSize() === 'large'"
+            [class.spinner--extra-large]="spinnerSize() === 'extra-large'">
+
+            <!-- Single rotating circle -->
+            <div class="spinner__circle"></div>
+        </div>
+        }
+        } @else {
+        <!-- Static Spinner for Low Performance Devices -->
+        <div class="spinner spinner--static" [class.spinner--small]="spinnerSize() === 'small'"
+            [class.spinner--medium]="spinnerSize() === 'medium'" [class.spinner--large]="spinnerSize() === 'large'"
+            [class.spinner--extra-large]="spinnerSize() === 'extra-large'">
+
+            <!-- Static loading icon -->
+            <div class="spinner__static-icon">⏳</div>
+        </div>
+        }
+    </div>
+
+    <!-- Loading Messages -->
+    <div class="loading-messages">
+
+        <!-- Primary Loading Text -->
+        <h2 class="loading-text loading-text--primary">
+            {{ progressMessage() }}
+        </h2>
+
+        <!-- Detailed Message (if enabled) -->
+        @if (enableDetailedMessages() && currentDetailedMessage()) {
+        <p class="loading-text loading-text--detailed">
+            {{ currentDetailedMessage() }}
+        </p>
+        }
+
+        <!-- Progress Bar (if shown) -->
+        @if (showProgress() && progressValue() > 0) {
+        <div class="progress-container">
+            <div class="progress-bar" [attr.aria-valuemin]="0" [attr.aria-valuemax]="100"
+                [attr.aria-valuenow]="progressValue()" role="progressbar">
+                <div class="progress-fill" [style.width.%]="progressValue()">
+                </div>
+            </div>
+            <span class="progress-percentage">{{ round(progressValue()) }}%</span>
+        </div>
+        }
+    </div>
+
+    <!-- Performance Debug Info (Development Only) -->
+    @if (enableDetailedMessages() && shouldShowAnimations()) {
+    <div class="debug-info">
+        <small class="debug-text">
+            Frame: {{ currentFrame() }} |
+            Performance: {{ performanceLevel() }} |
+            Size: {{ spinnerSize() }}
+        </small>
+    </div>
+    }
+
+    <!-- TV Safe Area Padding Helper -->
+    <div class="tv-safe-area-indicator" aria-hidden="true"></div>
+
+</div>
+}
+
+<!-- Accessibility: Screen Reader Only Text -->
+<div class="sr-only" [attr.aria-live]="isVisible() ? 'polite' : 'off'">
+    @if (isVisible()) {
+    Loading content. {{ accessibilityLabel() }}
+    }
+</div>
