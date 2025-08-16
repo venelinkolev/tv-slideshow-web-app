@@ -5,6 +5,12 @@
     [class.standard-performance]="performanceLevel() != null && performanceLevel() >= 3" [ngStyle]="safeAreaStyles()">
 
     <!-- Loading State с TV-подходящ дизайн -->
+    <app-loading-state [isVisible]="isLoading()" [loadingText]="loadingMessage()"
+        [showProgress]="shouldShowLoadingProgress()" [progressValue]="loadingProgress()"
+        [performanceLevel]="performanceLevel()" [enableDetailedMessages]="enableDetailedLoadingMessages()">
+    </app-loading-state>
+
+    <!-- Loading State с TV-подходящ дизайн -->
     <div class="loading-overlay" *ngIf="isLoading()">
         <div class="loading-content">
             <div class="loading-spinner" [class.animations-disabled]="!animationsEnabled()">
