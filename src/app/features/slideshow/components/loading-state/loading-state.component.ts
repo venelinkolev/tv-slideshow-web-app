@@ -7,7 +7,8 @@ import {
     inject,
     PLATFORM_ID,
     OnInit,
-    OnDestroy
+    OnDestroy,
+    HostBinding
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Subject, interval } from 'rxjs';
@@ -238,5 +239,10 @@ export class LoadingStateComponent implements OnInit, OnDestroy {
             animationsEnabled: this.shouldShowAnimations(),
             spinnerSize: this.spinnerSize()
         };
+    }
+
+    @HostBinding('class.visible')
+    get hostVisible(): boolean {
+        return this.isVisible();
     }
 }
