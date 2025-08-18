@@ -280,14 +280,26 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     private initializeComponent(): void {
         console.log('SlideShowContainerComponent: Initializing component logic');
 
-        // Subscribe to configuration changes
+        // ⚡ PATCH: Call loadProducts() immediately while config subscription runs in parallel
+        console.log('🚀 PATCH: Starting product loading immediately (non-blocking)');
+        this.loadProducts();
+
+        // ✅ Original config subscription (unchanged logic)
         this.configService.config$
             .pipe(takeUntil(this.destroy$))
             .subscribe(config => {
+                console.log('📋 Config update received:', config);
                 if (config) {
                     this.config.set(config);
-                    this.loadProducts();
                     this.updateTvSettings(config.tvOptimizations);
+
+                    // Optional: Reload products only if this is a significant config change
+                    // (Skip on initial load since we already called loadProducts above)
+                    const isInitialLoad = this.products().length === 0;
+                    if (!isInitialLoad) {
+                        console.log('🔄 Config changed after initial load, refreshing products');
+                        this.loadProducts();
+                    }
                 }
             });
 

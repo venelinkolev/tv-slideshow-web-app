@@ -6,7 +6,8 @@ import {
     output,
     signal,
     computed,
-    effect
+    effect,
+    untracked
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy } from '@angular/core';
@@ -97,16 +98,17 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
         const autoHide = this.autoHide();
         const isHovered = this.isHovered();
 
-        if (autoHide && !isHovered) {
-            // Auto-hide след 3 секунди
-            setTimeout(() => {
-                if (!this.isHovered() && this.autoHide()) {
-                    this.isVisibleSignal.set(false);
-                }
-            }, 3000);
-        } else if (isHovered || !autoHide) {
-            this.isVisibleSignal.set(true);
-        }
+        untracked(() => {
+            if (autoHide && !isHovered) {
+                setTimeout(() => {
+                    if (!this.isHovered() && this.autoHide()) {
+                        this.isVisibleSignal.set(false);
+                    }
+                }, 3000);
+            } else if (isHovered || !autoHide) {
+                this.isVisibleSignal.set(true);
+            }
+        });
     });
 
     // ✅ Progress tracking variables

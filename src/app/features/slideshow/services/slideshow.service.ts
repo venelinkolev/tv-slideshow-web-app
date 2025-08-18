@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, BehaviorSubject, interval, Subscription } from 'rxjs';
-import { tap, switchMap, takeWhile } from 'rxjs/operators';
+import { tap, switchMap, takeWhile, map } from 'rxjs/operators';
 
 import { Product } from '@core/models/product.interface';
 import { ProductTemplate } from '@core/models/template.interface';
@@ -38,22 +38,47 @@ export class SlideShowService {
     /**
      * Зарежда продукти с помощта на ProductApiService според конфигурацията
      */
+
     loadProducts(): Observable<Product[]> {
         console.log('🔄 SlideShowService.loadProducts()');
-        // Получаваме лимит на продукти от конфигурацията
-        const maxProducts = this.getMaxProductCount();
+
+        // ⚡ PATCH: Get max products with fallback
+        const maxProducts = this.getMaxProductCountSafe();
 
         return this.productApiService.getProducts().pipe(
+            map((products: Product[]) => {
+                console.log(`✅ Received ${products.length} products from API`);
+
+                // ⚡ PATCH: Actually slice the array (this was missing!)
+                const limitedProducts = products.slice(0, maxProducts);
+
+                if (products.length > maxProducts) {
+                    console.log(`✂️ Limited products from ${products.length} to ${maxProducts}`);
+                }
+
+                return limitedProducts;
+            }),
             tap((products: Product[]) => {
                 console.log(`✅ Заредени ${products.length} продукта`);
-
-                // Ограничаваме броя продукти, ако надвишава лимита от конфигурацията
-                if (products.length > maxProducts) {
-                    console.log(`⚠️ Броят продукти надвишава лимита (${maxProducts}), отрязваме до лимита`);
-                }
             })
         );
     }
+    // loadProducts(): Observable<Product[]> {
+    //     console.log('🔄 SlideShowService.loadProducts()');
+    //     // Получаваме лимит на продукти от конфигурацията
+    //     const maxProducts = this.getMaxProductCount();
+
+    //     return this.productApiService.getProducts().pipe(
+    //         tap((products: Product[]) => {
+    //             console.log(`✅ Заредени ${products.length} продукта`);
+
+    //             // Ограничаваме броя продукти, ако надвишава лимита от конфигурацията
+    //             if (products.length > maxProducts) {
+    //                 console.log(`⚠️ Броят продукти надвишава лимита (${maxProducts}), отрязваме до лимита`);
+    //             }
+    //         })
+    //     );
+    // }
 
     /**
      * Зарежда шаблон по ID
@@ -216,5 +241,17 @@ export class SlideShowService {
     shouldAutoRotate(): boolean {
         const config = this.configService.config();
         return config?.general?.autoStart ?? true;
+    }
+
+    /**
+ * Get max product count with safe fallback
+ */
+    private getMaxProductCountSafe(): number {
+        try {
+            return this.getMaxProductCount();
+        } catch (error) {
+            console.warn('⚠️ Could not get max product count, using fallback of 10');
+            return 10;
+        }
     }
 }

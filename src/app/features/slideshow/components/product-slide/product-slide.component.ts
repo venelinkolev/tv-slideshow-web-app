@@ -6,7 +6,8 @@ import {
     output,
     signal,
     computed,
-    effect
+    effect,
+    untracked
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy } from '@angular/core';
@@ -112,7 +113,9 @@ export class ProductSlideComponent implements OnInit, OnDestroy {
         console.log(`ProductSlideComponent: Product changed to ${product?.id}`);
 
         if (product) {
-            this.initializeSlide();
+            untracked(() => {
+                this.initializeSlide();
+            });
         }
     });
 

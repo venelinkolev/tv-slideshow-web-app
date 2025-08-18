@@ -206,6 +206,12 @@ export class ConfigService {
 
     constructor() {
         console.log('🔧 ConfigService initializing...');
+
+        // ⚡ PATCH: INSTANT config$ availability - emit defaultConfig immediately
+        console.log('🚀 PATCH: Emitting default config immediately to unblock loadProducts()');
+        this.configSubject.next(this.defaultConfig);
+
+        // ✅ Original async initialization continues unchanged
         this.initializeConfig();
     }
 
@@ -417,9 +423,13 @@ export class ConfigService {
         this.loadConfig().subscribe({
             next: (config) => {
                 console.log('✅ ConfigService initialized successfully');
+                // ⚡ PATCH: Emit the loaded config (may override default)
+                this.configSubject.next(config);
             },
             error: (error) => {
                 console.error('❌ ConfigService initialization failed:', error);
+                // ⚡ PATCH: Keep using default config on error (already emitted)
+                console.log('🔄 PATCH: Continuing with default config due to init error');
             }
         });
     }
