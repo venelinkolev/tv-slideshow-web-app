@@ -10,15 +10,15 @@
         [performanceLevel]="performanceLevel()" [enableDetailedMessages]="enableDetailedLoadingMessages()">
     </app-loading-state>
 
-    <!-- Loading State с TV-подходящ дизайн -->
-    <div class="loading-overlay" *ngIf="isLoading()">
+    <!-- Test Loading State с TV-подходящ дизайн -->
+    <!-- <div class="loading-overlay" *ngIf="isLoading()">
         <div class="loading-content">
             <div class="loading-spinner" [class.animations-disabled]="!animationsEnabled()">
             </div>
             <h2 class="loading-text">Зареждане на продукти...</h2>
             <p class="loading-subtext">Моля изчакайте</p>
         </div>
-    </div>
+    </div> -->
 
     <!-- Error State с възможност за retry -->
     <div class="error-overlay" *ngIf="hasError()">
