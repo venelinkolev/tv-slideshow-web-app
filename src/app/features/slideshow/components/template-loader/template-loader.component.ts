@@ -424,4 +424,16 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
     public getCurrentComponentInstance(): any | null {
         return this.currentComponentRef?.instance || null;
     }
+
+    /**
+     * Handle fallback image error
+     * @param event Error event from image element
+     */
+    public onFallbackImageError(event: Event): void {
+        const img = event.target as HTMLImageElement;
+        if (img && img.src !== '/assets/images/product-placeholder.jpg') {
+            img.src = '/assets/images/product-placeholder.jpg';
+            console.warn('TemplateLoaderComponent: Fallback image failed, using placeholder');
+        }
+    }
 }

@@ -14,7 +14,7 @@
         <!-- Loading Message -->
         <div class="loading-message">
             <h3 class="loading-title">Зареждане на темплейт</h3>
-            <p class="loading-text">{{ templateName() }}</p>
+            <p class="loading-text">{{ templateName() || 'Неизвестен темплейт' }}</p>
             @if (loadTime() > 0) {
             <span class="loading-time">{{ loadTime().toFixed(0) }}ms</span>
             }
@@ -38,8 +38,8 @@
         <!-- Error Content -->
         <div class="error-content">
             <h3 class="error-title">Грешка при зареждане на темплейт</h3>
-            <p class="error-template">Темплейт: <strong>{{ templateName() }}</strong></p>
-            <p class="error-message">{{ errorMessage() }}</p>
+            <p class="error-template">Темплейт: <strong>{{ templateName() || 'Неизвестен' }}</strong></p>
+            <p class="error-message">{{ errorMessage() || 'Неизвестна грешка' }}</p>
 
             @if (isUsingFallback()) {
             <div class="fallback-notice">
@@ -69,7 +69,7 @@
         <div class="fallback-notice-banner" role="banner">
             <span class="fallback-icon">⚠️</span>
             <span class="fallback-text">
-                Използван е резервен темплейт поради грешка в "{{ templateName() }}"
+                Използван е резервен темплейт поради грешка в "{{ templateName() || 'оригиналния темплейт' }}"
             </span>
         </div>
         }
@@ -90,8 +90,7 @@
                 <!-- Product Image -->
                 <div class="fallback-image-container">
                     <img class="fallback-image" [src]="product().imageUrl" [alt]="product().name" loading="eager"
-                        (error)="$event.target.src='/assets/images/product-placeholder.jpg'"
-                        [attr.aria-describedby]="'product-name-' + product().id">
+                        (error)="onFallbackImageError($event)" [attr.aria-describedby]="'product-name-' + product().id">
                 </div>
 
                 <!-- Product Info -->
@@ -100,8 +99,8 @@
                         {{ product().name }}
                     </h1>
 
-                    <div class="fallback-price" [attr.aria-label]="'Цена ' + product().price + ' лева'">
-                        {{ product().price | currency:'BGN':'symbol':'1.2-2':'bg' }}
+                    <div class="fallback-price" [attr.aria-label]="'Цена ' + (product().price || 0) + ' лева'">
+                        {{ (product().price || 0) | currency:'BGN':'symbol':'1.2-2':'bg' }}
                     </div>
 
                     @if (product().shortDescription) {
