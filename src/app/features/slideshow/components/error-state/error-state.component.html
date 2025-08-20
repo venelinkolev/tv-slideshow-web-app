@@ -1,0 +1,166 @@
+<!-- TV Error State Container -->
+<div [class]="errorClasses().join(' ')" [attr.aria-live]="isVisible() ? 'polite' : null"
+    [attr.aria-hidden]="!isVisible()">
+
+    <!-- Main Error Display -->
+    @if (isVisible()) {
+    <div class="error-state__overlay">
+        <div class="error-state__container">
+
+            <!-- Error Header -->
+            <div class="error-state__header">
+                <div class="error-state__icon" [attr.aria-label]="'Грешка от категория: ' + errorCategory()">
+                    {{ errorIcon() }}
+                </div>
+                <h2 class="error-state__title">
+                    @switch (errorCategory()) {
+                    @case ('network') { Проблем с връзката }
+                    @case ('timeout') { Изтече времето }
+                    @case ('server') { Техническа грешка }
+                    @case ('not_found') { Не е намерено }
+                    @case ('auth') { Необходима оторизация }
+                    @case ('forbidden') { Няма права }
+                    @case ('validation') { Невалидни данни }
+                    @default { Възникна грешка }
+                    }
+                </h2>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-state__message">
+                <p class="error-state__description">
+                    {{ friendlyErrorMessage() }}
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="error-state__actions">
+
+                <!-- Retry Button -->
+                @if (shouldShowRetryButton()) {
+                <button class="error-state__button error-state__button--primary"
+                    [class.error-state__button--loading]="isRetrying()" [disabled]="isRetrying()"
+                    (click)="onRetryClick()" [attr.aria-label]="actionButtonText() + ' - основно действие'">
+
+                    @if (isRetrying()) {
+                    <span class="error-state__loading-spinner" aria-hidden="true"></span>
+                    }
+
+                    <span class="error-state__button-text">
+                        {{ actionButtonText() }}
+                    </span>
+                </button>
+                }
+
+                <!-- Dismiss Button -->
+                <button class="error-state__button error-state__button--secondary" (click)="onDismissClick()"
+                    [attr.aria-label]="'Затвори грешката'">
+                    Затвори
+                </button>
+
+                <!-- Details Toggle Button -->
+                @if (showDetails() || originalError()) {
+                <button class="error-state__button error-state__button--link" (click)="onToggleDetails()"
+                    [attr.aria-expanded]="showErrorDetails()"
+                    [attr.aria-label]="showErrorDetails() ? 'Скрий детайлите' : 'Покажи детайлите'">
+
+                    <span class="error-state__details-icon" [class.rotated]="showErrorDetails()">
+                        ▼
+                    </span>
+
+                    {{ showErrorDetails() ? 'Скрий детайлите' : 'Повече детайли' }}
+                </button>
+                }
+            </div>
+
+            <!-- Error Details Section (Collapsible) -->
+            @if (showErrorDetails()) {
+            <div class="error-state__details" role="region" aria-label="Детайли за грешката">
+
+                <!-- Technical Details -->
+                <div class="error-state__technical-info">
+                    <h3 class="error-state__details-title">Техническа информация</h3>
+
+                    <div class="error-state__code-block">
+                        <pre class="error-state__code">{{ getDetailedErrorInfo() }}</pre>
+                    </div>
+
+                    <!-- Error Context -->
+                    @if (originalError()?.context) {
+                    <div class="error-state__context">
+                        <h4 class="error-state__context-title">Контекст:</h4>
+                        <div class="error-state__context-data">
+                            {{ originalError()!.context | json }}
+                        </div>
+                    </div>
+                    }
+
+                    <!-- Retry Strategy Info -->
+                    @if (originalError()?.retryStrategy) {
+                    <div class="error-state__retry-info">
+                        <h4 class="error-state__retry-title">Стратегия за повторен опит:</h4>
+                        <ul class="error-state__retry-details">
+                            <li>Може да се повтори: {{ originalError()!.retryStrategy!.canRetry ? 'Да' : 'Не' }}</li>
+                            @if (originalError()!.retryStrategy!.retryDelay) {
+                            <li>Забавяне: {{ originalError()!.retryStrategy!.retryDelay }}мс</li>
+                            }
+                            @if (originalError()!.retryStrategy!.maxRetries) {
+                            <li>Максимум опити: {{ originalError()!.retryStrategy!.maxRetries }}</li>
+                            }
+                        </ul>
+                    </div>
+                    }
+                </div>
+
+                <!-- Error Reporting Section -->
+                <div class="error-state__reporting">
+                    <h3 class="error-state__reporting-title">Докладвай проблема</h3>
+                    <p class="error-state__reporting-description">
+                        Можете да ни помогнете да подобрим приложението, като опишете какво правихте когато възникна
+                        грешката.
+                    </p>
+
+                    <div class="error-state__comment-section">
+                        <label for="user-comment" class="error-state__comment-label">
+                            Коментар (по избор):
+                        </label>
+                        <textarea id="user-comment" class="error-state__comment-input"
+                            placeholder="Опишете какво правихте когато възникна грешката..." rows="3"
+                            [value]="userComment()" (input)="onUserCommentChange($any($event.target).value)"
+                            maxlength="500">
+                </textarea>
+                        <div class="error-state__comment-counter">
+                            {{ userComment().length }}/500
+                        </div>
+                    </div>
+
+                    <button class="error-state__button error-state__button--report" (click)="onReportError()"
+                        [attr.aria-label]="'Изпрати доклад за грешката'">
+                        📧 Изпрати доклад
+                    </button>
+                </div>
+            </div>
+            }
+
+        </div>
+
+        <!-- Background Overlay -->
+        <div class="error-state__backdrop" (click)="onDismissClick()" aria-hidden="true">
+        </div>
+    </div>
+    }
+
+</div>
+
+<!-- Accessibility Support -->
+@if (isVisible()) {
+<!-- Screen Reader Announcement -->
+<div class="sr-only" aria-live="assertive">
+    Възникна грешка: {{ friendlyErrorMessage() }}.
+    @if (shouldShowRetryButton()) {
+    Можете да опитате отново или да затворите съобщението.
+    } @else {
+    Моля, затворете съобщението за да продължите.
+    }
+</div>
+}
