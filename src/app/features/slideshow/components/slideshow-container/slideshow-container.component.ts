@@ -13,7 +13,7 @@ import {
     PLATFORM_ID
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, Subject, interval, combineLatest, fromEvent } from 'rxjs';
+import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom } from 'rxjs';
 import { takeUntil, startWith, debounceTime, filter } from 'rxjs/operators';
 
 import { Product } from '@core/models/product.interface';
@@ -21,6 +21,8 @@ import { ProductTemplate } from '@core/models/template.interface';
 import { SlideshowConfig, SlideshowTvSettings } from '@core/models/slideshow-config.interface';
 import { PerformanceLevel, TvPlatform, TvResolution } from '@core/models/enums';
 import { ProductApiService } from '@core/services/product-api.service';
+import { ApiError } from '@core/models/api-response.interface';
+import { ApiErrorType } from '@core/models/enums';
 import { ConfigService } from '@core/services/config.service';
 import { TemplateRegistryService } from '@core/services/template-registry.service';
 import { PerformanceMonitorService } from '@core/services/performance-monitor.service';
@@ -30,6 +32,7 @@ import { ProductSlideComponent } from '../product-slide';
 import { SlideProgressComponent } from '../slide-progress';
 import { NavigationControlsComponent } from '../navigation-controls';
 import { LoadingStateComponent } from '../loading-state';
+import { ErrorStateComponent } from '../error-state';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -47,7 +50,7 @@ import { LoadingStateComponent } from '../loading-state';
 @Component({
     selector: 'app-slideshow-container',
     standalone: true,
-    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent],
+    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -74,6 +77,11 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     protected readonly currentSlideIndex = signal<number>(0);
     protected readonly isAutoPlaying = signal<boolean>(false);
     protected readonly progress = signal<number>(0);
+    protected readonly errorCode = signal<string>('');
+    protected readonly errorType = signal<ApiErrorType | null>(null);
+    protected readonly originalError = signal<ApiError | null>(null);
+    protected readonly canRetryError = signal<boolean>(true);
+    protected readonly isRetrying = signal<boolean>(false);
 
     // TV-specific reactive state  
     protected readonly performanceLevel = signal<PerformanceLevel>(PerformanceLevel.STANDARD);
@@ -520,35 +528,36 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     /**
      * Load products with TV optimizations (public for retry button)
      */
-    public loadProducts(): void {
-        console.log('SlideShowContainerComponent: Loading products with TV optimizations');
+    /**
+    * Load products using SlideShowService (correct architecture)
+    * SlideShowService adds slideshow-specific business logic on top of ProductApiService
+    */
+    private async loadProducts(): Promise<void> {
+        console.log('SlideShowContainerComponent.loadProducts() - Using SlideShowService');
 
-        this.isLoading.set(true);
-        this.hasError.set(false);
+        try {
+            this.isLoading.set(true);
+            this.hasError.set(false);
 
-        this.slideShowService.loadProducts()
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (products) => {
-                    this.products.set(products);
-                    this.isLoading.set(false);
-                    this.setupTemplate();
-                    this.initializeSlideShow();
+            // ✅ CORRECT: Use SlideShowService which adds slideshow business logic
+            // This includes: config-based product limiting, slideshow-specific processing
+            const products = await firstValueFrom(this.slideShowService.loadProducts());
 
-                    // Preload images if enabled
-                    if (this.preloadingEnabled()) {
-                        this.preloadProductImages(products);
-                    }
-                },
-                error: (error) => {
-                    console.error('SlideShowContainerComponent: Error loading products', error);
-                    this.isLoading.set(false);
-                    this.hasError.set(true);
-                    this.errorMessage.set('Грешка при зареждане на продуктите. Моля, опитайте отново.');
-                }
-            });
+            if (products && products.length > 0) {
+                this.products.set(products);
+                console.log(`✅ Loaded ${products.length} products successfully (via SlideShowService)`);
+            } else {
+                console.warn('No products returned from SlideShowService');
+                this.setError('Няма налични продукти за показване.', 'NO_PRODUCTS', null);
+            }
+
+        } catch (error: any) {
+            console.error('Failed to load products from SlideShowService:', error);
+            this.handleProductLoadingError(error);
+        } finally {
+            this.isLoading.set(false);
+        }
     }
-
     /**
      * Preload product images for smooth slideshow
      */
@@ -778,5 +787,139 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     // Enhanced methods за по-добра интеграция
     hasProducts(): boolean {
         return this.products().length > 0;
+    }
+
+    // =====================================
+    // ERROR STATE COMPONENT EVENT HANDLERS
+    // =====================================
+
+    /**
+     * Handle retry action from ErrorStateComponent
+     */
+    onErrorRetry(): void {
+        console.log('SlideShowContainerComponent.onErrorRetry() - User initiated retry');
+
+        this.isRetrying.set(true);
+        this.hasError.set(false);
+
+        // Retry loading products
+        this.loadProducts().finally(() => {
+            this.isRetrying.set(false);
+        });
+    }
+
+    /**
+     * Handle error dismissal from ErrorStateComponent
+     */
+    onErrorDismiss(): void {
+        console.log('SlideShowContainerComponent.onErrorDismiss() - User dismissed error');
+
+        this.hasError.set(false);
+        this.errorMessage.set('');
+        this.errorCode.set('');
+        this.errorType.set(null);
+        this.originalError.set(null);
+    }
+
+    /**
+     * Handle error reporting from ErrorStateComponent
+     */
+    onErrorReport(event: { error: ApiError | null; userComment?: string }): void {
+        console.log('SlideShowContainerComponent.onErrorReport() - User reported error', event);
+
+        // TODO: Implement error reporting to backend or analytics service
+        // For now, just log the report
+        console.log('Error report details:', {
+            error: event.error,
+            userComment: event.userComment,
+            timestamp: new Date(),
+            userAgent: navigator.userAgent,
+            currentConfig: this.config()
+        });
+
+        // You could send this to an analytics service or backend
+        // this.analyticsService.reportError(event);
+    }
+
+    /**
+     * Handle error details toggle from ErrorStateComponent
+     */
+    onErrorDetailsToggle(showDetails: boolean): void {
+        console.log(`SlideShowContainerComponent.onErrorDetailsToggle(${showDetails}) - Details visibility changed`);
+        // Optional: track error details usage for UX improvements
+    }
+
+    // =====================================
+    // ENHANCED ERROR HANDLING (PRIVATE METHODS)
+    // =====================================
+
+    /**
+     * Set error state with enhanced error information
+     */
+    private setError(
+        message: string,
+        code: string,
+        type: ApiErrorType | null,
+        originalError: ApiError | null = null,
+        canRetry: boolean = true
+    ): void {
+        console.log(`SlideShowContainerComponent.setError() - ${code}: ${message}`);
+
+        this.hasError.set(true);
+        this.errorMessage.set(message);
+        this.errorCode.set(code);
+        this.errorType.set(type);
+        this.originalError.set(originalError);
+        this.canRetryError.set(canRetry);
+    }
+
+    /**
+     * Handle product loading errors with error categorization
+     */
+    private handleProductLoadingError(error: any): void {
+        console.log('SlideShowContainerComponent.handleProductLoadingError() - Processing error', error);
+
+        let errorMessage = 'Възникна грешка при зареждане на продуктите.';
+        let errorCode = 'UNKNOWN_ERROR';
+        let errorType: ApiErrorType | null = null;
+        let canRetry = true;
+        let originalError: ApiError | null = null;
+
+        // Analyze error type
+        if (error?.status === 0) {
+            errorMessage = 'Проблем с мрежовата връзка. Моля, проверете интернет свързаността.';
+            errorCode = 'NETWORK_ERROR';
+            errorType = ApiErrorType.NETWORK_ERROR;
+        } else if (error?.status >= 500) {
+            errorMessage = 'Възникна техническа грешка на сървъра. Опитайте отново след няколко минути.';
+            errorCode = 'SERVER_ERROR';
+            errorType = ApiErrorType.SERVER_ERROR;
+        } else if (error?.status === 404) {
+            errorMessage = 'API адресът не е намерен. Моля, свържете се с администратор.';
+            errorCode = 'NOT_FOUND_ERROR';
+            errorType = ApiErrorType.NOT_FOUND_ERROR;
+            canRetry = false;
+        } else if (error?.status === 401 || error?.status === 403) {
+            errorMessage = 'Няма права за достъп до продуктите. Моля, свържете се с администратор.';
+            errorCode = 'AUTHORIZATION_ERROR';
+            errorType = ApiErrorType.AUTHORIZATION_ERROR;
+            canRetry = false;
+        }
+
+        // Check if it's a structured API error
+        if (error?.error && typeof error.error === 'object') {
+            originalError = error.error as ApiError;
+            if (originalError.message) {
+                errorMessage = originalError.message;
+            }
+            if (originalError.code) {
+                errorCode = originalError.code;
+            }
+            if (originalError.retryStrategy) {
+                canRetry = originalError.retryStrategy.canRetry;
+            }
+        }
+
+        this.setError(errorMessage, errorCode, errorType, originalError, canRetry);
     }
 }

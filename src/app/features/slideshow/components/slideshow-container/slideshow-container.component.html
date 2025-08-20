@@ -20,8 +20,17 @@
         </div>
     </div> -->
 
+    <!-- ERROR STATE COMPONENT -->
+    @if (hasError()) {
+    <app-error-state [hasError]="hasError()" [errorMessage]="errorMessage()" [errorCode]="errorCode()"
+        [errorType]="errorType()" [originalError]="originalError()" [canRetry]="canRetryError()"
+        [isRetrying]="isRetrying()" [showDetails]="false" [autoHideDelay]="0" (retry)="onErrorRetry()"
+        (dismiss)="onErrorDismiss()" (reportError)="onErrorReport($event)"
+        (toggleDetails)="onErrorDetailsToggle($event)">
+    </app-error-state>
+    }
     <!-- Error State с възможност за retry -->
-    <div class="error-overlay" *ngIf="hasError()">
+    <!-- <div class="error-overlay" *ngIf="hasError()">
         <div class="error-content">
             <div class="error-icon">⚠️</div>
             <h2 class="error-title">Възникна грешка</h2>
@@ -30,7 +39,7 @@
                 Опитай отново
             </button>
         </div>
-    </div>
+    </div> -->
 
     <!-- Main Slideshow Content -->
     <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">

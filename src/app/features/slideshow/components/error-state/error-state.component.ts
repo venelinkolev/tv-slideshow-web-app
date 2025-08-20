@@ -12,7 +12,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy } from '@angular/core';
 
-import { ApiError, ApiErrorType } from '@core/models/api-response.interface';
+import { ApiError } from '@core/models/api-response.interface';
+import { ApiErrorType } from '@core/models/enums';
 import { ServiceStatusEnum } from '@core/models/enums';
 
 /**
@@ -145,7 +146,7 @@ export class ErrorStateComponent implements OnInit, OnDestroy {
 
         // Използвай friendly message ако няма specific error message
         if (!originalMessage || originalMessage.length < 10) {
-            return friendlyMessages[category] || friendlyMessages.general;
+            return friendlyMessages[category] || friendlyMessages['general'];
         }
 
         return originalMessage;
