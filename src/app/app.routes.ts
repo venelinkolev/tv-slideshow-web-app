@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { ErrorStateTestComponent } from './test/error-state-test.component';
 
 export const routes: Routes = [
     {
@@ -22,6 +23,7 @@ export const routes: Routes = [
         redirectTo: '/slideshow',
         pathMatch: 'full'
     },
+    { path: 'test-error', component: ErrorStateTestComponent, data: { title: 'Error State Test' } },
     {
         path: '**',
         redirectTo: '/slideshow' // TV-safe fallback

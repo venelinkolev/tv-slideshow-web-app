@@ -6,7 +6,6 @@ import {
     output,
     signal,
     computed,
-    effect,
     inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -14,10 +13,11 @@ import { ChangeDetectionStrategy } from '@angular/core';
 
 import { ApiError } from '@core/models/api-response.interface';
 import { ApiErrorType } from '@core/models/enums';
-import { ServiceStatusEnum } from '@core/models/enums';
 
 /**
  * ErrorStateComponent - Показва error states с user-friendly messages
+ * 
+ * FIXED: Removed problematic effects that caused signal write errors
  * 
  * Отговорности:
  * - Показва различни типове грешки с подходящи иконки и съобщения
@@ -26,19 +26,6 @@ import { ServiceStatusEnum } from '@core/models/enums';
  * - Bulgarian error messages за локален контекст
  * - Auto-hide capabilities за temporary errors
  * - Error categorization и appropriate actions
- * 
- * ИЗПОЛЗВАНЕ:
- * <app-error-state 
- *   [hasError]="hasError()"
- *   [errorMessage]="errorMessage()"
- *   [errorCode]="errorCode()"
- *   [canRetry]="canRetry()"
- *   [isRetrying]="isRetrying()"
- *   [showDetails]="showErrorDetails()"
- *   (retry)="onRetry()"
- *   (dismiss)="onDismissError()"
- *   (reportError)="onReportError($event)"
- * />
  */
 @Component({
     selector: 'app-error-state',
@@ -68,15 +55,16 @@ export class ErrorStateComponent implements OnInit, OnDestroy {
     readonly toggleDetails = output<boolean>();
 
     // ✅ Private state signals
-    private readonly isVisibleSignal = signal<boolean>(false);
     private readonly showDetailsSignal = signal<boolean>(false);
     private readonly userCommentSignal = signal<string>('');
     private readonly autoHideTimerSignal = signal<number | null>(null);
 
     // ✅ Public readonly signals
-    readonly isVisible = this.isVisibleSignal.asReadonly();
     readonly showErrorDetails = this.showDetailsSignal.asReadonly();
     readonly userComment = this.userCommentSignal.asReadonly();
+
+    // ✅ FIXED: Computed for visibility based on input signal directly
+    readonly isVisible = computed(() => this.hasError());
 
     // ✅ Computed signals за error analysis
     readonly errorCategory = computed(() => {
@@ -189,32 +177,12 @@ export class ErrorStateComponent implements OnInit, OnDestroy {
     // ✅ Auto-hide timer
     private autoHideTimer?: number;
 
-    // ✅ Effect за visibility management
-    private readonly visibilityEffect = effect(() => {
-        const hasError = this.hasError();
-
-        if (hasError) {
-            this.showError();
-        } else {
-            this.hideError();
-        }
-    });
-
-    // ✅ Effect за auto-hide functionality
-    private readonly autoHideEffect = effect(() => {
-        const isVisible = this.isVisible();
-        const autoHideDelay = this.autoHideDelay();
-
-        if (isVisible && autoHideDelay > 0) {
-            this.startAutoHideTimer(autoHideDelay);
-        } else {
-            this.clearAutoHideTimer();
-        }
-    });
-
     ngOnInit(): void {
         console.log('ErrorStateComponent.ngOnInit() - Error state manager ready');
         console.log(`Initial state: hasError=${this.hasError()}, category=${this.errorCategory()}, canRetry=${this.canRetry()}`);
+
+        // ✅ FIXED: Handle auto-hide in ngOnInit instead of effect
+        this.setupAutoHide();
     }
 
     ngOnDestroy(): void {
@@ -240,7 +208,7 @@ export class ErrorStateComponent implements OnInit, OnDestroy {
     onDismissClick(): void {
         console.log('ErrorStateComponent.onDismissClick() - User dismissed error');
         this.dismiss.emit();
-        this.hideError();
+        this.clearAutoHideTimer();
     }
 
     /**
@@ -280,23 +248,39 @@ export class ErrorStateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Show error state with animation
+     * ✅ FIXED: Setup auto-hide functionality without effects
      * @private
      */
-    private showError(): void {
-        console.log('ErrorStateComponent.showError() - Showing error state');
-        this.isVisibleSignal.set(true);
-    }
+    private setupAutoHide(): void {
+        const checkAutoHide = () => {
+            const hasError = this.hasError();
+            const autoHideDelay = this.autoHideDelay();
 
-    /**
-     * Hide error state with animation
-     * @private
-     */
-    private hideError(): void {
-        console.log('ErrorStateComponent.hideError() - Hiding error state');
-        this.isVisibleSignal.set(false);
-        this.showDetailsSignal.set(false);
-        this.clearAutoHideTimer();
+            if (hasError && autoHideDelay > 0) {
+                this.startAutoHideTimer(autoHideDelay);
+            } else {
+                this.clearAutoHideTimer();
+            }
+        };
+
+        // Initial check
+        checkAutoHide();
+
+        // ✅ Watch for changes using simple polling instead of effects
+        // This is safer for complex scenarios and avoids signal write issues
+        const watchInterval = setInterval(() => {
+            if (!this.hasError()) {
+                this.clearAutoHideTimer();
+                this.showDetailsSignal.set(false);
+            } else {
+                checkAutoHide();
+            }
+        }, 100); // Check every 100ms
+
+        // Cleanup watcher on destroy
+        setTimeout(() => {
+            clearInterval(watchInterval);
+        }, 60000); // Stop watching after 1 minute to prevent memory leaks
     }
 
     /**
@@ -339,8 +323,8 @@ export class ErrorStateComponent implements OnInit, OnDestroy {
         }
 
         return `Error Code: ${originalError.code}
-Message: ${originalError.message}
-Context: ${JSON.stringify(originalError.context || {}, null, 2)}
-Retry Strategy: ${JSON.stringify(originalError.retryStrategy || {}, null, 2)}`;
+                Message: ${originalError.message}
+                Context: ${JSON.stringify(originalError.context || {}, null, 2)}
+                Retry Strategy: ${JSON.stringify(originalError.retryStrategy || {}, null, 2)}`;
     }
 }
