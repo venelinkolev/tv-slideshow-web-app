@@ -1,0 +1,142 @@
+<!-- TemplateLoaderComponent Template -->
+<div [class]="loaderClasses()" [attr.data-template]="templateName()" [attr.data-product-id]="product().id" role="main"
+    [attr.aria-label]="'Зареждане на темплейт ' + templateName()">
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <div class="template-loader__loading-state" role="status" aria-live="polite">
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+        </div>
+
+        <!-- Loading Message -->
+        <div class="loading-message">
+            <h3 class="loading-title">Зареждане на темплейт</h3>
+            <p class="loading-text">{{ templateName() }}</p>
+            @if (loadTime() > 0) {
+            <span class="loading-time">{{ loadTime().toFixed(0) }}ms</span>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError() && !isLoading()) {
+    <div class="template-loader__error-state" role="alert" aria-live="assertive">
+
+        <!-- Error Icon -->
+        <div class="error-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" />
+                <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" />
+            </svg>
+        </div>
+
+        <!-- Error Content -->
+        <div class="error-content">
+            <h3 class="error-title">Грешка при зареждане на темплейт</h3>
+            <p class="error-template">Темплейт: <strong>{{ templateName() }}</strong></p>
+            <p class="error-message">{{ errorMessage() }}</p>
+
+            @if (isUsingFallback()) {
+            <div class="fallback-notice">
+                <span class="fallback-icon">🔄</span>
+                <span>Използван е резервен темплейт</span>
+            </div>
+            }
+        </div>
+
+        <!-- Error Actions -->
+        <div class="error-actions">
+            <button class="retry-button" (click)="forceReloadTemplate()" type="button"
+                aria-label="Опитай отново да заредиш темплейта">
+                <span class="button-icon">🔄</span>
+                <span class="button-text">Опитай отново</span>
+            </button>
+        </div>
+    </div>
+    }
+
+    <!-- Main Dynamic Template Container -->
+    @if (!isLoading() && !hasError()) {
+    <div class="template-loader__content" [attr.data-ready]="isReady()" [attr.data-fallback]="isUsingFallback()">
+
+        <!-- Fallback Notice (if using fallback template) -->
+        @if (isUsingFallback()) {
+        <div class="fallback-notice-banner" role="banner">
+            <span class="fallback-icon">⚠️</span>
+            <span class="fallback-text">
+                Използван е резервен темплейт поради грешка в "{{ templateName() }}"
+            </span>
+        </div>
+        }
+
+        <!-- Dynamic Template Container -->
+        <div class="dynamic-template-container" #dynamicTemplateContainer
+            [attr.aria-label]="'Продукт темплейт ' + currentTemplate()">
+            <!-- Dynamic template component се зарежда тук -->
+        </div>
+
+        <!-- Inline Fallback (when even classic template fails) -->
+        @if (!currentTemplate() && !isLoading() && !hasError()) {
+        <div class="inline-fallback-template" role="main">
+
+            <!-- Fallback Product Display -->
+            <div class="fallback-product">
+
+                <!-- Product Image -->
+                <div class="fallback-image-container">
+                    <img class="fallback-image" [src]="product().imageUrl" [alt]="product().name" loading="eager"
+                        (error)="$event.target.src='/assets/images/product-placeholder.jpg'"
+                        [attr.aria-describedby]="'product-name-' + product().id">
+                </div>
+
+                <!-- Product Info -->
+                <div class="fallback-info">
+                    <h1 class="fallback-name" [id]="'product-name-' + product().id">
+                        {{ product().name }}
+                    </h1>
+
+                    <div class="fallback-price" [attr.aria-label]="'Цена ' + product().price + ' лева'">
+                        {{ product().price | currency:'BGN':'symbol':'1.2-2':'bg' }}
+                    </div>
+
+                    @if (product().shortDescription) {
+                    <p class="fallback-description">
+                        {{ product().shortDescription }}
+                    </p>
+                    }
+
+                    @if (product().category) {
+                    <div class="fallback-category">
+                        <span class="category-label">Категория:</span>
+                        <span class="category-value">{{ product().category }}</span>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+    }
+
+    <!-- Debug Information (only in development) -->
+    @if (false) { <!-- Set to true for debugging -->
+    <div class="template-loader__debug"
+        style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px; font-size: 12px; border-radius: 4px; z-index: 9999;">
+        <h4>Template Loader Debug</h4>
+        <div>Template: {{ debugInfo().templateName }}</div>
+        <div>Current: {{ debugInfo().currentTemplate }}</div>
+        <div>Loading: {{ debugInfo().isLoading }}</div>
+        <div>Error: {{ debugInfo().hasError }}</div>
+        <div>Ready: {{ debugInfo().isReady }}</div>
+        <div>Fallback: {{ debugInfo().isUsingFallback }}</div>
+        <div>Load Time: {{ debugInfo().loadTime }}ms</div>
+        <div>Valid Template: {{ debugInfo().hasValidTemplate }}</div>
+    </div>
+    }
+
+</div>

@@ -1,0 +1,1 @@
+export { TemplateLoaderComponent } from './template-loader.component';
