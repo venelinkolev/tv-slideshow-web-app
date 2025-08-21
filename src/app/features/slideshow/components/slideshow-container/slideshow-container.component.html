@@ -44,13 +44,24 @@
     <!-- Main Slideshow Content -->
     <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
 
-        <!-- Product Slides -->
+        <!-- Template Loader -->
         @if (currentProduct() && config(); as currentConfig) {
+        <app-template-loader [product]="currentProduct()!"
+            [templateName]="currentConfig?.templates?.selectedTemplateId || 'classic'"
+            [imageQuality]="currentConfig?.tvOptimizations?.performance?.imagePreloading === 'all' ? 'high' : 'medium'"
+            [enableAnimations]="currentConfig?.timing?.transitionType !== 'none'" [forceReload]="false"
+            (templateLoaded)="onTemplateLoaded($event)" (templateError)="onTemplateError($event)"
+            (componentReady)="onComponentReady($event)">
+        </app-template-loader>
+        }
+
+        <!-- Product Slides -->
+        <!-- @if (currentProduct() && config(); as currentConfig) {
         <app-product-slide [product]="currentProduct()!"
             [templateName]="currentConfig?.templates?.selectedTemplateId || 'classic'" [imageQuality]="'medium'"
             [enableAnimations]="currentConfig?.timing?.transitionType !== 'none'"
             (slideReady)="handleSlideReady($event)" (imageError)="handleImageError($event)" />
-        }
+        } -->
 
         <!-- Test Product Slides -->
         <div *ngIf="false" class="slides-container">

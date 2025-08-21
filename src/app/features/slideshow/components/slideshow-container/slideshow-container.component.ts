@@ -33,6 +33,7 @@ import { SlideProgressComponent } from '../slide-progress';
 import { NavigationControlsComponent } from '../navigation-controls';
 import { LoadingStateComponent } from '../loading-state';
 import { ErrorStateComponent } from '../error-state';
+import { TemplateLoaderComponent } from '../template-loader';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -50,7 +51,9 @@ import { ErrorStateComponent } from '../error-state';
 @Component({
     selector: 'app-slideshow-container',
     standalone: true,
-    imports: [CommonModule, ProductSlideComponent, SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent],
+    imports: [CommonModule,
+        // ProductSlideComponent, 
+        SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent, TemplateLoaderComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -921,5 +924,40 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         }
 
         this.setError(errorMessage, errorCode, errorType, originalError, canRetry);
+    }
+
+    // =====================================
+    // TEMPLATE LOADER COMPONENT EVENT HANDLERS
+    // =====================================
+
+    /**
+     * Handle template loaded event from TemplateLoaderComponent
+     */
+    onTemplateLoaded(event: { templateName: string; success: boolean; loadTime: number }): void {
+        console.log('SlideShowContainerComponent.onTemplateLoaded() - Template loaded successfully', event);
+
+        if (event.success) {
+            console.log(`Template '${event.templateName}' loaded in ${event.loadTime.toFixed(2)}ms`);
+        }
+    }
+
+    /**
+     * Handle template error event from TemplateLoaderComponent
+     */
+    onTemplateError(event: { templateName: string; error: string; fallbackUsed: boolean }): void {
+        console.error('SlideShowContainerComponent.onTemplateError() - Template loading failed', event);
+
+        if (event.fallbackUsed) {
+            console.log(`Fallback template used for failed template '${event.templateName}'`);
+        }
+    }
+
+    /**
+     * Handle component ready event from TemplateLoaderComponent
+     */
+    onComponentReady(event: { product: Product; template: string }): void {
+        console.log('SlideShowContainerComponent.onComponentReady() - Template component ready', event);
+
+        // Може да се добави логика за performance tracking тук
     }
 }
