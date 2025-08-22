@@ -1,0 +1,45 @@
+<!-- Classic Template - Centered Professional Layout -->
+<div [class]="getTemplateClasses()">
+
+    <div class="classic-container">
+
+        <!-- Product Image Section -->
+        <div class="image-section">
+            <div class="image-wrapper">
+                <img [src]="product().imageUrl" [alt]="product().name" class="product-image"
+                    (error)="onImageError($event)" loading="eager" />
+
+                <!-- Image overlay with category (if available) -->
+                @if (hasCategory()) {
+                <div class="category-badge">{{ product().category }}</div>
+                }
+            </div>
+        </div>
+
+        <!-- Product Information Section -->
+        <div class="info-section">
+
+            <!-- Product Name -->
+            <h1 class="product-name">{{ product().name }}</h1>
+
+            <!-- Product Price -->
+            <div class="product-price">{{ getDisplayPrice() }}</div>
+
+            <!-- Product Description -->
+            @if (product().shortDescription) {
+            <p class="product-description">{{ getDisplayDescription() }}</p>
+            }
+
+            <!-- Stock Status (if available) -->
+            @if (hasStockInfo()) {
+            <div class="stock-status" [class.in-stock]="product().inStock" [class.out-of-stock]="!product().inStock">
+                <span class="status-icon">{{ getStockStatusIcon() }}</span>
+                <span class="status-text">{{ getStockStatusText() }}</span>
+            </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>
