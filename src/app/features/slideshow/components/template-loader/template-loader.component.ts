@@ -126,6 +126,13 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
         return classes.join(' ');
     });
 
+    readonly hasLoadedComponent = computed(() => {
+        return this.currentComponentRef !== null &&
+            this.currentTemplate() !== '' &&
+            !this.isLoading() &&
+            !this.hasError();
+    });
+
     readonly debugInfo = computed(() => ({
         templateName: this.templateName(),
         isLoading: this.isLoading(),
@@ -134,7 +141,10 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
         isUsingFallback: this.isUsingFallback(),
         loadTime: this.loadTime(),
         currentTemplate: this.currentTemplate(),
-        hasValidTemplate: this.hasValidTemplate()
+        hasValidTemplate: this.hasValidTemplate(),
+        // 🔧 ДОБАВЕНО за дебъгинг
+        hasCurrentComponentRef: this.currentComponentRef !== null,
+        hasLoadedComponent: this.hasLoadedComponent()
     }));
 
     // ✅ Effects за reactive loading
@@ -278,12 +288,11 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
             // Calculate load time
             const loadTime = performance.now() - this.loadStartTime;
             this.loadTimeSignal.set(loadTime);
-            this.hasErrorSignal.set(false);
-            this.isUsingFallbackSignal.set(false);
 
-            // Update state
-            this.currentTemplateSignal.set(templateName);
             this.isLoadingSignal.set(false);
+            this.hasErrorSignal.set(false);
+            this.currentTemplateSignal.set(templateName);
+            this.isUsingFallbackSignal.set(false);
 
             // Emit success event
             this.templateLoaded.emit({

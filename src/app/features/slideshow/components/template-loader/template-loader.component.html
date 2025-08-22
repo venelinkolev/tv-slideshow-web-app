@@ -1,25 +1,23 @@
-<!-- src/app/features/slideshow/components/template-loader/template-loader.component.html -->
+<!-- Template Loader Component - ОКОНЧАТЕЛНА ПОПРАВКА НА HTML ЛОГИКАТА -->
+<!-- Файл: src/app/features/slideshow/components/template-loader/template-loader.component.html -->
 
 <div [class]="loaderClasses()" [attr.data-template]="templateName()" [attr.data-product-id]="product().id" role="main"
     [attr.aria-label]="'Зареждане на темплейт ' + templateName()">
 
-    <!-- ✅ FIXED: ViewChild container е винаги достъпен (извън условна логика) -->
+    <!-- 🔧 FIXED: Dynamic Template Container - показва се само когато има заредена компонента -->
     <div class="dynamic-template-container" #dynamicTemplateContainer
         [attr.aria-label]="'Продукт темплейт ' + currentTemplate()"
-        [style.display]="(!isLoading() && !hasError()) ? 'block' : 'none'">
+        [style.display]="hasLoadedComponent() ? 'block' : 'none'" [style.opacity]="hasLoadedComponent() ? '1' : '0'"
+        [style.transition]="'opacity 0.3s ease'">
         <!-- Dynamic template component се зарежда тук -->
     </div>
 
     <!-- Loading State -->
     @if (isLoading()) {
     <div class="template-loader__loading-state" role="status" aria-live="polite">
-
-        <!-- Loading Spinner -->
         <div class="loading-spinner">
             <div class="spinner-ring"></div>
         </div>
-
-        <!-- Loading Message -->
         <div class="loading-message">
             <h3 class="loading-title">Зареждане на темплейт</h3>
             <p class="loading-text">{{ templateName() || 'Неизвестен темплейт' }}</p>
@@ -33,8 +31,6 @@
     <!-- Error State -->
     @if (hasError() && !isLoading()) {
     <div class="template-loader__error-state" role="alert" aria-live="assertive">
-
-        <!-- Error Icon -->
         <div class="error-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
@@ -42,8 +38,6 @@
                 <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" />
             </svg>
         </div>
-
-        <!-- Error Content -->
         <div class="error-content">
             <h3 class="error-title">Грешка при зареждане на темплейт</h3>
             <p class="error-template">Темплейт: <strong>{{ templateName() || 'Неизвестен' }}</strong></p>
@@ -52,12 +46,10 @@
             @if (isUsingFallback()) {
             <div class="fallback-notice">
                 <span class="fallback-icon">🔄</span>
-                <span>Използван е резервен темплейт</span>
+                <span class="fallback-text">Използван е резервен темплейт</span>
             </div>
             }
         </div>
-
-        <!-- Error Actions -->
         <div class="error-actions">
             <button class="retry-button" (click)="forceReloadTemplate()" type="button"
                 aria-label="Опитай отново да заредиш темплейта">
@@ -68,11 +60,11 @@
     </div>
     }
 
-    <!-- Content State -->
-    @if (!isLoading() && !hasError()) {
+    <!-- 🔧 FIXED: Inline Fallback - показва се САМО когато НЯМА заредена компонента -->
+    @if (!hasLoadedComponent() && !isLoading() && !hasError()) {
     <div class="template-loader__content" [attr.data-ready]="isReady()" [attr.data-fallback]="isUsingFallback()">
 
-        <!-- Fallback Notice (if using fallback template) -->
+        <!-- Fallback Notice Banner -->
         @if (isUsingFallback()) {
         <div class="fallback-notice-banner" role="banner">
             <span class="fallback-icon">⚠️</span>
@@ -82,13 +74,9 @@
         </div>
         }
 
-        <!-- Inline Fallback (when even classic template fails) -->
-        @if (!currentTemplate() && !isLoading() && !hasError()) {
+        <!-- Inline Fallback Template -->
         <div class="inline-fallback-template" role="main">
-
-            <!-- Fallback Product Display -->
             <div class="fallback-product">
-
                 <!-- Product Image -->
                 <div class="fallback-image-container">
                     <img class="fallback-image" [src]="product().imageUrl" [alt]="product().name" loading="eager"
@@ -120,23 +108,19 @@
                 </div>
             </div>
         </div>
-        }
     </div>
     }
 
-    <!-- Debug Information (only in development) -->
-    @if (false) { <!-- Set to true for debugging -->
-    <div class="template-loader__debug"
-        style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px; font-size: 12px; border-radius: 4px; z-index: 9999;">
+    <!-- Debug Information (Set to true за debugging) -->
+    @if (true) {
+    <div class="debug-panel"
+        style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; font-size: 12px; border-radius: 4px; z-index: 9999;">
         <h4>Template Loader Debug</h4>
-        <div>Template: {{ debugInfo().templateName }}</div>
-        <div>Current: {{ debugInfo().currentTemplate }}</div>
-        <div>Loading: {{ debugInfo().isLoading }}</div>
-        <div>Error: {{ debugInfo().hasError }}</div>
-        <div>Ready: {{ debugInfo().isReady }}</div>
-        <div>Fallback: {{ debugInfo().isUsingFallback }}</div>
-        <div>Load Time: {{ debugInfo().loadTime }}ms</div>
-        <div>Valid Template: {{ debugInfo().hasValidTemplate }}</div>
+        <div>Template: {{ currentTemplate() || 'None' }}</div>
+        <div>Loading: {{ isLoading() ? 'Yes' : 'No' }}</div>
+        <div>Error: {{ hasError() ? 'Yes' : 'No' }}</div>
+        <div>Component: {{ hasLoadedComponent() ? 'Loaded' : 'Not loaded' }}</div>
+        <div>Fallback: {{ isUsingFallback() ? 'Yes' : 'No' }}</div>
     </div>
     }
 
