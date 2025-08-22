@@ -1,8 +1,9 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy } from '@angular/core';
 
 import { Product } from '@core/models';
+
 
 /**
  * Abstract base class for all product display templates
@@ -30,6 +31,7 @@ export const FALLBACK_IMAGE_ALTERNATIVES = {
     angular_default: '/assets/angular.svg'
 };
 
+
 @Component({
     template: '',
     standalone: true,
@@ -37,29 +39,27 @@ export const FALLBACK_IMAGE_ALTERNATIVES = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export abstract class BaseProductTemplateComponent {
-    // Required inputs
+    // Required inputs (запазвай signals)
     product = input.required<Product>();
 
-    // Optional inputs with defaults for TV optimization
+    // Optional inputs with defaults
     imageQuality = input<'low' | 'medium' | 'high'>('medium');
     enableAnimations = input<boolean>(true);
 
-    // Output events for parent component communication
-    imageError = output<Event>();
-    templateLoaded = output<string>();
+    // ✅ ПРОМЯНА: EventEmitter вместо output signals
+    @Output() imageError = new EventEmitter<Event>();
+    @Output() templateLoaded = new EventEmitter<string>();
 
-    // Abstract properties that must be implemented by concrete templates
+    // Abstract properties
     abstract readonly templateName: string;
     abstract readonly displayName: string;
 
-    // Common TV optimizations and fallbacks
+    // Common TV optimizations
     protected readonly imageErrorFallback = FALLBACK_IMAGE_ALTERNATIVES.css_background;
-    protected readonly maxDescriptionLength = 100; // TV viewing optimized
+    protected readonly maxDescriptionLength = 100;
 
     /**
      * Format price for Bulgarian market with BGN currency
-     * @param price Product price
-     * @returns Formatted price string (e.g., "29,99 лв.")
      */
     protected formatPrice(price: number): string {
         return new Intl.NumberFormat('bg-BG', {
@@ -72,9 +72,6 @@ export abstract class BaseProductTemplateComponent {
 
     /**
      * Truncate text for TV display with proper word boundaries
-     * @param text Text to truncate
-     * @param maxLength Maximum character length
-     * @returns Truncated text with ellipsis
      */
     protected truncateText(text: string, maxLength: number = this.maxDescriptionLength): string {
         if (text.length <= maxLength) return text;
@@ -88,7 +85,6 @@ export abstract class BaseProductTemplateComponent {
 
     /**
      * Handle image loading errors with fallback
-     * @param event Error event
      */
     onImageError(event: Event): void {
         console.log(`BaseProductTemplateComponent.onImageError() - ${this.templateName}`, event);
@@ -103,7 +99,6 @@ export abstract class BaseProductTemplateComponent {
 
     /**
      * Get CSS classes for template container
-     * @returns CSS class string
      */
     protected getTemplateClasses(): string {
         return [
@@ -116,7 +111,6 @@ export abstract class BaseProductTemplateComponent {
 
     /**
      * Template lifecycle hook - called when template is loaded
-     * @protected
      */
     protected onTemplateLoaded(): void {
         console.log(`Template loaded: ${this.templateName}`);

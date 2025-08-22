@@ -18,6 +18,14 @@ import {
     ValidationWarning
 } from '@core/models';
 
+import {
+    BaseProductTemplateComponent,
+    ClassicTemplateComponent,
+    ModernTemplateComponent,
+    MinimalTemplateComponent,
+    BoldTemplateComponent
+} from '../../features/templates';
+
 /**
  * Template Registry Service for TV Slideshow Application
  * Manages dynamic template loading, registration, and selection
@@ -343,9 +351,9 @@ export class TemplateRegistryService {
     // Private helper methods
 
     private initializeDefaultTemplates(): void {
-        console.log('🏭 Initializing default templates...');
+        console.log('🏭 Initializing default templates with components...');
 
-        // Create default template configurations
+        // Default config за всички templates
         const defaultConfig: TemplateConfig = {
             colors: {
                 primary: '#1565C0',
@@ -376,9 +384,163 @@ export class TemplateRegistryService {
             }
         };
 
-        this.defaultTemplateConfigs.set('default', defaultConfig);
-        console.log('✅ Default template configurations initialized');
+        // 🎨 РЕГИСТРИРАЙ CLASSIC TEMPLATE
+        const classicTemplate: ProductTemplate = {
+            id: 'classic',
+            name: 'Classic Template',
+            description: 'Традиционен централизиран layout, подходящ за всички продукти',
+            componentName: 'ClassicTemplateComponent',
+            previewImageUrl: '/assets/images/templates/classic-preview.jpg',
+            category: TemplateCategoryEnum.CLASSIC,
+            isActive: true,
+            tvRequirements: {
+                minResolution: { width: 1366, height: 768 },
+                performance: {
+                    requiresGPU: false,
+                    maxMemoryUsage: 50,
+                    animationComplexity: 2
+                },
+                supportedPlatforms: ['Samsung Tizen', 'LG WebOS', 'Android TV', 'Chrome OS'],
+                browserRequirements: {
+                    chrome: 60,
+                    firefox: 55,
+                    edge: 79
+                }
+            },
+            supportedProperties: {
+                supportsImages: true,
+                supportsSecondaryImages: false,
+                supportsBadges: true,
+                supportsDiscounts: true,
+                supportsLongDescription: false,
+                textLimits: {
+                    productName: 50,
+                    shortDescription: 120
+                }
+            },
+            defaultConfig: defaultConfig,
+            metadata: {
+                author: 'TV Slideshow Team',
+                version: '1.0.0',
+                createdAt: new Date('2024-01-01'),
+                updatedAt: new Date(),
+                tags: ['classic', 'tv-optimized', 'professional']
+            }
+        };
+
+        // 🎨 РЕГИСТРИРАЙ MODERN TEMPLATE  
+        const modernTemplate: ProductTemplate = {
+            id: 'modern',
+            name: 'Modern Template',
+            description: 'Съвременен split-screen дизайн с акцент върху визуалния ефект',
+            componentName: 'ModernTemplateComponent',
+            previewImageUrl: '/assets/images/templates/modern-preview.jpg',
+            category: TemplateCategoryEnum.MODERN,
+            isActive: true,
+            tvRequirements: {
+                minResolution: { width: 1920, height: 1080 },
+                performance: {
+                    requiresGPU: true,
+                    maxMemoryUsage: 80,
+                    animationComplexity: 4
+                },
+                supportedPlatforms: ['Samsung Tizen', 'LG WebOS', 'Android TV'],
+                browserRequirements: {
+                    chrome: 80,
+                    firefox: 75,
+                    edge: 85
+                }
+            },
+            supportedProperties: {
+                supportsImages: true,
+                supportsSecondaryImages: true,
+                supportsBadges: true,
+                supportsDiscounts: true,
+                supportsLongDescription: true,
+                textLimits: {
+                    productName: 40,
+                    shortDescription: 80
+                }
+            },
+            defaultConfig: defaultConfig,
+            metadata: {
+                author: 'TV Slideshow Team',
+                version: '1.0.0',
+                createdAt: new Date('2024-01-01'),
+                updatedAt: new Date(),
+                tags: ['modern', 'split-screen', 'premium']
+            }
+        };
+
+        // ✅ РЕГИСТРИРАЙ КОМПОНЕНТИТЕ
+        try {
+            this.registerTemplate(classicTemplate, ClassicTemplateComponent).subscribe({
+                next: (success) => {
+                    if (success) {
+                        console.log('✅ Classic template registered successfully');
+                    }
+                },
+                error: (error) => {
+                    console.error('❌ Failed to register Classic template:', error);
+                }
+            });
+
+            this.registerTemplate(modernTemplate, ModernTemplateComponent).subscribe({
+                next: (success) => {
+                    if (success) {
+                        console.log('✅ Modern template registered successfully');
+                    }
+                },
+                error: (error) => {
+                    console.error('❌ Failed to register Modern template:', error);
+                }
+            });
+
+            // TODO: Добави Minimal и Bold templates когато са готови
+            console.log('🎯 Default templates initialization completed');
+
+        } catch (error) {
+            console.error('❌ Error during template initialization:', error);
+            this.errorSignal.set(`Template initialization failed: ${error}`);
+        }
     }
+    // private initializeDefaultTemplates(): void {
+    //     console.log('🏭 Initializing default templates...');
+
+    //     // Create default template configurations
+    //     const defaultConfig: TemplateConfig = {
+    //         colors: {
+    //             primary: '#1565C0',
+    //             secondary: '#FFA726',
+    //             accent: '#E91E63',
+    //             background: '#FFFFFF',
+    //             text: '#212121'
+    //         },
+    //         typography: {
+    //             fontFamily: 'Roboto, Arial, sans-serif',
+    //             baseFontSize: '24px',
+    //             fontWeights: {
+    //                 light: 300,
+    //                 normal: 400,
+    //                 bold: 700
+    //             }
+    //         },
+    //         animations: {
+    //             enabled: true,
+    //             durationMultiplier: 1.0,
+    //             entranceAnimation: 'fade',
+    //             textAnimation: 'fade'
+    //         },
+    //         layout: {
+    //             safeAreaMultiplier: 1.0,
+    //             contentAlignment: 'center',
+    //             imageAspectRatio: 'cover'
+    //         }
+    //     };
+
+    //     this.defaultTemplateConfigs.set('default', defaultConfig);
+    //     console.log('✅ Default template configurations initialized');
+    // }
 
     private validateTemplate(template: ProductTemplate): ValidationResult {
         const errors: ValidationError[] = [];
