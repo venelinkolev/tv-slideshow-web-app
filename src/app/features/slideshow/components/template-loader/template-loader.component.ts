@@ -278,6 +278,8 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
             // Calculate load time
             const loadTime = performance.now() - this.loadStartTime;
             this.loadTimeSignal.set(loadTime);
+            this.hasErrorSignal.set(false);
+            this.isUsingFallbackSignal.set(false);
 
             // Update state
             this.currentTemplateSignal.set(templateName);
