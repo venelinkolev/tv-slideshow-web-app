@@ -64,12 +64,12 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
         const remoteEnabled = this.remoteControlEnabled();
         const visible = this.isVisible();
         const hovered = this.isHovered();
-        const paused = !this.isAutoPlaying();
+        const helpVisible = this.isHelpVisible();
 
-        // Show controls if remote is enabled AND (manually shown OR hovered OR paused)
-        const shouldShow = remoteEnabled && (visible || hovered || paused);
+        // 🔧 FIX: Премахни paused логиката
+        const shouldShow = remoteEnabled && (visible || hovered || helpVisible);
 
-        console.log(`shouldShowControls: remote=${remoteEnabled}, visible=${visible}, hovered=${hovered}, paused=${paused} => ${shouldShow}`);
+        console.log(`shouldShowControls: remote=${remoteEnabled}, visible=${visible}, hovered=${hovered}, help=${helpVisible} => ${shouldShow}`);
         return shouldShow;
     });
 
@@ -102,6 +102,11 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         console.log('NavigationControlsComponent.ngOnInit() - TV remote controls ready');
         console.log(`Initial state: remoteEnabled=${this.remoteControlEnabled()}, autoPlaying=${this.isAutoPlaying()}, hasProducts=${this.hasProducts()}`);
+
+        // 🔧 ENSURE controls start hidden
+        this.isVisibleSignal.set(false);
+        this.isHelpVisibleSignal.set(false);
+        this.isHoveredSignal.set(false);
 
         // Don't start auto-hide immediately - wait for user interaction
         // this.setupAutoHide();
