@@ -13,7 +13,8 @@ import {
     effect,
     inject,
     untracked,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -74,6 +75,7 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
     private readonly templateRegistry = inject(TemplateRegistryService);
     private readonly configService = inject(ConfigService);
     private readonly performanceMonitor = inject(PerformanceMonitorService);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     // ✅ ViewChild за dynamic component loading
     @ViewChild('dynamicTemplateContainer', { read: ViewContainerRef, static: false })
@@ -127,10 +129,24 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
     });
 
     readonly hasLoadedComponent = computed(() => {
-        return this.currentComponentRef !== null &&
-            this.currentTemplate() !== '' &&
-            !this.isLoading() &&
-            !this.hasError();
+
+        const hasRef = this.currentComponentRef !== null;
+        const hasTemplate = this.currentTemplate() !== '';
+        const notLoading = !this.isLoading();
+        const noError = !this.hasError();
+
+        const result = hasRef && hasTemplate && notLoading && noError;
+
+        // Debug logging
+        console.log('🔄 hasLoadedComponent computed:', {
+            hasRef,
+            hasTemplate,
+            notLoading,
+            noError,
+            result
+        });
+
+        return result;
     });
 
     readonly debugInfo = computed(() => ({
@@ -249,10 +265,8 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
             // Cleanup previous component
             this.cleanupCurrentComponent();
 
-            // Create new component using TemplateFactory (будe imported when available)
-            // For now, direct ViewContainerRef usage
+            // Create new component using ViewContainerRef
             this.dynamicTemplateContainer.clear();
-
             const componentRef = this.dynamicTemplateContainer.createComponent(templateComponent);
 
             // Set component inputs
@@ -279,41 +293,56 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
                     });
             }
 
-            // Store reference
+            // 🔧 FIXED: Правилният ред на операциите
+
+            // 1. Първо съхрани reference
             this.currentComponentRef = componentRef;
 
-            // Trigger change detection
+            // 2. Trigger change detection на компонента
             componentRef.changeDetectorRef.detectChanges();
 
-            // Calculate load time
+            // 3. Calculate load time
             const loadTime = performance.now() - this.loadStartTime;
             this.loadTimeSignal.set(loadTime);
 
-            this.isLoadingSignal.set(false);
-            this.hasErrorSignal.set(false);
-            this.currentTemplateSignal.set(templateName);
-            this.isUsingFallbackSignal.set(false);
+            // 4. Update state signals в правилен ред
+            this.isLoadingSignal.set(false);           // Stop loading
+            this.hasErrorSignal.set(false);           // Clear errors
+            this.currentTemplateSignal.set(templateName); // Set current template
+            this.isUsingFallbackSignal.set(false);    // Not using fallback
 
-            // Emit success event
+            // 5. Force change detection on this component too
+            // NOTE: Ако имаш ChangeDetectorRef injected, добави:
+            this.cdr.detectChanges();
+
+            console.log(`✅ TemplateLoaderComponent: Template '${templateName}' loaded successfully in ${loadTime.toFixed(2)}ms`);
+
+            // Debug the state after setting
+            console.log('📊 Debug state after loading:', {
+                currentComponentRef: this.currentComponentRef !== null,
+                currentTemplate: this.currentTemplate(),
+                isLoading: this.isLoading(),
+                hasError: this.hasError(),
+                hasLoadedComponent: this.hasLoadedComponent()
+            });
+
+            // 6. Emit success events
             this.templateLoaded.emit({
-                templateName,
+                templateName: templateName,
                 success: true,
-                loadTime
+                loadTime: loadTime
             });
 
             this.componentReady.emit({
-                product,
+                product: product,
                 template: templateName
             });
-
-            console.log(`✅ TemplateLoaderComponent: Template '${templateName}' loaded successfully in ${loadTime.toFixed(2)}ms`);
 
         } catch (error) {
             console.error('TemplateLoaderComponent: Error loading template:', error);
             await this.loadFallbackTemplate(product, `Loading error: ${error}`);
         }
     }
-
     /**
      * Load fallback template when primary template fails
      * @param product Product data
