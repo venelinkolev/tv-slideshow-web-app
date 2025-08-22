@@ -1,6 +1,14 @@
-<!-- TemplateLoaderComponent Template -->
+<!-- src/app/features/slideshow/components/template-loader/template-loader.component.html -->
+
 <div [class]="loaderClasses()" [attr.data-template]="templateName()" [attr.data-product-id]="product().id" role="main"
     [attr.aria-label]="'Зареждане на темплейт ' + templateName()">
+
+    <!-- ✅ FIXED: ViewChild container е винаги достъпен (извън условна логика) -->
+    <div class="dynamic-template-container" #dynamicTemplateContainer
+        [attr.aria-label]="'Продукт темплейт ' + currentTemplate()"
+        [style.display]="(!isLoading() && !hasError()) ? 'block' : 'none'">
+        <!-- Dynamic template component се зарежда тук -->
+    </div>
 
     <!-- Loading State -->
     @if (isLoading()) {
@@ -60,7 +68,7 @@
     </div>
     }
 
-    <!-- Main Dynamic Template Container -->
+    <!-- Content State -->
     @if (!isLoading() && !hasError()) {
     <div class="template-loader__content" [attr.data-ready]="isReady()" [attr.data-fallback]="isUsingFallback()">
 
@@ -73,12 +81,6 @@
             </span>
         </div>
         }
-
-        <!-- Dynamic Template Container -->
-        <div class="dynamic-template-container" #dynamicTemplateContainer
-            [attr.aria-label]="'Продукт темплейт ' + currentTemplate()">
-            <!-- Dynamic template component се зарежда тук -->
-        </div>
 
         <!-- Inline Fallback (when even classic template fails) -->
         @if (!currentTemplate() && !isLoading() && !hasError()) {

@@ -76,8 +76,8 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
     private readonly performanceMonitor = inject(PerformanceMonitorService);
 
     // ✅ ViewChild за dynamic component loading
-    @ViewChild('dynamicTemplateContainer', { read: ViewContainerRef, static: true })
-    private dynamicTemplateContainer!: ViewContainerRef;
+    @ViewChild('dynamicTemplateContainer', { read: ViewContainerRef, static: false })
+    private dynamicTemplateContainer?: ViewContainerRef; // Made optional with ?
 
     // ✅ Component lifecycle management
     private readonly destroy$ = new Subject<void>();
@@ -172,9 +172,11 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
         // Ensure container is available
         if (!this.dynamicTemplateContainer) {
             console.error('TemplateLoaderComponent: ViewContainerRef not available!');
-            this.handleLoadingError('Template container not initialized', 'classic');
+            this.handleLoadingError('Template container not initialized', this.templateName());
             return;
         }
+
+        console.log('TemplateLoaderComponent: ViewContainerRef successfully initialized');
 
         // Load initial template
         const initialTemplate = this.templateName();
@@ -199,6 +201,11 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
      * @param product Product data
      */
     private async loadTemplate(templateName: string, product: Product): Promise<void> {
+        if (!this.dynamicTemplateContainer) {
+            console.error('TemplateLoaderComponent: Cannot load template - container not available');
+            this.handleLoadingError('Template container not initialized', templateName);
+            return;
+        }
         console.log(`TemplateLoaderComponent.loadTemplate(${templateName}) for product ${product.id}`);
 
         // Check if already loading the same template
@@ -221,6 +228,11 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
             if (!templateComponent) {
                 console.warn(`TemplateLoaderComponent: Template component '${templateName}' not found`);
                 await this.loadFallbackTemplate(product, `Template '${templateName}' not found`);
+                return;
+            }
+
+            if (!this.dynamicTemplateContainer) {
+                this.handleLoadingError('Template container became unavailable', templateName);
                 return;
             }
 
@@ -318,6 +330,11 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
                 return;
             }
 
+            if (!this.dynamicTemplateContainer) {
+                this.handleLoadingError('Template container not available for fallback', fallbackTemplate);
+                return;
+            }
+
             // Load classic template
             this.cleanupCurrentComponent();
             this.dynamicTemplateContainer.clear();
@@ -405,6 +422,14 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
             }
 
             this.currentComponentRef = null;
+        }
+
+        if (this.dynamicTemplateContainer) {
+            try {
+                this.dynamicTemplateContainer.clear();
+            } catch (error) {
+                console.error('TemplateLoaderComponent: Error clearing container:', error);
+            }
         }
     }
 
