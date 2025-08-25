@@ -64,20 +64,18 @@
         } -->
 
         <!-- Test Product Slides -->
-        <div *ngIf="false" class="slides-container">
+        <!-- <div *ngIf="false" class="slides-container">
             <div class="slide" *ngFor="let product of products(); trackBy: trackByProductId; let i = index"
                 [class.active]="i === currentSlideIndex()"
                 [class.preloaded]="product.imageUrl && preloadedImages.has(product.imageUrl)"
                 [attr.aria-hidden]="i !== currentSlideIndex()" [attr.data-slide-index]="i">
 
-                <!-- Product Content - ще се замени с динамични темплейти -->
                 <div class="product-content">
                     <div class="product-image-container">
                         <img [src]="product.imageUrl" [alt]="product.name" class="product-image"
                             [class.loading]="product.imageUrl && !preloadedImages.has(product.imageUrl)" loading="lazy"
                             [attr.aria-label]="'Изображение на ' + product.name">
 
-                        <!-- Product Badge -->
                         <div class="product-badge" *ngIf="product.badge?.text"
                             [class]="'badge-' + (product.badge?.color || 'primary')">
                             {{ product.badge?.text }}
@@ -103,7 +101,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <!-- Slide Progress Indicator -->
         @if (config(); as currentConfig) {
