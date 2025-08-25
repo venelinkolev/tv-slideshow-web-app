@@ -10,14 +10,11 @@ import {
     HostListener,
     ElementRef,
     Renderer2,
-    PLATFORM_ID,
-    effect,
-    untracked
+    PLATFORM_ID
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom, timer, switchMap, tap, Subscription } from 'rxjs';
-import { takeUntil, startWith, debounceTime, filter, map } from 'rxjs/operators';
-import { AnimationBuilder, AnimationFactory, AnimationPlayer } from '@angular/animations';
+import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom } from 'rxjs';
+import { takeUntil, startWith, debounceTime, filter } from 'rxjs/operators';
 
 import { Product } from '@core/models/product.interface';
 import { ProductTemplate } from '@core/models/template.interface';
@@ -51,17 +48,6 @@ import { TemplateLoaderComponent } from '../template-loader';
  * - Sleep prevention and fullscreen management
  * - Platform-specific optimizations (WebOS, Tizen, Android TV)
  */
-
-// Local interface since not exported from models
-interface PerformanceMetrics {
-    fps: number;
-    memoryUsageMB: number;
-    loadTimeMs: number;
-    slideTransitionMs: number;
-    apiResponseTimeMs: number;
-    imageLoadTimeMs: number;
-}
-
 @Component({
     selector: 'app-slideshow-container',
     standalone: true,
@@ -99,60 +85,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     protected readonly originalError = signal<ApiError | null>(null);
     protected readonly canRetryError = signal<boolean>(true);
     protected readonly isRetrying = signal<boolean>(false);
-
-    // Animation management
-    private currentAnimationPlayer: AnimationPlayer | null = null;
-    private readonly animationBuilder = inject(AnimationBuilder);
-    private readonly isTransitioningSignal = signal<boolean>(false);
-    private readonly imagePreloadCache = new Map<string, HTMLImageElement>();
-
-    // Animation state
-    private readonly transitionTypeSignal = signal<'slide' | 'fade' | 'none'>('slide');
-    private readonly animationSpeedSignal = signal<'normal' | 'fast' | 'slow'>('normal');
-
-    // Public readonly signals
-    readonly isTransitioning = this.isTransitioningSignal.asReadonly();
-    readonly transitionType = this.transitionTypeSignal.asReadonly();
-
-    // Auto-rotation effects (field initializers for proper injection context)
-    private readonly productLoadedEffect = effect(() => {
-        const products = this.products();
-        const isLoading = this.isLoading();
-
-        if (products.length > 1 && !isLoading) {
-            console.log('SlideShowContainerComponent: Products loaded, starting auto-rotation');
-            // Small delay to let component settle
-            untracked(() => {
-                timer(1000).pipe(
-                    tap(() => this.startAutoRotation()),
-                    takeUntil(this.destroy$)
-                ).subscribe();
-            });
-        }
-    });
-
-    private readonly configChangedEffect = effect(() => {
-        const config = this.config();
-
-        untracked(() => {
-            if (config?.timing?.baseSlideDuration) {
-                this.restartAutoRotationOnConfigChange();
-            }
-        });
-    });
-
-    // Auto-rotation management
-    private autoRotationSubscription: Subscription | null = null;
-    private userInteractionTimer: Subscription | null = null;
-    private configChangeTimer: Subscription | null = null;
-
-    // Auto-rotation control signals
-    private readonly isPausedByUserSignal = signal<boolean>(false);
-    private readonly shouldPauseForPerformanceSignal = signal<boolean>(false);
-
-    // Performance thresholds
-    private readonly lowPerformanceThreshold = 20; // FPS
-    private readonly userInteractionPauseTime = 10000; // 10 seconds
 
     // TV-specific reactive state  
     protected readonly performanceLevel = signal<PerformanceLevel>(PerformanceLevel.STANDARD);
@@ -307,22 +239,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         return config?.general?.showProgressIndicators || false;
     });
 
-    // Auto-rotation control (readonly)
-    readonly isPausedByUser = this.isPausedByUserSignal.asReadonly();
-    readonly shouldPauseForPerformance = this.shouldPauseForPerformanceSignal.asReadonly();
-
-    // Auto-rotation availability
-    readonly canAutoRotate = computed(() => {
-        const hasMultipleProducts = this.products().length > 1;
-        const hasValidConfig = this.config()?.timing?.baseSlideDuration && this.config()!.timing!.baseSlideDuration > 0;
-        const notPausedByUser = !this.isPausedByUser();
-        const performanceOK = !this.shouldPauseForPerformance();
-        const notLoading = !this.isLoading();
-        const noError = !this.hasError();
-
-        return hasMultipleProducts && hasValidConfig && notPausedByUser && performanceOK && notLoading && noError;
-    });
-
     ngOnInit(): void {
         console.log('SlideShowContainerComponent: Initializing with TV optimizations');
 
@@ -334,58 +250,10 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         } else {
             console.warn('SlideShowContainerComponent: Not running in browser environment');
         }
-
-        // Performance monitoring for auto-rotation
-        interval(2000).pipe(
-            map(() => this.performanceMonitor.getCurrentMetrics()),
-            takeUntil(this.destroy$)
-        ).subscribe((metrics: PerformanceMetrics) => {
-            this.currentFPS.set(metrics.fps);
-
-            const shouldPause = metrics.fps < this.lowPerformanceThreshold;
-
-            if (shouldPause !== this.shouldPauseForPerformance()) {
-                this.shouldPauseForPerformanceSignal.set(shouldPause);
-
-                if (shouldPause) {
-                    console.warn(`SlideShowContainerComponent: Pausing auto-rotation due to low FPS: ${metrics.fps}`);
-                    this.stopAutoRotation();
-                } else if (this.isAutoPlaying()) {
-                    console.log(`SlideShowContainerComponent: Resuming auto-rotation, FPS improved: ${metrics.fps}`);
-                    this.startAutoRotation();
-                }
-            }
-        });
-
-        console.log('✅ SlideShowContainerComponent: Initialization complete');
-
     }
 
     ngOnDestroy(): void {
         console.log('SlideShowContainerComponent: Cleaning up TV optimizations');
-
-        // Stop auto-rotation
-        this.stopAutoRotation();
-
-        // Cleanup timers
-        if (this.userInteractionTimer) {
-            this.userInteractionTimer.unsubscribe();
-        }
-        if (this.configChangeTimer) {
-            this.configChangeTimer.unsubscribe();
-        }
-
-        // Existing cleanup...
-        this.destroy$.next();
-        this.destroy$.complete();
-
-        // Cleanup animations
-        if (this.currentAnimationPlayer) {
-            this.currentAnimationPlayer.destroy();
-        }
-
-        // Clear image cache
-        this.imagePreloadCache.clear();
 
         // Clean up subscriptions
         this.destroy$.next();
@@ -736,145 +604,33 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     /**
      * TV Remote Control Actions
      */
-
     public nextSlide(): void {
-        if (!this.canNavigate() || this.isTransitioning()) return;
-
         const products = this.products();
+        if (products.length === 0) return;
+
         const currentIndex = this.currentSlideIndex();
-        const totalSlides = products.length;
+        const nextIndex = (currentIndex + 1) % products.length;
+        this.currentSlideIndex.set(nextIndex);
 
-        const nextIndex = (currentIndex + 1) % totalSlides;
-
-        console.log(`SlideShowContainerComponent: Manual next slide ${nextIndex + 1}/${totalSlides}`);
-
-        // Use faster transition for manual navigation
-        this.transitionTypeSignal.set('slide');
-        this.transitionToSlide(nextIndex);
-        this.handleUserInteraction();
+        console.log(`SlideShowContainerComponent: Next slide ${nextIndex + 1}/${products.length}`);
     }
 
     public previousSlide(): void {
-        if (!this.canNavigate() || this.isTransitioning()) return;
-
         const products = this.products();
+        if (products.length === 0) return;
+
         const currentIndex = this.currentSlideIndex();
-        const totalSlides = products.length;
+        const prevIndex = currentIndex === 0 ? products.length - 1 : currentIndex - 1;
+        this.currentSlideIndex.set(prevIndex);
 
-        const prevIndex = currentIndex === 0 ? totalSlides - 1 : currentIndex - 1;
-
-        console.log(`SlideShowContainerComponent: Manual previous slide ${prevIndex + 1}/${totalSlides}`);
-
-        // Use slide transition for manual navigation
-        this.transitionTypeSignal.set('slide');
-        this.transitionToSlide(prevIndex);
-        this.handleUserInteraction();
+        console.log(`SlideShowContainerComponent: Previous slide ${prevIndex + 1}/${products.length}`);
     }
 
     public toggleAutoPlay(): void {
         const newState = !this.isAutoPlaying();
         this.isAutoPlaying.set(newState);
-        this.isPausedByUserSignal.set(!newState);
-
-        if (newState) {
-            this.startAutoRotation();
-            console.log('SlideShowContainerComponent: Auto-play enabled');
-        } else {
-            this.stopAutoRotation();
-            console.log('SlideShowContainerComponent: Auto-play disabled');
-        }
+        console.log(`SlideShowContainerComponent: Auto-play ${newState ? 'enabled' : 'disabled'}`);
     }
-
-    /**
-    * Check if manual navigation is possible
-    * @private
-    */
-    private canNavigate(): boolean {
-        return !this.isLoading() && !this.hasError() && this.products().length > 1;
-    }
-
-    /**
-    * Preload next few images for smooth transitions
-    * @private
-    */
-    private preloadNextImages(): void {
-        const products = this.products();
-        const currentIndex = this.currentSlideIndex();
-        const preloadCount = this.shouldPauseForPerformance() ? 1 : 3;
-
-        console.log(`SlideShowContainerComponent: Preloading ${preloadCount} images`);
-
-        for (let i = 1; i <= preloadCount; i++) {
-            const nextIndex = (currentIndex + i) % products.length;
-            if (nextIndex < products.length) {
-                this.preloadImage(products[nextIndex]);
-            }
-        }
-    }
-
-    /**
-     * Preload individual image
-     * @private
-     */
-    private preloadImage(product: Product): void {
-        const imageUrl = product.imageUrl;
-
-        // Skip if already preloaded
-        if (this.imagePreloadCache.has(imageUrl)) {
-            return;
-        }
-
-        const img = new Image();
-
-        img.onload = () => {
-            console.log(`SlideShowContainerComponent: Preloaded image for product ${product.id}`);
-            this.imagePreloadCache.set(imageUrl, img);
-        };
-
-        img.onerror = (error) => {
-            console.warn(`SlideShowContainerComponent: Failed to preload image for product ${product.id}:`, error);
-        };
-
-        img.src = imageUrl;
-    }
-
-    /**
-     * Check if image is preloaded
-     * @param product Product to check
-     * @returns boolean
-     */
-    private isImagePreloaded(product: Product): boolean {
-        return this.imagePreloadCache.has(product.imageUrl);
-    }
-
-    // Old TV remote control actions
-    // public nextSlide(): void {
-    //     const products = this.products();
-    //     if (products.length === 0) return;
-
-    //     const currentIndex = this.currentSlideIndex();
-    //     const nextIndex = (currentIndex + 1) % products.length;
-    //     this.currentSlideIndex.set(nextIndex);
-
-    //     console.log(`SlideShowContainerComponent: Next slide ${nextIndex + 1}/${products.length}`);
-    // }
-
-    // public previousSlide(): void {
-    //     const products = this.products();
-    //     if (products.length === 0) return;
-
-    //     const currentIndex = this.currentSlideIndex();
-    //     const prevIndex = currentIndex === 0 ? products.length - 1 : currentIndex - 1;
-    //     this.currentSlideIndex.set(prevIndex);
-
-    //     console.log(`SlideShowContainerComponent: Previous slide ${prevIndex + 1}/${products.length}`);
-    // }
-
-    // public toggleAutoPlay(): void {
-    //     const newState = !this.isAutoPlaying();
-    //     this.isAutoPlaying.set(newState);
-    //     console.log(`SlideShowContainerComponent: Auto-play ${newState ? 'enabled' : 'disabled'}`);
-    // }
 
     public restartSlideshow(): void {
         this.currentSlideIndex.set(0);
@@ -902,159 +658,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     private enableAllFeatures(): void {
         console.log('SlideShowContainerComponent: Enabling all features');
         // Implementation for standard performance mode
-    }
-
-    /**
- * Start automatic slide rotation
- * @private
- */
-    private startAutoRotation(): void {
-        if (!this.canAutoRotate()) {
-            console.log('SlideShowContainerComponent: Auto-rotation conditions not met');
-            return;
-        }
-
-        this.stopAutoRotation(); // Clear existing timer
-
-        const slideInterval = this.config()?.timing?.baseSlideDuration || 20000;
-        console.log(`SlideShowContainerComponent: Starting auto-rotation with ${slideInterval}ms interval`);
-
-        this.autoRotationSubscription = timer(slideInterval, slideInterval).pipe(
-            tap(() => {
-                if (this.canAutoRotate()) {
-                    console.log('SlideShowContainerComponent: Auto-rotation tick');
-                    this.performAutoSlideChange();
-                }
-            }),
-            takeUntil(this.destroy$)
-        ).subscribe();
-
-        this.isAutoPlaying.set(true);
-    }
-
-    /**
-     * Stop automatic slide rotation
-     * @private
-     */
-    private stopAutoRotation(): void {
-        if (this.autoRotationSubscription) {
-            this.autoRotationSubscription.unsubscribe();
-            this.autoRotationSubscription = null;
-            console.log('SlideShowContainerComponent: Auto-rotation stopped');
-        }
-    }
-
-    /**
-     * Perform automatic slide change (without user interaction tracking)
-     * @private
-     */
-    /**
- * Perform automatic slide change with smooth transition
- * @private
- */
-    private performAutoSlideChange(): void {
-        if (this.isTransitioning()) {
-            console.log('SlideShowContainerComponent: Transition in progress, skipping auto-change');
-            return;
-        }
-
-        const products = this.products();
-        const currentIndex = this.currentSlideIndex();
-        const totalSlides = products.length;
-
-        if (totalSlides <= 1) return;
-
-        const nextIndex = (currentIndex + 1) % totalSlides;
-        const nextProduct = products[nextIndex];
-
-        // Check if next image is preloaded
-        if (!this.isImagePreloaded(nextProduct)) {
-            console.log('SlideShowContainerComponent: Next image not preloaded, using fallback transition');
-            this.transitionTypeSignal.set('fade');
-        } else {
-            this.transitionTypeSignal.set('slide');
-        }
-
-        // Perform transition with animation
-        this.transitionToSlide(nextIndex);
-    }
-
-    /**
-     * Transition to specific slide with animation
-     * @private
-     */
-    private transitionToSlide(targetIndex: number): void {
-        if (this.isTransitioning()) return;
-
-        console.log(`SlideShowContainerComponent: Transitioning to slide ${targetIndex + 1}`);
-
-        this.isTransitioningSignal.set(true);
-
-        // Get transition duration based on performance
-        const duration = this.shouldPauseForPerformance() ? 200 : 800;
-
-        // Update slide index
-        this.currentSlideIndex.set(targetIndex);
-
-        // Preload next images
-        this.preloadNextImages();
-
-        // End transition after duration
-        timer(duration).pipe(
-            tap(() => {
-                this.isTransitioningSignal.set(false);
-                console.log(`SlideShowContainerComponent: Transition to slide ${targetIndex + 1} complete`);
-            }),
-            takeUntil(this.destroy$)
-        ).subscribe();
-    }
-
-    /**
-     * Handle user interaction - pause auto-rotation temporarily
-     * @private
-     */
-    private handleUserInteraction(): void {
-        this.isPausedByUserSignal.set(true);
-
-        // Clear existing timer
-        if (this.userInteractionTimer) {
-            this.userInteractionTimer.unsubscribe();
-        }
-
-        // Resume after pause time
-        this.userInteractionTimer = timer(this.userInteractionPauseTime).pipe(
-            tap(() => {
-                console.log('SlideShowContainerComponent: Resuming auto-rotation after user interaction');
-                this.isPausedByUserSignal.set(false);
-                if (this.isAutoPlaying()) {
-                    this.startAutoRotation();
-                }
-            }),
-            takeUntil(this.destroy$)
-        ).subscribe();
-    }
-
-    /**
-     * Restart auto-rotation when configuration changes
-     * @private
-     */
-    private restartAutoRotationOnConfigChange(): void {
-        console.log('SlideShowContainerComponent: Restarting auto-rotation due to config change');
-
-        if (this.isAutoPlaying()) {
-            this.stopAutoRotation();
-
-            // Clear existing config timer
-            if (this.configChangeTimer) {
-                this.configChangeTimer.unsubscribe();
-            }
-
-            // Small delay to ensure config is updated
-            this.configChangeTimer = timer(100).pipe(
-                tap(() => this.startAutoRotation()),
-                takeUntil(this.destroy$)
-            ).subscribe();
-        }
     }
 
     /**
