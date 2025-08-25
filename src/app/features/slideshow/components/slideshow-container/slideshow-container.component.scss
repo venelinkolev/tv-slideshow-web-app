@@ -4,6 +4,25 @@
 // Import TV variables
 @import '../../../../../assets/styles/variables';
 
+// TV-optimized animation variables
+:root {
+  --slide-transition-duration: 800ms;
+  --slide-transition-easing: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --fade-duration: 600ms;
+  --image-scale-duration: 400ms;
+  --tv-animation-performance: auto; // Can be 'reduced' for low-end TVs
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --slide-transition-duration: 200ms;
+    --fade-duration: 150ms;
+    --image-scale-duration: 100ms;
+    --tv-animation-performance: reduced;
+  }
+}
+
 // TV Performance Mixins
 @mixin tv-safe-text {
   font-family: var(--tv-font-family, 'Roboto', 'Arial', sans-serif);
@@ -102,6 +121,20 @@
     // Full animation support
     .slides-container {
       filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+  }
+
+  // Transition states
+  &.transitioning {
+    .slideshow-content {
+      pointer-events: none; // Prevent interaction during transition
+    }
+  }
+
+  &.performance-reduced {
+    * {
+      transition-duration: 0.1s !important;
+      animation-duration: 0.1s !important;
     }
   }
 }
@@ -250,6 +283,66 @@
   }
 }
 
+// Slide Transition Container
+.slide-transition-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+// Slide Animation States
+.slide-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--slide-transition-duration) var(--slide-transition-easing),
+              opacity var(--fade-duration) var(--slide-transition-easing);
+
+  // Default state (hidden)
+  &.slide-hidden {
+    opacity: 0;
+    transform: translateX(100%);
+    z-index: 1;
+  }
+
+  // Active state (visible)
+  &.slide-active {
+    opacity: 1;
+    transform: translateX(0);
+    z-index: 3;
+  }
+
+  // Previous state (exiting)
+  &.slide-previous {
+    opacity: 0;
+    transform: translateX(-100%);
+    z-index: 2;
+  }
+
+  // Entering state (coming in)
+  &.slide-entering {
+    opacity: 0;
+    transform: translateX(100%);
+    z-index: 2;
+  }
+
+  // Exiting state (going out)
+  &.slide-exiting {
+    opacity: 1;
+    transform: translateX(0);
+    z-index: 2;
+    
+    // Start transition out
+    &.slide-exiting-complete {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+}
+
 // Product Content
 .product-content {
   display: grid;
@@ -384,6 +477,76 @@
   border-radius: 20px;
   font-size: var(--tv-small-size, 1rem);
   font-weight: 600;
+}
+
+
+// Image-specific animations
+.product-image-container {
+  .product-image {
+    transition: transform var(--image-scale-duration) ease,
+                opacity var(--fade-duration) ease,
+                filter 300ms ease;
+    
+    // Loading state
+    &.image-loading {
+      opacity: 0.3;
+      filter: blur(2px);
+    }
+    
+    // Loaded state  
+    &.image-loaded {
+      opacity: 1;
+      filter: none;
+      transform: scale(1);
+    }
+
+    // Error state
+    &.image-error {
+      opacity: 0.6;
+      filter: grayscale(100%);
+    }
+
+    // Hover effect (for manual navigation)
+    &.image-interactive:hover {
+      transform: scale(1.02);
+    }
+  }
+}
+
+// Text content animations
+.product-info {
+  .product-name,
+  .product-price,
+  .product-description {
+    transition: opacity var(--fade-duration) var(--slide-transition-easing),
+                transform var(--slide-transition-duration) var(--slide-transition-easing);
+  }
+
+  // Staggered animation for text elements
+  &.content-entering {
+    .product-name {
+      animation: slideInUp 0.6s ease forwards;
+      animation-delay: 0.1s;
+    }
+    
+    .product-price {
+      animation: slideInUp 0.6s ease forwards;
+      animation-delay: 0.2s;
+    }
+    
+    .product-description {
+      animation: slideInUp 0.6s ease forwards;
+      animation-delay: 0.3s;
+    }
+  }
+
+  &.content-exiting {
+    .product-name,
+    .product-price,
+    .product-description {
+      animation: slideOutDown 0.4s ease forwards;
+    }
+  }
 }
 
 // Progress Indicator
@@ -703,6 +866,67 @@
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+// Slide transition keyframes
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes imageLoad {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(4px);
+  }
+  50% {
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+// Performance-safe glow effect for progress
+@keyframes progressGlow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 // TV-specific media queries
