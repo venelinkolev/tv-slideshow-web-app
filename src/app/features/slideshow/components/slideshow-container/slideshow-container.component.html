@@ -44,15 +44,25 @@
     <!-- Main Slideshow Content -->
     <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
 
-        <!-- Template Loader -->
-        @if (currentProduct() && config(); as currentConfig) {
-        <app-template-loader [product]="currentProduct()!"
-            [templateName]="currentConfig?.templates?.selectedTemplateId || 'classic'"
-            [imageQuality]="currentConfig?.tvOptimizations?.performance?.imagePreloading === 'all' ? 'high' : 'medium'"
-            [enableAnimations]="currentConfig?.timing?.transitionType !== 'none'" [forceReload]="false"
-            (templateLoaded)="onTemplateLoaded($event)" (templateError)="onTemplateError($event)"
-            (componentReady)="onComponentReady($event)">
-        </app-template-loader>
+        <!-- NgxOwlCarousel Integration - ПОПРАВЕНА ВЕРСИЯ -->
+        @if (config(); as currentConfig) {
+        <owl-carousel-o #owlCarousel [options]="carouselOptions()" class="tv-slideshow-carousel"
+            [class.performance-low]="performanceLevel() === 1" [class.performance-basic]="performanceLevel() === 2"
+            [class.performance-standard]="performanceLevel() === 3" (changed)="onCarouselChange($event)"
+            (initialized)="onCarouselInitialized($event)" (translate)="onCarouselTranslate($event)" role="region"
+            [attr.aria-label]="'Продуктов слайдшоу с ' + products().length + ' елемента'">
+            <!-- ПОПРАВЕН: Carousel Slides - правилен Angular 18 @for syntax -->
+            @for (product of products(); track product.id) {
+            <div class="carousel-slide-item">
+                <app-template-loader [product]="product"
+                    [templateName]="currentConfig?.templates?.selectedTemplateId || 'classic'"
+                    [imageQuality]="currentConfig?.tvOptimizations?.performance?.imagePreloading === 'all' ? 'high' : 'medium'"
+                    [enableAnimations]="currentConfig?.timing?.transitionType !== 'none'" [forceReload]="false"
+                    [class.active-slide]="$index === currentSlideIndex()" (templateLoaded)="onTemplateLoaded($event)"
+                    (templateError)="onTemplateError($event)" (componentReady)="onComponentReady($event)" />
+            </div>
+            }
+        </owl-carousel-o>
         }
 
         <!-- Product Slides -->
