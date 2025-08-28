@@ -2,7 +2,8 @@
 // Използва TV-специфични переменни от _variables.scss
 
 // Import TV variables
-@import '../../../../../assets/styles/variables';
+// @import '../../../../../assets/styles/variables';
+@use '/src/assets/styles/variables';
 
 // TV Performance Mixins
 @mixin tv-safe-text {

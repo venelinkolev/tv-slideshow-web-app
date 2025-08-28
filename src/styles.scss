@@ -1,6 +1,7 @@
 // Import TV-специфични променливи и миксини
-@import 'assets/styles/variables';
-@import 'assets/styles/tv-utils';
+
+@use '../src/assets/styles/tv-utils';
+@use '../src/assets/styles/variables';
 
 /* Reset и основни стилове оптимизирани за TV визуализация */
 * {

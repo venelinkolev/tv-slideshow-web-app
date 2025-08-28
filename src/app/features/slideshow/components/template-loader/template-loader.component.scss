@@ -1,5 +1,5 @@
-@import '../../../../../assets/styles/variables';
-@import '../../../../../assets/styles/tv-utils';
+@use '../../../../../../src/assets/styles/variables';
+@use '../../../../../../src/assets/styles/tv-utils';
 
 // Main component container (root element with dynamic classes)
 .template-loader {

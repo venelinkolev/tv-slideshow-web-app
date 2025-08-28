@@ -36,7 +36,7 @@ import { NavigationControlsComponent } from '../navigation-controls';
 import { LoadingStateComponent } from '../loading-state';
 import { ErrorStateComponent } from '../error-state';
 import { TemplateLoaderComponent } from '../template-loader';
-import { EmblaTestComponent } from '../embla-test/embla-test.component';
+// import { EmblaTestComponent } from '../embla-test/embla-test.component';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -56,7 +56,11 @@ import { EmblaTestComponent } from '../embla-test/embla-test.component';
     standalone: true,
     imports: [CommonModule,
         // ProductSlideComponent, 
-        SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent, TemplateLoaderComponent, CarouselModule, EmblaTestComponent],
+        SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent,
+        // TemplateLoaderComponent, 
+        CarouselModule,
+        // EmblaTestComponent
+    ],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
