@@ -1,5 +1,5 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { Injectable, inject, signal, computed, DOCUMENT } from '@angular/core';
+
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 

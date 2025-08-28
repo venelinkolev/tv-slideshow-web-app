@@ -1,5 +1,5 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { Injectable, inject, signal, computed, DOCUMENT } from '@angular/core';
+
 import { Observable, BehaviorSubject, interval, fromEvent, combineLatest } from 'rxjs';
 import { map, startWith, shareReplay, tap, filter, switchMap } from 'rxjs/operators';
 

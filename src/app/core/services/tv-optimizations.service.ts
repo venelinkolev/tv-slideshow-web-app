@@ -1,6 +1,6 @@
 // src/app/core/services/tv-optimizations.service.ts
-import { Injectable, inject, PLATFORM_ID } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { Injectable, inject, PLATFORM_ID, DOCUMENT } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { TvUtils } from '@features/slideshow/utils/tv-utils';
 import { PerformanceMonitorService } from './performance-monitor.service';
 

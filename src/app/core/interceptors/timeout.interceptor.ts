@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, DOCUMENT } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
-import { DOCUMENT } from '@angular/common';
+
 import { Observable } from 'rxjs';
 import { timeout, catchError, tap, finalize } from 'rxjs/operators';
 
