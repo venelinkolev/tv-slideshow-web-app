@@ -1,0 +1,54 @@
+.embla-test-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 3px solid #007bff;
+  background: #f8f9fa;
+}
+
+.embla {
+  overflow: hidden;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  background: white;
+}
+
+.embla__container {
+  display: flex;
+}
+
+.embla__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+}
+
+.embla__slide:nth-child(1) {
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+}
+
+.embla__slide:nth-child(2) {
+  background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+}
+
+.embla__slide:nth-child(3) {
+  background: linear-gradient(45deg, #45b7d1, #96ceb4);
+}
+
+.embla__slide__content {
+  text-align: center;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  
+  h3 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    font-size: 1.2rem;
+  }
+}

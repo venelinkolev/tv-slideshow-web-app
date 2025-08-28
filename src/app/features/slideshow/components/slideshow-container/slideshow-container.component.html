@@ -43,15 +43,20 @@
 
     <!-- Main Slideshow Content -->
     <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
-
+        <!-- 🧪 EMBLA CAROUSEL TEST -->
+        <div style="position: absolute; top: 50px; left: 50%; transform: translateX(-50%); 
+                z-index: 8888; background: white; padding: 20px; border-radius: 10px; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <app-embla-test></app-embla-test>
+        </div>
         <!-- NgxOwlCarousel Integration - ПОПРАВЕНА ВЕРСИЯ -->
-        @if (config(); as currentConfig) {
+        <!-- @if (config(); as currentConfig) {
         <owl-carousel-o #owlCarousel [options]="carouselOptions()" class="tv-slideshow-carousel"
             [class.performance-low]="performanceLevel() === 1" [class.performance-basic]="performanceLevel() === 2"
             [class.performance-standard]="performanceLevel() === 3" (changed)="onCarouselChange($event)"
             (initialized)="onCarouselInitialized($event)" (translate)="onCarouselTranslate($event)" role="region"
             [attr.aria-label]="'Продуктов слайдшоу с ' + products().length + ' елемента'">
-            <!-- ПОПРАВЕН: Carousel Slides - правилен Angular 18 @for syntax -->
+
             @for (product of products(); track product.id) {
             <div class="carousel-slide-item">
                 <app-template-loader [product]="product"
@@ -63,7 +68,7 @@
             </div>
             }
         </owl-carousel-o>
-        }
+        } -->
 
         <!-- Product Slides -->
         <!-- @if (currentProduct() && config(); as currentConfig) {
