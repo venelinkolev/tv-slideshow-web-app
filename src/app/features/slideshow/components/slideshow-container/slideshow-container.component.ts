@@ -16,7 +16,6 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom } from 'rxjs';
 import { takeUntil, startWith, debounceTime, filter } from 'rxjs/operators';
-import { CarouselModule, OwlOptions, CarouselComponent } from 'ngx-owl-carousel-o';
 
 import { Product } from '@core/models/product.interface';
 import { ProductTemplate } from '@core/models/template.interface';
@@ -58,7 +57,6 @@ import { TemplateLoaderComponent } from '../template-loader';
         // ProductSlideComponent, 
         SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent,
         // TemplateLoaderComponent, 
-        CarouselModule,
         // EmblaTestComponent
     ],
     templateUrl: './slideshow-container.component.html',
@@ -76,8 +74,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     private readonly elementRef = inject(ElementRef);
     private readonly renderer = inject(Renderer2);
     private readonly platformId = inject(PLATFORM_ID);
-
-    @ViewChild('owlCarousel', { static: false }) owlCarousel?: CarouselComponent;
 
     // Basic reactive state signals
     protected readonly isLoading = signal<boolean>(true);
@@ -104,54 +100,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     protected readonly memoryUsage = signal<number>(0);
     protected readonly currentFPS = signal<number>(0);
     protected readonly sleepPreventionActive = signal<boolean>(false);
-
-    // Carousel state
-    private readonly carouselInitialized = signal<boolean>(false);
-    readonly isCarouselReady = this.carouselInitialized.asReadonly();
-
-    // Carousel configuration
-    readonly carouselOptions = computed<OwlOptions>(() => {
-        const config = this.configService.config();
-        const performanceLevel = this.performanceLevel();
-
-        return {
-            items: 1,
-            dots: false,
-            nav: false,
-            loop: true,
-            center: false,
-            mouseDrag: false,
-            touchDrag: false,
-            pullDrag: false,
-            freeDrag: false,
-            margin: 0,
-            stagePadding: 0,
-            autoWidth: false,
-            startPosition: 0,
-            rtl: false,
-            smartSpeed: performanceLevel >= 2 ? 600 : 300,
-
-            // Auto-play settings
-            autoplay: true,
-            autoplayTimeout: config.timing?.baseSlideDuration || 20000,
-            autoplayHoverPause: false,
-            autoplaySpeed: performanceLevel >= 2 ? 800 : 400,
-
-            // Responsive settings
-            responsive: {
-                0: { items: 1 },
-                768: { items: 1 },
-                1024: { items: 1 },
-                1366: { items: 1 },
-                1920: { items: 1 },
-                3840: { items: 1 }
-            },
-
-            slideBy: 1,
-            lazyLoad: performanceLevel <= 1,
-            lazyLoadEager: performanceLevel >= 3 ? 2 : 1
-        };
-    });
 
     // Computed values for TV optimizations
     protected readonly tvSettings = computed(() => this.config()?.tvOptimizations);
@@ -672,33 +620,10 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle carousel initialization
-     */
-    onCarouselInitialized(event: any): void {
-        console.log('SlideShowContainerComponent.onCarouselInitialized:', event);
-        this.carouselInitialized.set(true);
-        console.log('Carousel initialized successfully');
-    }
-
-    /**
-     * Handle carousel translation
-     */
-    onCarouselTranslate(event: any): void {
-        if (event && typeof event.startPosition === 'number') {
-            console.log(`Carousel translating to slide: ${event.startPosition}`);
-        }
-    }
-
-    /**
      * TV Remote Control Actions
      */
     public nextSlide(): void {
         console.log('SlideShowContainerComponent.nextSlide() - Carousel enhanced');
-
-        if (this.owlCarousel && this.isCarouselReady()) {
-            this.owlCarousel.next();
-            return;
-        }
 
         // FALLBACK: existing logic
         const products = this.products();
@@ -712,11 +637,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     public previousSlide(): void {
         console.log('SlideShowContainerComponent.previousSlide() - Carousel enhanced');
 
-        if (this.owlCarousel && this.isCarouselReady()) {
-            this.owlCarousel.prev();
-            return;
-        }
-
         // FALLBACK: existing logic
         const products = this.products();
         if (products.length === 0) return;
@@ -728,16 +648,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
 
     public goToSlide(index: number): void {
         console.log(`SlideShowContainerComponent.goToSlide(${index}) - Carousel enhanced`);
-
-        if (this.owlCarousel && this.isCarouselReady()) {
-            const products = this.products();
-            if (index >= 0 && index < products.length) {
-                this.owlCarousel.to(`slide-${index}`);
-            } else {
-                console.warn(`Invalid slide index: ${index}`);
-            }
-            return;
-        }
 
         // FALLBACK: Direct index set
         this.currentSlideIndex.set(index);
