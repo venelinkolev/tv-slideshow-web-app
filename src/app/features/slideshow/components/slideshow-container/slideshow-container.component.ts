@@ -10,6 +10,7 @@ import {
     HostListener,
     ElementRef,
     ViewChild,
+    AfterViewInit,
     Renderer2,
     PLATFORM_ID
 } from '@angular/core';
@@ -35,7 +36,7 @@ import { NavigationControlsComponent } from '../navigation-controls';
 import { LoadingStateComponent } from '../loading-state';
 import { ErrorStateComponent } from '../error-state';
 import { TemplateLoaderComponent } from '../template-loader';
-import { EmblaTestComponent } from '../embla-test/embla-test.component';
+import { EmblaCarouselDirective, EmblaCarouselType } from 'embla-carousel-angular';
 
 /**
  * Main TV-optimized container component for the slideshow feature.
@@ -55,15 +56,12 @@ import { EmblaTestComponent } from '../embla-test/embla-test.component';
     standalone: true,
     imports: [CommonModule,
         // ProductSlideComponent, 
-        SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent,
-        // TemplateLoaderComponent, 
-        EmblaTestComponent
-    ],
+        SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent, EmblaCarouselDirective, TemplateLoaderComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SlideShowContainerComponent implements OnInit, OnDestroy {
+export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterViewInit {
     // Services injection using Angular 18 inject approach
     private readonly productApiService = inject(ProductApiService);
     private readonly configService = inject(ConfigService);
@@ -90,6 +88,13 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     protected readonly originalError = signal<ApiError | null>(null);
     protected readonly canRetryError = signal<boolean>(true);
     protected readonly isRetrying = signal<boolean>(false);
+
+    @ViewChild(EmblaCarouselDirective, { static: false }) emblaCarouselRef!: EmblaCarouselDirective;
+
+    /**
+    * Embla carousel instance for programmatic control
+    */
+    private emblaCarousel = signal<EmblaCarouselType | null>(null);
 
     // TV-specific reactive state  
     protected readonly performanceLevel = signal<PerformanceLevel>(PerformanceLevel.STANDARD);
@@ -244,6 +249,47 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
         return config?.general?.showProgressIndicators || false;
     });
 
+    /**
+     * TV-optimized Embla carousel options
+     * Computed signal that reacts to config changes
+     */
+    readonly emblaOptions = computed(() => {
+        const config = this.config();
+        const performanceLevel = this.performanceLevel();
+
+        if (!config) {
+            return this.getDefaultEmblaOptions();
+        }
+
+        return {
+            // Basic carousel configuration
+            loop: true,
+            align: 'center' as const,
+            skipSnaps: false,
+            containScroll: 'trimSnaps' as const,
+
+            // TV-optimized drag settings (disabled for programmatic control only)
+            dragFree: false,
+            draggable: false,
+
+            // Performance optimizations based on TV capabilities
+            ...(performanceLevel && performanceLevel <= 2 ? {
+                // Low performance TV settings
+                duration: 50, // Faster transitions for weak hardware
+                watchDrag: false,
+                watchResize: false,
+            } : {
+                // Standard performance settings  
+                duration: 30,
+                watchDrag: false,
+                watchResize: true,
+            }),
+
+            // Auto-play settings (handled by our custom logic)
+            startIndex: 0,
+        };
+    });
+
     ngOnInit(): void {
         console.log('SlideShowContainerComponent: Initializing with TV optimizations');
 
@@ -266,6 +312,99 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
 
         // TV-specific cleanup
         this.cleanupTvOptimizations();
+    }
+
+    /**
+ * Initialize Embla carousel after view init
+ */
+    ngAfterViewInit(): void {
+        // Initialize Embla carousel with delay to ensure DOM is ready
+        setTimeout(() => {
+            this.initializeEmblaCarousel();
+        }, 100);
+    }
+
+    /**
+ * Initialize Embla carousel instance
+ */
+    private initializeEmblaCarousel(): void {
+        if (!this.emblaCarouselRef) {
+            console.warn('Embla carousel ref not available');
+            return;
+        }
+
+        // Get carousel instance from directive
+        const carouselInstance = this.emblaCarouselRef.emblaApi;
+
+        if (carouselInstance) {
+            console.log('SlideShowContainerComponent: Embla carousel initialized');
+            this.emblaCarousel.set(carouselInstance);
+            this.setupEmblaEventListeners(carouselInstance);
+
+            // Set initial slide position
+            const currentIndex = this.currentSlideIndex();
+            if (currentIndex > 0) {
+                carouselInstance.scrollTo(currentIndex, false); // Jump without animation
+            }
+        } else {
+            console.warn('Failed to get Embla carousel instance');
+        }
+    }
+
+    /**
+     * Setup Embla carousel event listeners for TV optimization
+     */
+    private setupEmblaEventListeners(emblaCarousel: EmblaCarouselType): void {
+        // Listen for slide changes
+        emblaCarousel.on('select', () => {
+            const selectedIndex = emblaCarousel.selectedScrollSnap();
+            console.log(`Embla carousel selected slide: ${selectedIndex}`);
+
+            // Sync with our internal state
+            if (selectedIndex !== this.currentSlideIndex()) {
+                this.currentSlideIndex.set(selectedIndex);
+            }
+        });
+
+        // Listen for settle events (when transition completes)
+        emblaCarousel.on('settle', () => {
+            console.log('Embla carousel transition settled');
+
+            // Performance monitoring: track transition time
+            if (this.performanceMonitor) {
+                const measurementEnd = this.performanceMonitor.startApiMeasurement('carousel_transition');
+                measurementEnd(); // End measurement immediately for now
+            }
+        });
+
+        // Listen for resize events (TV resolution changes)
+        emblaCarousel.on('resize', () => {
+            console.log('Embla carousel resized - TV resolution changed');
+
+            // Re-align carousel after resolution change
+            emblaCarousel.reInit();
+        });
+
+        // Listen for init event
+        emblaCarousel.on('init', () => {
+            console.log('Embla carousel fully initialized');
+        });
+    }
+
+    /**
+     * Get default Embla options for fallback scenarios
+     */
+    private getDefaultEmblaOptions() {
+        return {
+            loop: true,
+            align: 'center' as const,
+            dragFree: false,
+            draggable: false,
+            duration: 30,
+            skipSnaps: false,
+            containScroll: 'trimSnaps' as const,
+            startIndex: 0,
+        };
     }
 
     /**
@@ -622,36 +761,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
     /**
      * TV Remote Control Actions
      */
-    public nextSlide(): void {
-        console.log('SlideShowContainerComponent.nextSlide() - Carousel enhanced');
-
-        // FALLBACK: existing logic
-        const products = this.products();
-        if (products.length === 0) return;
-
-        const currentIndex = this.currentSlideIndex();
-        const nextIndex = (currentIndex + 1) % products.length;
-        this.currentSlideIndex.set(nextIndex);
-    }
-
-    public previousSlide(): void {
-        console.log('SlideShowContainerComponent.previousSlide() - Carousel enhanced');
-
-        // FALLBACK: existing logic
-        const products = this.products();
-        if (products.length === 0) return;
-
-        const currentIndex = this.currentSlideIndex();
-        const prevIndex = currentIndex === 0 ? products.length - 1 : currentIndex - 1;
-        this.currentSlideIndex.set(prevIndex);
-    }
-
-    public goToSlide(index: number): void {
-        console.log(`SlideShowContainerComponent.goToSlide(${index}) - Carousel enhanced`);
-
-        // FALLBACK: Direct index set
-        this.currentSlideIndex.set(index);
-    }
 
     public toggleAutoPlay(): void {
         const newState = !this.isAutoPlaying();
@@ -667,6 +776,129 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy {
 
     public requestFullscreen(): void {
         this.tvOptimizations.requestFullscreen();
+    }
+
+    // =====================================
+    // EMBLA CAROUSEL EVENT HANDLERS
+    // =====================================
+
+    /**
+     * Handle Embla carousel initialization
+     * Called when carousel is ready
+     */
+    onEmblaCarouselInit(emblaCarousel: EmblaCarouselType): void {
+        console.log('SlideShowContainerComponent.onEmblaCarouselInit() - Embla carousel initialized');
+
+        this.emblaCarousel.set(emblaCarousel);
+
+        // Setup carousel event listeners
+        this.setupEmblaEventListeners(emblaCarousel);
+
+        // Initialize carousel position
+        const currentIndex = this.currentSlideIndex();
+        if (currentIndex > 0) {
+            emblaCarousel.scrollTo(currentIndex, false); // Jump without animation
+        }
+    }
+
+
+    // =====================================
+    // EMBLA CAROUSEL NAVIGATION METHODS
+    // =====================================
+
+    /**
+     * Navigate to next slide using Embla carousel
+     * Enhanced version of existing nextSlide() method
+     */
+    nextSlide(): void {
+        console.log('SlideShowContainerComponent.nextSlide() - Using Embla carousel navigation');
+
+        const carousel = this.emblaCarousel();
+        const products = this.products();
+
+        if (!carousel || products.length === 0) {
+            console.warn('Embla carousel not ready or no products available - using fallback');
+            this.fallbackNextSlide();
+            return;
+        }
+
+        // Use Embla's scrollNext for smooth transition
+        carousel.scrollNext();
+
+        // Note: currentSlideIndex will be updated automatically via select event
+    }
+
+    /**
+     * Navigate to previous slide using Embla carousel
+     * Enhanced version of existing previousSlide() method
+     */
+    previousSlide(): void {
+        console.log('SlideShowContainerComponent.previousSlide() - Using Embla carousel navigation');
+
+        const carousel = this.emblaCarousel();
+        const products = this.products();
+
+        if (!carousel || products.length === 0) {
+            console.warn('Embla carousel not ready or no products available - using fallback');
+            this.fallbackPreviousSlide();
+            return;
+        }
+
+        // Use Embla's scrollPrev for smooth transition
+        carousel.scrollPrev();
+
+        // Note: currentSlideIndex will be updated automatically via select event
+    }
+
+    /**
+     * Navigate to specific slide using Embla carousel
+     * Enhanced method for direct navigation
+     */
+    goToSlide(targetIndex: number, smooth: boolean = true): void {
+        console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, ${smooth}) - Using Embla carousel`);
+
+        const carousel = this.emblaCarousel();
+        const products = this.products();
+
+        if (!carousel || products.length === 0) {
+            console.warn('Embla carousel not ready or no products available - using fallback');
+            this.currentSlideIndex.set(Math.max(0, Math.min(targetIndex, products.length - 1)));
+            return;
+        }
+
+        // Validate target index
+        const validIndex = Math.max(0, Math.min(targetIndex, products.length - 1));
+
+        // Use Embla's scrollTo with animation control
+        carousel.scrollTo(validIndex, !smooth);
+    }
+
+    // =====================================
+    // FALLBACK NAVIGATION METHODS
+    // =====================================
+
+    /**
+     * Fallback next slide method when Embla is not ready
+     */
+    private fallbackNextSlide(): void {
+        const products = this.products();
+        if (products.length === 0) return;
+
+        const currentIndex = this.currentSlideIndex();
+        const nextIndex = (currentIndex + 1) % products.length;
+        this.currentSlideIndex.set(nextIndex);
+    }
+
+    /**
+     * Fallback previous slide method when Embla is not ready
+     */
+    private fallbackPreviousSlide(): void {
+        const products = this.products();
+        if (products.length === 0) return;
+
+        const currentIndex = this.currentSlideIndex();
+        const prevIndex = currentIndex === 0 ? products.length - 1 : currentIndex - 1;
+        this.currentSlideIndex.set(prevIndex);
     }
 
     /**

@@ -680,6 +680,120 @@
   }
 }
 
+// =====================================
+// EMBLA CAROUSEL TV-OPTIMIZED STYLES
+// =====================================
+
+.embla-carousel-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  
+  &.tv-optimized {
+    // TV-specific optimizations
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0); // Hardware acceleration
+  }
+  
+  &.low-performance {
+    // Reduced animations for weak TV hardware
+    * {
+      animation-duration: 0.2s !important;
+      transition-duration: 0.2s !important;
+    }
+  }
+}
+
+.embla {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  
+  &__container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    touch-action: none; // Disable touch for TV environment
+  }
+  
+  &__slide {
+    flex: 0 0 100%;
+    min-width: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    
+    // TV-safe styling
+    overflow: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    
+    &--active {
+      z-index: 2;
+      
+      // Enhanced focus for active slide
+      app-template-loader {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    // Non-active slides styling
+    app-template-loader {
+      width: 100%;
+      height: 100%;
+      transform: scale(0.98);
+      opacity: 0.95;
+      transition: all 0.3s ease-in-out;
+    }
+  }
+}
+
+// TV Resolution optimizations
+@media (min-width: 1920px) {
+  .embla-carousel-wrapper {
+    &.tv-optimized .embla__slide {
+      // Higher resolution TV optimizations
+      font-size: 1.1em;
+    }
+  }
+}
+
+@media (min-width: 3840px) {
+  .embla-carousel-wrapper {
+    &.tv-optimized .embla__slide {
+      // 4K TV optimizations
+      font-size: 1.3em;
+    }
+  }
+}
+
+// Performance optimizations for specific TV platforms
+.slideshow-container.tv-device {
+  .embla-carousel-wrapper {
+    // WebOS and Tizen optimizations
+    image-rendering: optimizeSpeed;
+    image-rendering: -webkit-optimize-contrast;
+    
+    &.low-performance {
+      // Extreme performance mode for old TVs
+      .embla__slide {
+        transform: none !important;
+        transition: none !important;
+        
+        app-template-loader {
+          transform: none !important;
+        }
+      }
+    }
+  }
+}
+
 // Accessibility
 .sr-only {
   position: absolute !important;

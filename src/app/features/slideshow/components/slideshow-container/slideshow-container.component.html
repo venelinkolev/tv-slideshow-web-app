@@ -10,16 +10,6 @@
         [performanceLevel]="performanceLevel()" [enableDetailedMessages]="enableDetailedLoadingMessages()">
     </app-loading-state>
 
-    <!-- Test Loading State с TV-подходящ дизайн -->
-    <!-- <div class="loading-overlay" *ngIf="isLoading()">
-        <div class="loading-content">
-            <div class="loading-spinner" [class.animations-disabled]="!animationsEnabled()">
-            </div>
-            <h2 class="loading-text">Зареждане на продукти...</h2>
-            <p class="loading-subtext">Моля изчакайте</p>
-        </div>
-    </div> -->
-
     <!-- ERROR STATE COMPONENT -->
     @if (hasError()) {
     <app-error-state [hasError]="hasError()" [errorMessage]="errorMessage()" [errorCode]="errorCode()"
@@ -29,94 +19,37 @@
         (toggleDetails)="onErrorDetailsToggle($event)">
     </app-error-state>
     }
-    <!-- Error State с възможност за retry -->
-    <!-- <div class="error-overlay" *ngIf="hasError()">
-        <div class="error-content">
-            <div class="error-icon">⚠️</div>
-            <h2 class="error-title">Възникна грешка</h2>
-            <p class="error-message">{{ errorMessage() }}</p>
-            <button class="retry-button tv-button" (click)="loadProducts()" [attr.aria-label]="'Опитай отново'">
-                Опитай отново
-            </button>
-        </div>
-    </div> -->
 
     <!-- Main Slideshow Content -->
-    <div class="slideshow-content" *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
-        <!-- 🧪 EMBLA CAROUSEL TEST -->
-        <div style="position: absolute; top: 50px; left: 50%; transform: translateX(-50%); 
-                z-index: 8888; background: white; padding: 20px; border-radius: 10px; 
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-            <app-embla-test />
-        </div>
-        <!-- NgxOwlCarousel Integration - ПОПРАВЕНА ВЕРСИЯ -->
-        <!-- @if (config(); as currentConfig) {
-        <owl-carousel-o #owlCarousel [options]="carouselOptions()" class="tv-slideshow-carousel"
-            [class.performance-low]="performanceLevel() === 1" [class.performance-basic]="performanceLevel() === 2"
-            [class.performance-standard]="performanceLevel() === 3" (changed)="onCarouselChange($event)"
-            (initialized)="onCarouselInitialized($event)" (translate)="onCarouselTranslate($event)" role="region"
-            [attr.aria-label]="'Продуктов слайдшоу с ' + products().length + ' елемента'">
+    @if (!isLoading() && !hasError() && products() && products().length > 0) {
+    <div class="slideshow-content">
+        <!-- EMBLA CAROUSEL INTEGRATION - MAIN SLIDESHOW -->
+        <div class="embla-carousel-wrapper" [class.tv-optimized]="isTvDevice()"
+            [class.low-performance]="performanceLevel() != null && performanceLevel() <= 2">
 
-            @for (product of products(); track product.id) {
-            <div class="carousel-slide-item">
-                <app-template-loader [product]="product"
-                    [templateName]="currentConfig?.templates?.selectedTemplateId || 'classic'"
-                    [imageQuality]="currentConfig?.tvOptimizations?.performance?.imagePreloading === 'all' ? 'high' : 'medium'"
-                    [enableAnimations]="currentConfig?.timing?.transitionType !== 'none'" [forceReload]="false"
-                    [class.active-slide]="$index === currentSlideIndex()" (templateLoaded)="onTemplateLoaded($event)"
-                    (templateError)="onTemplateError($event)" (componentReady)="onComponentReady($event)" />
-            </div>
-            }
-        </owl-carousel-o>
-        } -->
+            <div class="embla" #emblaCarousel emblaCarousel [options]="emblaOptions()" role="region"
+                [attr.aria-label]="'Продуктов слайдшоу с ' + products().length + ' слайда'"
+                [attr.aria-live]="isAutoPlaying() ? 'polite' : 'off'">
 
-        <!-- Product Slides -->
-        <!-- @if (currentProduct() && config(); as currentConfig) {
-        <app-product-slide [product]="currentProduct()!"
-            [templateName]="currentConfig?.templates?.selectedTemplateId || 'classic'" [imageQuality]="'medium'"
-            [enableAnimations]="currentConfig?.timing?.transitionType !== 'none'"
-            (slideReady)="handleSlideReady($event)" (imageError)="handleImageError($event)" />
-        } -->
+                <div class="embla__container">
+                    @for (product of products(); track product.id; let i = $index) {
+                    <div class="embla__slide" [class.embla__slide--active]="i === currentSlideIndex()"
+                        [attr.aria-hidden]="i !== currentSlideIndex()">
 
-        <!-- Test Product Slides -->
-        <!-- <div *ngIf="false" class="slides-container">
-            <div class="slide" *ngFor="let product of products(); trackBy: trackByProductId; let i = index"
-                [class.active]="i === currentSlideIndex()"
-                [class.preloaded]="product.imageUrl && preloadedImages.has(product.imageUrl)"
-                [attr.aria-hidden]="i !== currentSlideIndex()" [attr.data-slide-index]="i">
+                        <app-template-loader [product]="product"
+                            [templateName]="config()?.templates?.selectedTemplateId || 'classic'"
+                            [imageQuality]="config()?.tvOptimizations?.performance?.imagePreloading === 'all' ? 'high' : 'medium'"
+                            [enableAnimations]="config()?.timing?.transitionType !== 'none'" [forceReload]="false"
+                            [class.active-slide]="i === currentSlideIndex()" (templateLoaded)="onTemplateLoaded($event)"
+                            (templateError)="onTemplateError($event)" (componentReady)="onComponentReady($event)" />
 
-                <div class="product-content">
-                    <div class="product-image-container">
-                        <img [src]="product.imageUrl" [alt]="product.name" class="product-image"
-                            [class.loading]="product.imageUrl && !preloadedImages.has(product.imageUrl)" loading="lazy"
-                            [attr.aria-label]="'Изображение на ' + product.name">
-
-                        <div class="product-badge" *ngIf="product.badge?.text"
-                            [class]="'badge-' + (product.badge?.color || 'primary')">
-                            {{ product.badge?.text }}
-                        </div>
                     </div>
-
-                    <div class="product-info">
-                        <h1 class="product-name">{{ product.name || 'Unknown Product' }}</h1>
-                        <p class="product-description" *ngIf="product.shortDescription">
-                            {{ product.shortDescription }}
-                        </p>
-
-                        <div class="product-pricing">
-                            <span class="current-price">{{ product.price | currency:'BGN':'symbol':'1.2-2' }}</span>
-                            <span class="original-price"
-                                *ngIf="product.discount?.originalPrice && product.discount?.originalPrice !== product.price">
-                                {{ product.discount?.originalPrice | currency:'BGN':'symbol':'1.2-2' }}
-                            </span>
-                            <span class="discount-badge" *ngIf="product.discount?.percentage">
-                                -{{ product.discount?.percentage }}%
-                            </span>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
-        </div> -->
+
+
+        </div>
 
         <!-- Slide Progress Indicator -->
         @if (config(); as currentConfig) {
@@ -127,74 +60,15 @@
             (progressComplete)="handleProgressComplete($event)" (progressClick)="handleProgressClick($event)" />
         }
 
-        <!-- Test Slide Progress -->
-        <!-- <div class="slide-progress" *ngIf="products() && products().length > 1"
-            [attr.aria-label]="'Слайд ' + (currentSlideIndex() + 1) + ' от ' + products().length">
-
-            <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="progress() || 0"
-                    [class.animations-disabled]="!animationsEnabled()">
-                </div>
-            </div>
-
-            <div class="slide-counter">
-                <span class="current">{{ (currentSlideIndex() || 0) + 1 }}</span>
-                <span class="separator">/</span>
-                <span class="total">{{ products().length || 0 }}</span>
-            </div>
-        </div> -->
-
         <!-- Navigation Controls (скрити по подразбиране, показват се при remote control) -->
         <app-navigation-controls [isAutoPlaying]="isAutoPlaying()" [remoteControlEnabled]="remoteControlEnabled()"
             [hasProducts]="hasProducts()" [productsCount]="products().length" [showHelp]="false" [autoHideDelay]="5000"
             (nextSlide)="nextSlide()" (previousSlide)="previousSlide()" (toggleAutoPlay)="toggleAutoPlay()"
             (requestFullscreen)="requestFullscreen()" (helpToggle)="onHelpToggle($event)">
         </app-navigation-controls>
-
-        <!-- Test Navigation Control -->
-        <!-- <div class="navigation-controls" *ngIf="remoteControlEnabled()" [class.visible]="!isAutoPlaying()">
-
-            <button class="nav-button prev-button tv-button" (click)="previousSlide()"
-                [attr.aria-label]="'Предишен слайд'" [disabled]="!products() || products().length <= 1">
-                ←
-            </button>
-
-            <button class="nav-button play-pause-button tv-button" (click)="toggleAutoPlay()"
-                [attr.aria-label]="isAutoPlaying() ? 'Пауза' : 'Възпроизвеждане'">
-                {{ isAutoPlaying() ? '⏸️' : '▶️' }}
-            </button>
-
-            <button class="nav-button next-button tv-button" (click)="nextSlide()" [attr.aria-label]="'Следващ слайд'"
-                [disabled]="!products() || products().length <= 1">
-                →
-            </button>
-
-            <button class="nav-button fullscreen-button tv-button" (click)="requestFullscreen()"
-                [attr.aria-label]="'Цял екран'">
-                ⛶
-            </button>
-        </div> -->
-
-        <!-- Remote Control Help (показва се временно при натискане на клавиш) -->
-        <!-- <div class="remote-help" *ngIf="remoteControlEnabled()" [class.visible]="false">
-            <h3>Управление с дистанционно</h3>
-            <div class="help-items">
-                <div class="help-item">
-                    <span class="key">← →</span>
-                    <span class="action">Предишен/Следващ слайд</span>
-                </div>
-                <div class="help-item">
-                    <span class="key">Space</span>
-                    <span class="action">Пауза/Възпроизвеждане</span>
-                </div>
-                <div class="help-item">
-                    <span class="key">Home</span>
-                    <span class="action">Рестарт</span>
-                </div>
-            </div>
-        </div> -->
     </div>
 
+    }
     <!-- Empty State -->
     <div class="empty-state" *ngIf="!isLoading() && !hasError() && (!products() || products().length === 0)">
         <div class="empty-content">
@@ -248,10 +122,12 @@
 
     <!-- Accessibility Announcements -->
     <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        <span *ngIf="isLoading()">Зареждане на продукти</span>
-        <span *ngIf="hasError()">Възникна грешка при зареждането</span>
-        <span *ngIf="!isLoading() && !hasError() && products() && products().length > 0">
-            Показване на {{ products().length }} продукта
-        </span>
+        @if (isLoading()) {
+        <span>Зареждане на продукти</span>
+        } @else if (hasError()) {
+        <span>Възникна грешка при зареждането</span>
+        }@else if (!isLoading() && !hasError() && products() && products().length > 0) {
+        <span>Показване на {{ products().length }} продукта</span>
+        }
     </div>
 </div>
