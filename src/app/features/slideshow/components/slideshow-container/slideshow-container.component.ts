@@ -880,24 +880,31 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Enhanced method for direct navigation
      */
     goToSlide(targetIndex: number, smooth: boolean = true): void {
-        console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, ${smooth}) - Using Embla carousel`);
+        console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, ${smooth}) - Direct navigation`);
 
         const carousel = this.emblaCarousel();
         const products = this.products();
 
-        if (!carousel || products.length === 0) {
-            console.warn('Embla carousel not ready or no products available - using fallback');
-            this.currentSlideIndex.set(Math.max(0, Math.min(targetIndex, products.length - 1)));
+        if (products.length === 0) {
+            console.warn('No products available for direct navigation');
             return;
         }
 
         // Validate target index
         const validIndex = Math.max(0, Math.min(targetIndex, products.length - 1));
 
-        // Use Embla's scrollTo with animation control
-        carousel.scrollTo(validIndex, !smooth);
-    }
+        if (!carousel) {
+            console.warn('Embla carousel not ready - using fallback for direct navigation');
+            this.currentSlideIndex.set(validIndex);
+            return;
+        }
 
+        // Use Embla's scrollTo - второто bool parameter е immediate (true = no animation)
+        console.log(`Using Embla scrollTo(${validIndex}, ${!smooth})`);
+        carousel.scrollTo(validIndex, !smooth);
+
+        // NOTE: currentSlideIndex се обновява автоматично от select event
+    }
     // =====================================
     // FALLBACK NAVIGATION METHODS
     // =====================================
@@ -1054,15 +1061,20 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Навигира директно към кликнатия slide
      */
     handleProgressClick(event: { targetIndex: number; percentage: number }): void {
-        console.log('SlideShowContainerComponent.handleProgressClick() - Manual navigation', event);
+        console.log('SlideShowContainerComponent.handleProgressClick() - Manual progress navigation', event);
 
         const products = this.products();
         const targetIndex = Math.max(0, Math.min(event.targetIndex, products.length - 1));
 
-        // Навигирай към target slide
-        this.currentSlideIndex.set(targetIndex);
+        if (products.length === 0) {
+            console.warn('No products available for progress navigation');
+            return;
+        }
 
-        console.log(`Manually navigated to slide ${targetIndex + 1}/${products.length}`);
+        // Use goToSlide method which handles Embla carousel properly
+        this.goToSlide(targetIndex, true);
+
+        console.log(`Progress navigation to slide ${targetIndex + 1}/${products.length}`);
     }
 
     // Handle help toggle from navigation controls
