@@ -267,17 +267,22 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     private resetAutoHideTimer(): void {
         this.clearAutoHideTimer();
 
-        // Only start auto-hide if controls are visible and auto-playing
-        if (this.isVisible() && this.isAutoPlaying()) {
+        // Start auto-hide timer если controls are visible (независимо от autoPlaying състоянието)
+        if (this.isVisible()) {
+            console.log(`NavigationControlsComponent: Starting auto-hide timer (${this.autoHideDelay()}ms)`);
+
             this.autoHideTimer = window.setTimeout(() => {
                 // Double-check conditions before hiding
-                if (this.isVisible() && this.isAutoPlaying() && !this.isHovered()) {
+                if (this.isVisible() && !this.isHovered() && !this.isHelpVisible()) {
                     console.log('NavigationControlsComponent: Auto-hide timer expired, hiding controls');
                     this.isVisibleSignal.set(false);
                 } else {
                     console.log('NavigationControlsComponent: Auto-hide timer expired but conditions changed, keeping visible');
+                    console.log(`State: visible=${this.isVisible()}, hovered=${this.isHovered()}, help=${this.isHelpVisible()}`);
                 }
             }, this.autoHideDelay());
+        } else {
+            console.log('NavigationControlsComponent: Controls not visible, skipping auto-hide timer');
         }
     }
 
