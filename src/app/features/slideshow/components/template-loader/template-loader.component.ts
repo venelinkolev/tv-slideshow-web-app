@@ -85,6 +85,7 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
     private readonly destroy$ = new Subject<void>();
     private currentComponentRef: ComponentRef<any> | null = null;
     private loadStartTime: number = 0;
+    private isViewInitialized = false;
 
     // ✅ Private state signals
     private readonly isLoadingSignal = signal<boolean>(false);
@@ -171,12 +172,18 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
 
         console.log(`TemplateLoaderComponent: Template change detected - ${templateName}`, {
             productId: product.id,
-            forceReload
+            forceReload,
+            viewInitialized: this.isViewInitialized
         });
 
         // Use untracked за да не влизаме в infinite loop
         untracked(() => {
-            this.loadTemplate(templateName, product);
+            // ✅ FIX: Зарежда template САМО ако ViewContainerRef е готов
+            if (this.isViewInitialized) {
+                this.loadTemplate(templateName, product);
+            } else {
+                console.log('TemplateLoaderComponent: View not yet initialized, deferring template load');
+            }
         });
     });
 
@@ -204,10 +211,20 @@ export class TemplateLoaderComponent implements OnInit, OnDestroy, AfterViewInit
 
         console.log('TemplateLoaderComponent: ViewContainerRef successfully initialized');
 
-        // Load initial template
+        // ✅ FIX: Mark view as initialized
+        this.isViewInitialized = true;
+
+        // Load initial template (effect може да е пропуснал loading заради timing)
         const initialTemplate = this.templateName();
         const initialProduct = this.product();
-        this.loadTemplate(initialTemplate, initialProduct);
+
+        // Ако template не е зареден, зареди го сега
+        if (!this.currentTemplate() || this.hasError()) {
+            console.log('TemplateLoaderComponent: Loading initial template after view init');
+            this.loadTemplate(initialTemplate, initialProduct);
+        } else {
+            console.log('TemplateLoaderComponent: Template already loaded, skipping initial load');
+        }
     }
 
     ngOnDestroy(): void {
