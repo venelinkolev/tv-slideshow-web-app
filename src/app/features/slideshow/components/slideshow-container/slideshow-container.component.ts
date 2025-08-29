@@ -358,10 +358,13 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         // Listen for slide changes
         emblaCarousel.on('select', () => {
             const selectedIndex = emblaCarousel.selectedScrollSnap();
-            console.log(`Embla carousel selected slide: ${selectedIndex}`);
+            const currentIndex = this.currentSlideIndex();
 
-            // Sync with our internal state
-            if (selectedIndex !== this.currentSlideIndex()) {
+            console.log(`Embla carousel select event: ${selectedIndex} (current: ${currentIndex})`);
+
+            // Sync with our internal state САМО ако има реална промяна
+            if (selectedIndex !== currentIndex) {
+                console.log(`Updating currentSlideIndex: ${currentIndex} -> ${selectedIndex}`);
                 this.currentSlideIndex.set(selectedIndex);
             }
         });
@@ -526,14 +529,14 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         console.log('SlideShowContainerComponent: Setting up TV remote control listeners');
 
         // Remote control navigation
-        fromEvent<KeyboardEvent>(document, 'keydown')
-            .pipe(
-                takeUntil(this.destroy$),
-                filter(event => this.isRemoteControlKey(event.key))
-            )
-            .subscribe(event => {
-                this.handleRemoteControlInput(event);
-            });
+        // fromEvent<KeyboardEvent>(document, 'keydown')
+        //     .pipe(
+        //         takeUntil(this.destroy$),
+        //         filter(event => this.isRemoteControlKey(event.key))
+        //     )
+        //     .subscribe(event => {
+        //         this.handleRemoteControlInput(event);
+        //     });
 
         // Fullscreen change detection
         fromEvent(document, 'fullscreenchange')
@@ -547,53 +550,53 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Handle remote control input
      */
     @HostListener('document:keydown', ['$event'])
-    handleRemoteControlInput(event: KeyboardEvent): void {
-        if (!this.remoteControlEnabled()) {
-            return;
-        }
+    // handleRemoteControlInput(event: KeyboardEvent): void {
+    //     if (!this.remoteControlEnabled()) {
+    //         return;
+    //     }
 
-        const tvSettings = this.tvSettings();
-        if (!tvSettings?.remoteControl?.keyMappings) {
-            return;
-        }
+    //     const tvSettings = this.tvSettings();
+    //     if (!tvSettings?.remoteControl?.keyMappings) {
+    //         return;
+    //     }
 
-        const { keyMappings } = tvSettings.remoteControl;
-        const key = event.key;
+    //     const { keyMappings } = tvSettings.remoteControl;
+    //     const key = event.key;
 
-        // Prevent default TV browser behavior
-        event.preventDefault();
-        event.stopPropagation();
+    //     // Prevent default TV browser behavior
+    //     event.preventDefault();
+    //     event.stopPropagation();
 
-        if (keyMappings.nextSlide.includes(key)) {
-            this.nextSlide();
-        } else if (keyMappings.previousSlide.includes(key)) {
-            this.previousSlide();
-        } else if (keyMappings.pauseResume.includes(key)) {
-            this.toggleAutoPlay();
-        } else if (keyMappings.restart.includes(key)) {
-            this.restartSlideshow();
-        }
+    //     if (keyMappings.nextSlide.includes(key)) {
+    //         this.nextSlide();
+    //     } else if (keyMappings.previousSlide.includes(key)) {
+    //         this.previousSlide();
+    //     } else if (keyMappings.pauseResume.includes(key)) {
+    //         this.toggleAutoPlay();
+    //     } else if (keyMappings.restart.includes(key)) {
+    //         this.restartSlideshow();
+    //     }
 
-        console.log(`SlideShowContainerComponent: Handled remote control input: ${key}`);
-    }
+    //     console.log(`SlideShowContainerComponent: Handled remote control input: ${key}`);
+    // }
 
     /**
      * Check if key is a remote control key
      */
-    private isRemoteControlKey(key: string): boolean {
-        const tvSettings = this.tvSettings();
-        if (!tvSettings?.remoteControl?.keyMappings) {
-            return false;
-        }
+    // private isRemoteControlKey(key: string): boolean {
+    //     const tvSettings = this.tvSettings();
+    //     if (!tvSettings?.remoteControl?.keyMappings) {
+    //         return false;
+    //     }
 
-        const { keyMappings } = tvSettings.remoteControl;
-        return [
-            ...keyMappings.nextSlide,
-            ...keyMappings.previousSlide,
-            ...keyMappings.pauseResume,
-            ...keyMappings.restart
-        ].includes(key);
-    }
+    //     const { keyMappings } = tvSettings.remoteControl;
+    //     return [
+    //         ...keyMappings.nextSlide,
+    //         ...keyMappings.previousSlide,
+    //         ...keyMappings.pauseResume,
+    //         ...keyMappings.restart
+    //     ].includes(key);
+    // }
 
     /**
      * Apply TV safe area styles
@@ -811,21 +814,32 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Enhanced version of existing nextSlide() method
      */
     nextSlide(): void {
-        console.log('SlideShowContainerComponent.nextSlide() - Using Embla carousel navigation');
+        console.log('SlideShowContainerComponent.nextSlide() - Enhanced Embla navigation');
 
         const carousel = this.emblaCarousel();
         const products = this.products();
 
-        if (!carousel || products.length === 0) {
-            console.warn('Embla carousel not ready or no products available - using fallback');
+        if (products.length === 0) {
+            console.warn('No products available for navigation');
+            return;
+        }
+
+        if (!carousel) {
+            console.warn('Embla carousel not ready - using fallback navigation');
             this.fallbackNextSlide();
             return;
         }
 
-        // Use Embla's scrollNext for smooth transition
-        carousel.scrollNext();
+        // Проверка дали carousel може да навигира
+        if (carousel.canScrollNext()) {
+            console.log('Using Embla scrollNext()');
+            carousel.scrollNext();
+        } else {
+            console.log('Carousel at end - using loop navigation');
+            carousel.scrollTo(0, false); // Jump to beginning
+        }
 
-        // Note: currentSlideIndex will be updated automatically via select event
+        // NOTE: currentSlideIndex се обновява автоматично от select event
     }
 
     /**
@@ -833,21 +847,32 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Enhanced version of existing previousSlide() method
      */
     previousSlide(): void {
-        console.log('SlideShowContainerComponent.previousSlide() - Using Embla carousel navigation');
+        console.log('SlideShowContainerComponent.previousSlide() - Enhanced Embla navigation');
 
         const carousel = this.emblaCarousel();
         const products = this.products();
 
-        if (!carousel || products.length === 0) {
-            console.warn('Embla carousel not ready or no products available - using fallback');
+        if (products.length === 0) {
+            console.warn('No products available for navigation');
+            return;
+        }
+
+        if (!carousel) {
+            console.warn('Embla carousel not ready - using fallback navigation');
             this.fallbackPreviousSlide();
             return;
         }
 
-        // Use Embla's scrollPrev for smooth transition
-        carousel.scrollPrev();
+        // Проверка дали carousel може да навигира
+        if (carousel.canScrollPrev()) {
+            console.log('Using Embla scrollPrev()');
+            carousel.scrollPrev();
+        } else {
+            console.log('Carousel at beginning - using loop navigation');
+            carousel.scrollTo(products.length - 1, false); // Jump to end
+        }
 
-        // Note: currentSlideIndex will be updated automatically via select event
+        // NOTE: currentSlideIndex се обновява автоматично от select event
     }
 
     /**
