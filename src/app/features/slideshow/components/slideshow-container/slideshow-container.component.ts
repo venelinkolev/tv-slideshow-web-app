@@ -12,11 +12,12 @@ import {
     ViewChild,
     AfterViewInit,
     Renderer2,
-    PLATFORM_ID
+    PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom } from 'rxjs';
-import { takeUntil, startWith, debounceTime, filter } from 'rxjs/operators';
+import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom, timer, Subscription } from 'rxjs';
+import { takeUntil, startWith, debounceTime, filter, switchMap, tap, finalize } from 'rxjs/operators';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 import { Product } from '@core/models/product.interface';
 import { ProductTemplate } from '@core/models/template.interface';
@@ -89,6 +90,15 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     protected readonly canRetryError = signal<boolean>(true);
     protected readonly isRetrying = signal<boolean>(false);
 
+    // Auto-rotation timer управление
+    private autoRotationTimer$?: Subscription;
+    private readonly pausedByUser = signal<boolean>(false);
+    private readonly lastUserInteraction = signal<number>(0);
+    private readonly autoRotationEnabled = signal<boolean>(true);
+
+    // Performance tracking за auto-rotation
+    private readonly performanceThrottled = signal<boolean>(false);
+
     @ViewChild(EmblaCarouselDirective, { static: false }) emblaCarouselRef!: EmblaCarouselDirective;
 
     /**
@@ -103,8 +113,56 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     protected readonly currentResolution = signal<TvResolution | null>(null);
     protected readonly isFullscreen = signal<boolean>(false);
     protected readonly memoryUsage = signal<number>(0);
-    protected readonly currentFPS = signal<number>(0);
+    protected readonly currentFPS = signal<number>(60);
     protected readonly sleepPreventionActive = signal<boolean>(false);
+
+    // Timing от конфигурация
+    readonly pauseOnInteraction = computed((): boolean => {
+        const config = this.config();
+        return config?.timing?.pauseOnInteraction === true; // Explicit boolean check
+    });
+
+    readonly resumeDelay = computed((): number => {
+        const config = this.config();
+        return config?.timing?.resumeDelay ?? 3000; // Default fallback
+    });
+
+    readonly slideInterval = computed((): number => {
+        const config = this.config();
+        return config?.timing?.baseSlideDuration ?? 20000; // Default 20 seconds
+    });
+
+    readonly transitionDuration = computed((): number => {
+        const config = this.config();
+        return config?.timing?.transitionDuration ?? 500; // Default 500ms
+    });
+
+    // Performance-aware timing adjustments
+    readonly effectiveSlideInterval = computed((): number => {
+        const baseInterval = this.slideInterval();
+        const fps = this.currentFPS();
+        const performanceLevel = this.performanceLevel();
+
+        // FIX: Explicit null checks for performance level
+        if (performanceLevel !== null && performanceLevel !== undefined) {
+            if (performanceLevel <= 1) {
+                return Math.max(baseInterval * 1.5, 30000); // Minimum 30s for weak TVs
+            } else if (performanceLevel === 2) {
+                return Math.max(baseInterval * 1.2, 25000); // Minimum 25s for basic TVs
+            }
+        }
+
+        // FPS-based adjustments with explicit number checks
+        if (typeof fps === 'number') {
+            if (fps < 20) {
+                return Math.max(baseInterval * 2, 40000); // Double interval for very low FPS
+            } else if (fps < 30) {
+                return Math.max(baseInterval * 1.3, 30000);
+            }
+        }
+
+        return baseInterval;
+    });
 
     // Computed values for TV optimizations
     protected readonly tvSettings = computed(() => this.config()?.tvOptimizations);
@@ -297,6 +355,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             this.initializeTvOptimizations();
             this.initializeComponent();
             this.setupTvEventListeners();
+            this.initializeAutoRotation();
             // Note: startPerformanceMonitoring is called from initializeComponent
         } else {
             console.warn('SlideShowContainerComponent: Not running in browser environment');
@@ -305,6 +364,8 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
 
     ngOnDestroy(): void {
         console.log('SlideShowContainerComponent: Cleaning up TV optimizations');
+
+        this.stopAutoRotation();
 
         // Clean up subscriptions
         this.destroy$.next();
@@ -765,10 +826,22 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * TV Remote Control Actions
      */
 
+    /**
+  * Toggle auto play functionality - enhanced version
+  */
     public toggleAutoPlay(): void {
-        const newState = !this.isAutoPlaying();
+        const newState = !this.autoRotationEnabled();
+        this.autoRotationEnabled.set(newState);
+
+        if (newState) {
+            console.log('Auto-rotation enabled by user');
+            this.startAutoRotation();
+        } else {
+            console.log('Auto-rotation disabled by user');
+            this.stopAutoRotation();
+        }
+
         this.isAutoPlaying.set(newState);
-        console.log(`SlideShowContainerComponent: Auto-play ${newState ? 'enabled' : 'disabled'}`);
     }
 
     public restartSlideshow(): void {
@@ -810,11 +883,14 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     // =====================================
 
     /**
-     * Navigate to next slide using Embla carousel
-     * Enhanced version of existing nextSlide() method
-     */
+   * Navigate to next slide using Embla carousel
+   * Enhanced version with auto-rotation integration
+   */
     nextSlide(): void {
-        console.log('SlideShowContainerComponent.nextSlide() - Enhanced Embla navigation');
+        console.log('SlideShowContainerComponent.nextSlide() - Manual navigation with pause');
+
+        // Pause auto-rotation for manual interaction
+        this.handleUserInteraction();
 
         const carousel = this.emblaCarousel();
         const products = this.products();
@@ -838,16 +914,17 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             console.log('Carousel at end - using loop navigation');
             carousel.scrollTo(0, false); // Jump to beginning
         }
-
-        // NOTE: currentSlideIndex се обновява автоматично от select event
     }
 
     /**
      * Navigate to previous slide using Embla carousel
-     * Enhanced version of existing previousSlide() method
+     * Enhanced version with auto-rotation integration
      */
     previousSlide(): void {
-        console.log('SlideShowContainerComponent.previousSlide() - Enhanced Embla navigation');
+        console.log('SlideShowContainerComponent.previousSlide() - Manual navigation with pause');
+
+        // Pause auto-rotation for manual interaction
+        this.handleUserInteraction();
 
         const carousel = this.emblaCarousel();
         const products = this.products();
@@ -871,8 +948,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             console.log('Carousel at beginning - using loop navigation');
             carousel.scrollTo(products.length - 1, false); // Jump to end
         }
-
-        // NOTE: currentSlideIndex се обновява автоматично от select event
     }
 
     /**
@@ -1255,5 +1330,254 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         console.log('SlideShowContainerComponent.onComponentReady() - Template component ready', event);
 
         // Може да се добави логика за performance tracking тук
+    }
+
+    // =====================================
+    //  AUTO-ROTATION СИСТЕМА
+    // =====================================
+
+    /**
+     * Initialize enhanced auto-rotation system
+     * Integrates with Embla carousel and config reactivity
+     */
+    private initializeAutoRotation(): void {
+        console.log('SlideShowContainerComponent: Initializing enhanced auto-rotation system');
+
+        // Start auto-rotation when products are loaded - FIXED signal to observable conversion
+        combineLatest([
+            toObservable(this.products),
+            toObservable(this.config),
+            toObservable(this.autoRotationEnabled)
+        ]).pipe(
+            takeUntil(this.destroy$),
+            debounceTime(100), // Prevent rapid config changes
+            // Fixed filter typing with explicit type assertion
+            filter(([products, config, enabled]) => {
+                return products.length > 0 &&
+                    config !== null &&
+                    config !== undefined &&
+                    enabled === true;
+            })
+        ).subscribe(([products, config, enabled]) => {
+            console.log('Auto-rotation conditions met - starting rotation');
+            this.restartAutoRotation();
+        });
+
+        // Monitor performance for rotation adjustments
+        this.setupPerformanceMonitoring();
+
+        // Listen for user interactions to pause rotation
+        this.setupInteractionHandlers();
+    }
+    /**
+     * Start auto-rotation timer with current settings
+     */
+    private startAutoRotation(): void {
+        if (this.autoRotationTimer$) {
+            console.log('Auto-rotation already running');
+            return;
+        }
+
+        const interval = this.effectiveSlideInterval();
+        const products = this.products();
+
+        if (products.length <= 1) {
+            console.log('Not enough products for auto-rotation');
+            return;
+        }
+
+        console.log(`Starting auto-rotation with ${interval}ms interval`);
+
+        this.isAutoPlaying.set(true);
+
+        this.autoRotationTimer$ = timer(interval, interval).pipe(
+            takeUntil(this.destroy$),
+            // FIX: Explicit boolean comparisons
+            filter(() => {
+                return this.pausedByUser() === false && this.autoRotationEnabled() === true;
+            }),
+            tap(() => {
+                console.log('Auto-rotation tick - advancing to next slide');
+                this.nextSlideWithRotation();
+            }),
+            // Handle errors gracefully
+            finalize(() => {
+                console.log('Auto-rotation timer finalized');
+            })
+        ).subscribe({
+            error: (error) => {
+                console.error('Auto-rotation timer error:', error);
+                this.handleAutoRotationError(error);
+            }
+        });
+    }
+
+    /**
+     * Stop auto-rotation timer
+     */
+    private stopAutoRotation(): void {
+        if (this.autoRotationTimer$) {
+            console.log('Stopping auto-rotation timer');
+            this.autoRotationTimer$.unsubscribe();
+            this.autoRotationTimer$ = undefined;
+            this.isAutoPlaying.set(false);
+        }
+    }
+
+    /**
+     * Restart auto-rotation with new settings
+     */
+    private restartAutoRotation(): void {
+        console.log('Restarting auto-rotation with updated settings');
+        this.stopAutoRotation();
+
+        // Small delay to ensure clean restart
+        setTimeout(() => {
+            this.startAutoRotation();
+        }, 100);
+    }
+
+    /**
+     * Pause auto-rotation temporarily
+     */
+    public pauseAutoRotation(): void {
+        console.log('Pausing auto-rotation due to user interaction');
+        this.pausedByUser.set(true);
+        this.lastUserInteraction.set(Date.now());
+    }
+
+    /**
+     * Resume auto-rotation after user interaction delay
+     */
+    public resumeAutoRotation(): void {
+        const shouldPause = this.pauseOnInteraction();
+        if (!shouldPause) {
+            console.log('Auto-rotation continues - pause on interaction disabled');
+            return;
+        }
+
+        const resumeDelay = this.resumeDelay();
+        console.log(`Resuming auto-rotation after ${resumeDelay}ms delay`);
+
+        setTimeout(() => {
+            if (!this.pausedByUser()) {
+                console.log('Auto-rotation already resumed');
+                return;
+            }
+
+            this.pausedByUser.set(false);
+            console.log('Auto-rotation resumed');
+        }, resumeDelay);
+    }
+
+    /**
+     * Handle next slide with auto-rotation logic
+     * Enhanced version that works with Embla carousel
+     */
+    private nextSlideWithRotation(): void {
+        const carousel = this.emblaCarousel();
+        const products = this.products();
+
+        if (!carousel || products.length === 0) {
+            console.warn('Cannot advance slide - carousel not ready or no products');
+            return;
+        }
+
+        // Check performance before slide transition
+        const fps = this.currentFPS();
+        if (fps < 15) {
+            console.warn('Performance too low for smooth transition - skipping this cycle');
+            return;
+        }
+
+        // Advance to next slide using Embla
+        if (carousel.canScrollNext()) {
+            carousel.scrollNext();
+        } else {
+            // Loop back to first slide
+            carousel.scrollTo(0);
+        }
+    }
+
+    /**
+     * Setup performance monitoring for rotation adjustments
+     */
+    private setupPerformanceMonitoring(): void {
+        if (!this.performanceMonitor) {
+            return;
+        }
+
+        // Monitor FPS for performance-aware rotation - FIXED typing
+        interval(2000).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(() => {
+            const metrics = this.performanceMonitor.getCurrentMetrics();
+            if (metrics && typeof metrics.fps === 'number') {
+                const fps = metrics.fps;
+                this.currentFPS.set(fps);
+
+                const wasThrottled = this.performanceThrottled();
+                const shouldThrottle = fps < 25;
+
+                // Explicit boolean comparisons
+                if (shouldThrottle === true && wasThrottled === false) {
+                    console.warn(`Performance throttling enabled - FPS: ${fps}`);
+                    this.performanceThrottled.set(true);
+                    this.restartAutoRotation(); // Apply new timing
+                } else if (shouldThrottle === false && wasThrottled === true) {
+                    console.log(`Performance throttling disabled - FPS: ${fps}`);
+                    this.performanceThrottled.set(false);
+                    this.restartAutoRotation(); // Apply new timing
+                }
+            }
+        });
+    }
+    /**
+     * Setup user interaction handlers for pause/resume
+     */
+    private setupInteractionHandlers(): void {
+        // Keyboard interactions - FIXED filter typing
+        fromEvent<KeyboardEvent>(document, 'keydown').pipe(
+            takeUntil(this.destroy$),
+            // FIX: Explicit key checking instead of includes with potentially undefined
+            filter((event: KeyboardEvent) => {
+                const allowedKeys = ['ArrowLeft', 'ArrowRight', 'Space'];
+                return allowedKeys.indexOf(event.code) !== -1;
+            })
+        ).subscribe((event: KeyboardEvent) => {
+            this.handleUserInteraction();
+        });
+
+        // Embla carousel direct interactions (when we add controls later)
+        // This will be expanded in next steps
+    }
+
+    /**
+     * Handle user interaction event
+     */
+    private handleUserInteraction(): void {
+        const shouldPause = this.pauseOnInteraction();
+        // FIX: Explicit boolean check
+        if (shouldPause !== true) {
+            return;
+        }
+
+        this.pauseAutoRotation();
+        this.resumeAutoRotation();
+    }
+
+    /**
+     * Handle auto-rotation errors gracefully
+     */
+    private handleAutoRotationError(error: any): void {
+        console.error('Auto-rotation error:', error);
+        this.autoRotationEnabled.set(false);
+
+        // Try to restart after delay
+        setTimeout(() => {
+            console.log('Attempting to restart auto-rotation after error');
+            this.autoRotationEnabled.set(true);
+            this.startAutoRotation();
+        }, 5000);
     }
 }
