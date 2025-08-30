@@ -15,9 +15,8 @@ import {
     PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom, timer, Subscription } from 'rxjs';
+import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom, timer, Subscription, BehaviorSubject } from 'rxjs';
 import { takeUntil, startWith, debounceTime, filter, switchMap, tap, finalize } from 'rxjs/operators';
-import { toObservable } from '@angular/core/rxjs-interop';
 
 import { Product } from '@core/models/product.interface';
 import { ProductTemplate } from '@core/models/template.interface';
@@ -63,6 +62,11 @@ import { EmblaCarouselDirective, EmblaCarouselType } from 'embla-carousel-angula
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterViewInit {
+
+    // Tracking за auto-rotation status changes
+    private lastAutoRotationStatus: boolean = false;
+    private lastConditionsCheck: { [key: string]: boolean } = {};
+
     // Services injection using Angular 18 inject approach
     private readonly productApiService = inject(ProductApiService);
     private readonly configService = inject(ConfigService);
@@ -383,6 +387,23 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         setTimeout(() => {
             this.initializeEmblaCarousel();
         }, 100);
+
+        if (typeof window !== 'undefined') {
+            (window as any).debugSlideshow = {
+                getStatus: () => this.debugGetAutoRotationStatus(),
+                triggerTick: () => this.debugTriggerAutoRotationTick(),
+                startRotation: () => this.startAutoRotation(),
+                stopRotation: () => this.stopAutoRotation(),
+                restart: () => this.debugRestartAutoRotation(),
+                checkConditions: () => this.shouldAutoRotationBeRunning(),
+                forceStart: () => this.forceStartAutoRotation(), // НОВ МЕТОД
+                clearLogs: () => console.clear() // НОВ МЕТОД
+            };
+            console.log('🧪 Enhanced debug slideshow methods:');
+            console.log('  window.debugSlideshow.forceStart() - Force start rotation');
+            console.log('  window.debugSlideshow.getStatus() - Get detailed status');
+            console.log('  window.debugSlideshow.clearLogs() - Clear console');
+        }
     }
 
     /**
@@ -1341,75 +1362,184 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Integrates with Embla carousel and config reactivity
      */
     private initializeAutoRotation(): void {
-        console.log('SlideShowContainerComponent: Initializing enhanced auto-rotation system');
+        console.log('SlideShowContainerComponent: Initializing enhanced auto-rotation system (RxJS)');
 
-        // Start auto-rotation when products are loaded - FIXED signal to observable conversion
-        combineLatest([
-            toObservable(this.products),
-            toObservable(this.config),
-            toObservable(this.autoRotationEnabled)
-        ]).pipe(
-            takeUntil(this.destroy$),
-            debounceTime(100), // Prevent rapid config changes
-            // Fixed filter typing with explicit type assertion
-            filter(([products, config, enabled]) => {
-                return products.length > 0 &&
-                    config !== null &&
-                    config !== undefined &&
-                    enabled === true;
-            })
-        ).subscribe(([products, config, enabled]) => {
-            console.log('Auto-rotation conditions met - starting rotation');
-            this.restartAutoRotation();
-        });
+        // Simple approach: Start monitoring conditions immediately
+        this.startAutoRotationMonitoring();
 
-        // Monitor performance for rotation adjustments
+        // Monitor performance for rotation adjustments  
         this.setupPerformanceMonitoring();
 
         // Listen for user interactions to pause rotation
         this.setupInteractionHandlers();
+
+        // Start auto-rotation if conditions are met
+        this.checkAndStartAutoRotation();
     }
+
+    /**
+ * Start monitoring auto-rotation conditions
+ */
+    private startAutoRotationMonitoring(): void {
+        console.log('🔍 Starting optimized auto-rotation monitoring');
+
+        // Monitor config changes (reactive)
+        this.configService.config$.pipe(
+            takeUntil(this.destroy$),
+            debounceTime(100)
+        ).subscribe((config) => {
+            console.log('⚙️  Config changed - checking auto-rotation conditions');
+            setTimeout(() => this.checkAndStartAutoRotation(), 50);
+        });
+
+        // Monitor conditions less frequently and only log changes
+        interval(3000).pipe( // Намалих от 1000 на 3000ms
+            takeUntil(this.destroy$)
+        ).subscribe(() => {
+            this.checkAutoRotationStatusChange();
+        });
+    }
+
+    /**
+ * Check auto-rotation status and only log when there are changes
+ */
+    private checkAutoRotationStatusChange(): void {
+        const shouldBeRunning = this.shouldAutoRotationBeRunning();
+        const isCurrentlyRunning = !!this.autoRotationTimer$;
+
+        // Only log if status changed
+        if (shouldBeRunning !== this.lastAutoRotationStatus) {
+            console.log(`🔄 Auto-rotation status changed: ${this.lastAutoRotationStatus} -> ${shouldBeRunning}`);
+            this.lastAutoRotationStatus = shouldBeRunning;
+
+            if (shouldBeRunning && !isCurrentlyRunning) {
+                console.log('▶️  Starting auto-rotation (conditions met)');
+                this.checkAndStartAutoRotation();
+            } else if (!shouldBeRunning && isCurrentlyRunning) {
+                console.log('⏹️  Stopping auto-rotation (conditions not met)');
+                this.stopAutoRotation();
+            }
+        }
+
+        // Check if timer status doesn't match expected status
+        if (shouldBeRunning && !isCurrentlyRunning) {
+            console.warn('⚠️  Timer should be running but is not - attempting restart');
+            this.checkAndStartAutoRotation();
+        }
+    }
+    /**
+     * Check if auto-rotation should be running
+     */
+    private shouldAutoRotationBeRunning(): boolean {
+        const products = this.products();
+        const config = this.config();
+        const enabled = this.autoRotationEnabled();
+
+        const conditions = {
+            hasProducts: products.length > 1,
+            hasConfig: config !== null && config !== undefined,
+            isEnabled: enabled === true,
+            notPausedByUser: this.pausedByUser() === false
+        };
+
+        // Only log if conditions changed
+        const conditionsChanged = JSON.stringify(conditions) !== JSON.stringify(this.lastConditionsCheck);
+        if (conditionsChanged) {
+            console.log('📋 Auto-rotation conditions changed:', conditions);
+            this.lastConditionsCheck = { ...conditions };
+        }
+
+        return conditions.hasProducts &&
+            conditions.hasConfig &&
+            conditions.isEnabled &&
+            conditions.notPausedByUser;
+    }
+
+    /**
+     * Check conditions and start auto-rotation if appropriate
+     */
+    private checkAndStartAutoRotation(): void {
+        console.log('Checking auto-rotation start conditions...');
+
+        if (this.shouldAutoRotationBeRunning()) {
+            console.log('✅ All conditions met - starting auto-rotation');
+            this.startAutoRotation();
+        } else {
+            console.log('❌ Conditions not met for auto-rotation');
+            this.stopAutoRotation();
+        }
+    }
+
     /**
      * Start auto-rotation timer with current settings
      */
     private startAutoRotation(): void {
+        // Stop existing timer first
         if (this.autoRotationTimer$) {
-            console.log('Auto-rotation already running');
-            return;
+            console.log('Stopping existing auto-rotation timer before restart');
+            this.autoRotationTimer$.unsubscribe();
+            this.autoRotationTimer$ = undefined;
         }
 
         const interval = this.effectiveSlideInterval();
         const products = this.products();
 
+        console.log('🔧 Starting auto-rotation setup:', {
+            interval,
+            productsCount: products.length,
+            autoRotationEnabled: this.autoRotationEnabled(),
+            pausedByUser: this.pausedByUser(),
+            hasEmblaCarousel: !!this.emblaCarousel()
+        });
+
         if (products.length <= 1) {
-            console.log('Not enough products for auto-rotation');
+            console.log('❌ Not enough products for auto-rotation');
+            this.isAutoPlaying.set(false);
             return;
         }
 
-        console.log(`Starting auto-rotation with ${interval}ms interval`);
-
+        console.log(`🚀 Starting auto-rotation timer with ${interval}ms interval`);
         this.isAutoPlaying.set(true);
 
         this.autoRotationTimer$ = timer(interval, interval).pipe(
             takeUntil(this.destroy$),
-            // FIX: Explicit boolean comparisons
             filter(() => {
-                return this.pausedByUser() === false && this.autoRotationEnabled() === true;
+                const notPaused = this.pausedByUser() === false;
+                const enabled = this.autoRotationEnabled() === true;
+                const hasCarousel = !!this.emblaCarousel();
+
+                if (!notPaused) {
+                    console.log('⏸️  Auto-rotation tick skipped - paused by user');
+                    return false;
+                }
+                if (!enabled) {
+                    console.log('⏸️  Auto-rotation tick skipped - disabled');
+                    return false;
+                }
+                if (!hasCarousel) {
+                    console.log('⏸️  Auto-rotation tick skipped - no carousel');
+                    return false;
+                }
+
+                return true;
             }),
             tap(() => {
-                console.log('Auto-rotation tick - advancing to next slide');
-                this.nextSlideWithRotation();
-            }),
-            // Handle errors gracefully
-            finalize(() => {
-                console.log('Auto-rotation timer finalized');
+                console.log('🎯 Auto-rotation tick - advancing to next slide');
             })
         ).subscribe({
+            next: () => {
+                this.nextSlideWithRotation();
+            },
             error: (error) => {
-                console.error('Auto-rotation timer error:', error);
+                console.error('❌ Auto-rotation timer error:', error);
                 this.handleAutoRotationError(error);
+            },
+            complete: () => {
+                console.log('Auto-rotation timer completed');
             }
         });
+
+        console.log('✅ Auto-rotation timer created successfully');
     }
 
     /**
@@ -1417,10 +1547,12 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      */
     private stopAutoRotation(): void {
         if (this.autoRotationTimer$) {
-            console.log('Stopping auto-rotation timer');
+            console.log('🛑 Stopping auto-rotation timer');
             this.autoRotationTimer$.unsubscribe();
             this.autoRotationTimer$ = undefined;
             this.isAutoPlaying.set(false);
+        } else {
+            console.log('⚪ Auto-rotation timer already stopped');
         }
     }
 
@@ -1504,33 +1636,66 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      */
     private setupPerformanceMonitoring(): void {
         if (!this.performanceMonitor) {
+            console.warn('⚠️  Performance monitor not available');
             return;
         }
 
-        // Monitor FPS for performance-aware rotation - FIXED typing
-        interval(2000).pipe(
+        // Monitor FPS less frequently 
+        interval(5000).pipe( // Намалих от 2000 на 5000ms
             takeUntil(this.destroy$)
         ).subscribe(() => {
             const metrics = this.performanceMonitor.getCurrentMetrics();
             if (metrics && typeof metrics.fps === 'number') {
                 const fps = metrics.fps;
-                this.currentFPS.set(fps);
+                const previousFPS = this.currentFPS();
+
+                // Only update and log if FPS changed significantly
+                if (Math.abs(fps - previousFPS) > 5) {
+                    this.currentFPS.set(fps);
+                    console.log(`📊 FPS updated: ${previousFPS} -> ${fps}`);
+                }
 
                 const wasThrottled = this.performanceThrottled();
                 const shouldThrottle = fps < 25;
 
-                // Explicit boolean comparisons
                 if (shouldThrottle === true && wasThrottled === false) {
-                    console.warn(`Performance throttling enabled - FPS: ${fps}`);
+                    console.warn(`🐌 Performance throttling enabled - FPS: ${fps}`);
                     this.performanceThrottled.set(true);
-                    this.restartAutoRotation(); // Apply new timing
                 } else if (shouldThrottle === false && wasThrottled === true) {
-                    console.log(`Performance throttling disabled - FPS: ${fps}`);
+                    console.log(`🚀 Performance throttling disabled - FPS: ${fps}`);
                     this.performanceThrottled.set(false);
-                    this.restartAutoRotation(); // Apply new timing
                 }
             }
         });
+    }
+
+    /**
+ * Force immediate start of auto-rotation (bypass all delays)
+ */
+    private forceStartAutoRotation(): void {
+        console.log('🚀 FORCE START: Bypassing all conditions and delays');
+
+        // Stop any existing timer
+        this.stopAutoRotation();
+
+        // Set all required conditions
+        this.autoRotationEnabled.set(true);
+        this.pausedByUser.set(false);
+
+        // Start immediately
+        const interval = this.effectiveSlideInterval();
+        console.log(`⚡ Force starting auto-rotation with ${interval}ms interval`);
+
+        this.isAutoPlaying.set(true);
+
+        this.autoRotationTimer$ = timer(interval, interval).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(() => {
+            console.log('⚡ FORCED Auto-rotation tick - advancing to next slide');
+            this.nextSlideWithRotation();
+        });
+
+        console.log('✅ Force start completed');
     }
     /**
      * Setup user interaction handlers for pause/resume
@@ -1579,5 +1744,73 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             this.autoRotationEnabled.set(true);
             this.startAutoRotation();
         }, 5000);
+    }
+
+    // =========================================
+    // DEBUG МЕТОД ЗА ТЕСТВАНЕ НА AUTO-ROTATION
+    // =========================================
+
+    /**
+     * Debug method to manually trigger auto-rotation tick
+     * Call from browser console: window.debugSlideshow.triggerTick()
+     */
+    public debugTriggerAutoRotationTick(): void {
+        console.log('🧪 DEBUG: Manually triggering auto-rotation tick');
+        this.nextSlideWithRotation();
+    }
+
+    /**
+     * Debug method to get current auto-rotation status
+     * Call from browser console: window.debugSlideshow.getStatus()
+     */
+    public debugGetAutoRotationStatus(): any {
+        const status = {
+            // Timer status
+            hasTimer: !!this.autoRotationTimer$,
+            isAutoPlaying: this.isAutoPlaying(),
+
+            // Conditions
+            autoRotationEnabled: this.autoRotationEnabled(),
+            pausedByUser: this.pausedByUser(),
+            shouldBeRunning: this.shouldAutoRotationBeRunning(),
+
+            // Configuration
+            slideInterval: this.slideInterval(),
+            effectiveSlideInterval: this.effectiveSlideInterval(),
+
+            // Data status  
+            productsCount: this.products().length,
+            hasConfig: this.config() !== null,
+            currentSlideIndex: this.currentSlideIndex(),
+
+            // Carousel status
+            hasEmblaCarousel: !!this.emblaCarousel(),
+
+            // Performance
+            currentFPS: this.currentFPS(),
+            performanceThrottled: this.performanceThrottled()
+        };
+
+        console.log('🔍 Auto-rotation detailed status:');
+        console.table(status);
+        return status;
+    }
+
+    /**
+ * Debug method to force restart auto-rotation
+ */
+    public debugRestartAutoRotation(): void {
+        console.log('🔄 DEBUG: Force restarting auto-rotation');
+        this.stopAutoRotation();
+
+        setTimeout(() => {
+            console.log('🔄 DEBUG: Starting auto-rotation after stop');
+            this.checkAndStartAutoRotation();
+
+            setTimeout(() => {
+                console.log('🔄 DEBUG: Final status after restart:');
+                this.debugGetAutoRotationStatus();
+            }, 1000);
+        }, 100);
     }
 }
