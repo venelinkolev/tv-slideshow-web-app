@@ -52,13 +52,13 @@
         </div>
 
         <!-- Slide Progress Indicator -->
-        @if (config(); as currentConfig) {
+        <!-- @if (config(); as currentConfig) {
         <app-slide-progress [currentIndex]="currentSlideIndex()" [totalSlides]="products().length"
             [slideInterval]="currentConfig?.timing?.baseSlideDuration || 20000" [showCounter]="true"
             [showProgressBar]="true" [autoHide]="false"
             [animationEnabled]="currentConfig?.timing?.transitionType !== 'none'"
             (progressComplete)="handleProgressComplete($event)" (progressClick)="handleProgressClick($event)" />
-        }
+        } -->
 
         <!-- Navigation Controls (скрити по подразбиране, показват се при remote control) -->
         <app-navigation-controls [isAutoPlaying]="isAutoPlaying()" [remoteControlEnabled]="remoteControlEnabled()"

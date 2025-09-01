@@ -55,8 +55,8 @@ import { EmblaCarouselDirective, EmblaCarouselType } from 'embla-carousel-angula
     selector: 'app-slideshow-container',
     standalone: true,
     imports: [CommonModule,
-        // ProductSlideComponent, 
-        SlideProgressComponent, NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent, EmblaCarouselDirective, TemplateLoaderComponent],
+        // ProductSlideComponent, SlideProgressComponent, 
+        NavigationControlsComponent, LoadingStateComponent, ErrorStateComponent, EmblaCarouselDirective, TemplateLoaderComponent],
     templateUrl: './slideshow-container.component.html',
     styleUrls: ['./slideshow-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -383,27 +383,76 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
  * Initialize Embla carousel after view init
  */
     ngAfterViewInit(): void {
-        // Initialize Embla carousel with delay to ensure DOM is ready
         setTimeout(() => {
             this.initializeEmblaCarousel();
         }, 100);
 
+        // ОБНОВЕН debug interface с timer debugging:
         if (typeof window !== 'undefined') {
             (window as any).debugSlideshow = {
+                // Status & Info
                 getStatus: () => this.debugGetAutoRotationStatus(),
-                triggerTick: () => this.debugTriggerAutoRotationTick(),
+                checkConditions: () => this.shouldAutoRotationBeRunning(),
+                checkCarousel: () => this.checkCarouselStatus(),
+
+                // Auto-rotation Control
                 startRotation: () => this.startAutoRotation(),
                 stopRotation: () => this.stopAutoRotation(),
                 restart: () => this.debugRestartAutoRotation(),
-                checkConditions: () => this.shouldAutoRotationBeRunning(),
-                forceStart: () => this.forceStartAutoRotation(), // НОВ МЕТОД
-                clearLogs: () => console.clear() // НОВ МЕТОД
+                forceStart: () => this.forceStartAutoRotation(),
+                disable: () => this.disableAllAutoRotation(),
+
+                // Test Methods
+                simpleStart: () => this.simplifiedAutoRotationStart(),
+                quickTest: () => this.quickRotationTest(),
+                manualTest: () => this.testManualNavigation(),
+                triggerTick: () => this.debugTriggerAutoRotationTick(),
+
+                // Timer Testing
+                basicJS: () => this.basicJavaScriptTimerTest(),
+                bareRxJS: () => this.bareRxJSTimerTest(),
+                testTakeUntil: () => this.testTakeUntilProblem(),
+
+                // FILTER CONDITIONS DEBUG (НОВ)
+                testFilter: () => this.testFilterConditions(),
+                testRealFilter: () => this.testTimerWithRealFilter(),
+                monitor: () => this.monitorFilterConditions(),
+                stopMonitor: () => this.stopMonitoring(),
+
+                // Previous debugging
+                ultraSimple: () => this.ultraSimpleTimerTest(),
+                withTakeUntil: () => this.timerWithTakeUntilTest(),
+                debugLogic: () => this.debugQuickTestLogic(),
+                checkDestroy: () => this.checkDestroySubject(),
+
+                // Manual Control
+                nextSlide: () => this.nextSlide(),
+                prevSlide: () => this.previousSlide(),
+
+                disableProgress: () => this.disableSlideProgressAutoAdvance(),
+                updateNextSlide: () => this.updateNextSlideToIgnoreProgressAdvance(),
+                testClean: () => this.testAutoRotationWithoutProgressConflict(),
+
+                // Utilities
+                clearLogs: () => console.clear()
             };
-            console.log('🧪 Enhanced debug slideshow methods:');
-            console.log('  window.debugSlideshow.forceStart() - Force start rotation');
-            console.log('  window.debugSlideshow.getStatus() - Get detailed status');
-            console.log('  window.debugSlideshow.clearLogs() - Clear console');
+
+            console.log('🧪 FILTER CONDITIONS DEBUG Ready:');
+            console.log('');
+            console.log('🎯 НАЙДИ ПРОБЛЕМА (START HERE):');
+            console.log('  window.debugSlideshow.testFilter()     ← Check current conditions');
+            console.log('  window.debugSlideshow.testRealFilter() ← Test with real filter logic');
+            console.log('  window.debugSlideshow.monitor()        ← Monitor conditions changes');
+            console.log('');
+            console.log('📊 STATUS:');
+            console.log('  window.debugSlideshow.getStatus()');
+            console.log('');
         }
+
+        // Wait for initialization
+        setTimeout(() => {
+            console.log('🎬 Ready for filter conditions debugging');
+        }, 3000);
     }
 
     /**
@@ -1399,7 +1448,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             this.checkAutoRotationStatusChange();
         });
     }
-
     /**
  * Check auto-rotation status and only log when there are changes
  */
@@ -1812,5 +1860,648 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
                 this.debugGetAutoRotationStatus();
             }, 1000);
         }, 100);
+    }
+
+    /**
+ * Simplified auto-rotation start for testing
+ */
+    public simplifiedAutoRotationStart(): void {
+        console.log('🎯 SIMPLIFIED START: Basic auto-rotation test');
+
+        const products = this.products();
+        const carousel = this.emblaCarousel();
+
+        if (products.length <= 1) {
+            console.error('❌ Need more than 1 product for rotation');
+            return;
+        }
+
+        if (!carousel) {
+            console.error('❌ Embla carousel not ready');
+            return;
+        }
+
+        console.log('✅ Starting simplified 5-second rotation for testing');
+
+        this.autoRotationTimer$ = timer(5000, 5000).pipe(
+            takeUntil(this.destroy$),
+            tap(() => console.log('💫 Simple rotation tick'))
+        ).subscribe(() => {
+            if (carousel.canScrollNext()) {
+                carousel.scrollNext();
+            } else {
+                carousel.scrollTo(0);
+            }
+        });
+
+        this.isAutoPlaying.set(true);
+        console.log('✅ Simplified rotation started - should tick every 5 seconds');
+    }
+
+    /**
+ * Quick test method - 3 second intervals
+ */
+    public quickRotationTest(): void {
+        console.log('⚡ QUICK TEST: 3-second rotation test starting...');
+
+        this.stopAutoRotation(); // Stop any existing
+
+        const products = this.products();
+        const carousel = this.emblaCarousel();
+
+        console.log('🔍 Quick test conditions:', {
+            productsCount: products.length,
+            hasCarousel: !!carousel,
+            carouselReady: carousel ? 'YES' : 'NO'
+        });
+
+        if (products.length <= 1) {
+            console.error('❌ QUICK TEST FAILED: Need more than 1 product');
+            return;
+        }
+
+        if (!carousel) {
+            console.error('❌ QUICK TEST FAILED: No Embla carousel available');
+            console.log('Try running this after a few seconds when carousel initializes');
+            return;
+        }
+
+        console.log('✅ Starting QUICK TEST with 3-second intervals');
+
+        let tickCount = 0;
+        this.autoRotationTimer$ = timer(3000, 3000).pipe(
+            takeUntil(this.destroy$),
+            tap(() => {
+                tickCount++;
+                console.log(`⏰ QUICK TEST Tick #${tickCount}`);
+            })
+        ).subscribe(() => {
+            if (carousel.canScrollNext()) {
+                console.log('➡️  Moving to next slide');
+                carousel.scrollNext();
+            } else {
+                console.log('🔄 Looping back to first slide');
+                carousel.scrollTo(0);
+            }
+
+            // Auto-stop after 5 ticks for testing
+            if (tickCount >= 5) {
+                console.log('🏁 QUICK TEST completed - stopping after 5 ticks');
+                this.stopAutoRotation();
+            }
+        });
+
+        this.isAutoPlaying.set(true);
+        console.log('✅ QUICK TEST started - will auto-stop after 5 ticks (15 seconds)');
+    }
+
+    /**
+     * Check Embla carousel status
+     */
+    public checkCarouselStatus(): any {
+        const carousel = this.emblaCarousel();
+        const products = this.products();
+
+        const status = {
+            hasCarousel: !!carousel,
+            productsCount: products.length,
+            currentIndex: this.currentSlideIndex(),
+            canScrollNext: carousel ? carousel.canScrollNext() : 'N/A',
+            canScrollPrev: carousel ? carousel.canScrollPrev() : 'N/A',
+            selectedIndex: carousel ? carousel.selectedScrollSnap() : 'N/A'
+        };
+
+        console.log('🎠 Carousel Status:');
+        console.table(status);
+        return status;
+    }
+
+    /**
+     * Manual carousel navigation test
+     */
+    public testManualNavigation(): void {
+        console.log('🎮 Testing manual carousel navigation...');
+
+        const carousel = this.emblaCarousel();
+        if (!carousel) {
+            console.error('❌ No carousel available for manual test');
+            return;
+        }
+
+        console.log('➡️  Testing next slide...');
+        carousel.scrollNext();
+
+        setTimeout(() => {
+            console.log('⬅️  Testing previous slide...');
+            carousel.scrollPrev();
+
+            setTimeout(() => {
+                console.log('🎯 Testing jump to slide 0...');
+                carousel.scrollTo(0);
+                console.log('✅ Manual navigation test completed');
+            }, 2000);
+        }, 2000);
+    }
+
+    /**
+ * Ultra simple timer test - no conditions, no filters
+ */
+    public ultraSimpleTimerTest(): void {
+        console.log('🔬 ULTRA SIMPLE TIMER TEST - No conditions, just raw timer');
+
+        // Stop existing
+        this.stopAutoRotation();
+
+        let tickCount = 0;
+        console.log('⏱️  Starting raw timer - 2 second intervals');
+
+        this.autoRotationTimer$ = timer(2000, 2000).subscribe(() => {
+            tickCount++;
+            console.log(`🔔 RAW TIMER TICK #${tickCount} at ${new Date().toLocaleTimeString()}`);
+
+            // Stop after 3 ticks
+            if (tickCount >= 3) {
+                console.log('🏁 Raw timer test completed - stopping');
+                if (this.autoRotationTimer$) {
+                    this.autoRotationTimer$.unsubscribe();
+                    this.autoRotationTimer$ = undefined;
+                }
+            }
+        });
+
+        console.log('✅ Raw timer started - should tick every 2 seconds');
+    }
+
+    /**
+     * Test timer with takeUntil only
+     */
+    public timerWithTakeUntilTest(): void {
+        console.log('🔬 TIMER WITH TAKEUNTIL TEST');
+
+        this.stopAutoRotation();
+
+        let tickCount = 0;
+        console.log('⏱️  Starting timer with takeUntil only - 3 second intervals');
+
+        this.autoRotationTimer$ = timer(3000, 3000).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(() => {
+            tickCount++;
+            console.log(`🔔 TAKEUNTIL TIMER TICK #${tickCount}`);
+
+            if (tickCount >= 3) {
+                console.log('🏁 TakeUntil timer test completed');
+                this.stopAutoRotation();
+            }
+        });
+
+        console.log('✅ TakeUntil timer started');
+    }
+
+    /**
+     * Test the exact quickTest timer logic step by step
+     */
+    public debugQuickTestLogic(): void {
+        console.log('🔍 DEBUGGING QUICK TEST TIMER LOGIC');
+
+        this.stopAutoRotation();
+
+        const products = this.products();
+        const carousel = this.emblaCarousel();
+
+        console.log('📋 Pre-conditions check:');
+        console.log(`  - Products: ${products.length}`);
+        console.log(`  - Carousel: ${!!carousel}`);
+        console.log(`  - destroy$ exists: ${!!this.destroy$}`);
+
+        if (products.length <= 1) {
+            console.error('❌ Not enough products');
+            return;
+        }
+
+        if (!carousel) {
+            console.error('❌ No carousel');
+            return;
+        }
+
+        console.log('⏱️  Creating timer with full observable chain...');
+
+        let tickCount = 0;
+        this.autoRotationTimer$ = timer(3000, 3000).pipe(
+            takeUntil(this.destroy$),
+            tap(() => {
+                tickCount++;
+                console.log(`🎯 TAP: Timer tick #${tickCount} - before any logic`);
+            })
+        ).subscribe({
+            next: () => {
+                console.log(`✅ SUBSCRIBE NEXT: Processing tick #${tickCount}`);
+
+                if (carousel.canScrollNext()) {
+                    console.log('➡️  Carousel can scroll next - executing scrollNext()');
+                    carousel.scrollNext();
+                } else {
+                    console.log('🔄 Carousel at end - executing scrollTo(0)');
+                    carousel.scrollTo(0);
+                }
+
+                if (tickCount >= 3) {
+                    console.log('🏁 Debug test completed after 3 ticks');
+                    this.stopAutoRotation();
+                }
+            },
+            error: (err) => {
+                console.error('❌ SUBSCRIBE ERROR:', err);
+            },
+            complete: () => {
+                console.log('✅ SUBSCRIBE COMPLETED');
+            }
+        });
+
+        console.log('✅ Debug timer created with full logging');
+    }
+
+    /**
+     * Check if destroy$ subject is working properly
+     */
+    public checkDestroySubject(): void {
+        console.log('🔍 Checking destroy$ subject status');
+
+        console.log('destroy$ properties:');
+        console.log(`  - exists: ${!!this.destroy$}`);
+        console.log(`  - closed: ${this.destroy$.closed}`);
+        console.log(`  - isStopped: ${this.destroy$.isStopped}`);
+
+        // Test if destroy$ works with a simple timer
+        console.log('⏱️  Testing destroy$ with simple timer...');
+
+        const testTimer = timer(1000, 1000).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe((value) => {
+            console.log(`🔔 Destroy$ test timer tick: ${value}`);
+
+            if (value >= 2) {
+                console.log('🏁 Destroy$ test completed - timer should stop automatically');
+                // Don't unsubscribe manually - let takeUntil handle it
+            }
+        });
+    }
+
+    /**
+ * Test basic JavaScript setInterval (no RxJS)
+ */
+    public basicJavaScriptTimerTest(): void {
+        console.log('🧪 BASIC JAVASCRIPT TIMER TEST - Pure setInterval');
+
+        // Clear any existing intervals
+        if ((this as any).basicTimerInterval) {
+            clearInterval((this as any).basicTimerInterval);
+        }
+
+        let tickCount = 0;
+        console.log('⏱️  Starting basic JavaScript timer - 2 second intervals');
+
+        (this as any).basicTimerInterval = setInterval(() => {
+            tickCount++;
+            console.log(`🔔 BASIC JS TIMER TICK #${tickCount} at ${new Date().toLocaleTimeString()}`);
+
+            if (tickCount >= 3) {
+                console.log('🏁 Basic JS timer test completed - clearing interval');
+                clearInterval((this as any).basicTimerInterval);
+                (this as any).basicTimerInterval = null;
+            }
+        }, 2000);
+
+        console.log('✅ Basic JavaScript timer started');
+    }
+
+    /**
+     * Test RxJS timer without any pipes
+     */
+    public bareRxJSTimerTest(): void {
+        console.log('🧪 BARE RXJS TIMER TEST - No pipes, no operators');
+
+        // Stop any existing subscription
+        if ((this as any).bareTimerSub) {
+            (this as any).bareTimerSub.unsubscribe();
+        }
+
+        let tickCount = 0;
+        console.log('⏱️  Starting bare RxJS timer - 2 second intervals');
+
+        (this as any).bareTimerSub = timer(2000, 2000).subscribe(() => {
+            tickCount++;
+            console.log(`🔔 BARE RXJS TIMER TICK #${tickCount} at ${new Date().toLocaleTimeString()}`);
+
+            if (tickCount >= 3) {
+                console.log('🏁 Bare RxJS timer test completed');
+                (this as any).bareTimerSub.unsubscribe();
+                (this as any).bareTimerSub = null;
+            }
+        });
+
+        console.log('✅ Bare RxJS timer started');
+    }
+
+    /**
+     * Test if takeUntil is the problem
+     */
+    public testTakeUntilProblem(): void {
+        console.log('🧪 TESTING TAKEUNTIL PROBLEM');
+
+        if ((this as any).takeUntilTestSub) {
+            (this as any).takeUntilTestSub.unsubscribe();
+        }
+
+        console.log('🔍 Checking destroy$ subject:', {
+            exists: !!this.destroy$,
+            closed: this.destroy$.closed,
+            isStopped: this.destroy$.isStopped
+        });
+
+        let tickCount = 0;
+        console.log('⏱️  Starting timer with takeUntil');
+
+        (this as any).takeUntilTestSub = timer(2000, 2000).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe({
+            next: () => {
+                tickCount++;
+                console.log(`🔔 TAKEUNTIL TIMER TICK #${tickCount}`);
+
+                if (tickCount >= 3) {
+                    console.log('🏁 TakeUntil timer test completed');
+                    (this as any).takeUntilTestSub.unsubscribe();
+                    (this as any).takeUntilTestSub = null;
+                }
+            },
+            error: (err) => {
+                console.error('❌ TakeUntil timer error:', err);
+            },
+            complete: () => {
+                console.log('✅ TakeUntil timer completed naturally');
+            }
+        });
+
+        console.log('✅ TakeUntil timer started');
+    }
+
+    /**
+     * Disable ALL auto-rotation systems for clean testing
+     */
+    public disableAllAutoRotation(): void {
+        console.log('🛑 DISABLING ALL AUTO-ROTATION SYSTEMS');
+
+        // Stop our timer
+        this.stopAutoRotation();
+
+        // Disable auto-rotation flag
+        this.autoRotationEnabled.set(false);
+        this.isAutoPlaying.set(false);
+
+        // Try to stop SlideProgressComponent auto-advance (if possible)
+        // This might need to be done differently depending on implementation
+
+        console.log('✅ All auto-rotation systems disabled');
+        console.log('Now you can test individual timers without interference');
+    }
+
+    /**
+ * Test the exact filter conditions used in auto-rotation
+ */
+    public testFilterConditions() {
+        console.log('🔍 TESTING FILTER CONDITIONS - Real auto-rotation logic');
+
+        // Test the exact conditions from startAutoRotation
+        const conditions = {
+            notPaused: this.pausedByUser() === false,
+            enabled: this.autoRotationEnabled() === true,
+            hasCarousel: !!this.emblaCarousel(),
+        };
+
+        const overallResult = conditions.notPaused && conditions.enabled && conditions.hasCarousel;
+
+        console.log('📊 Filter Conditions Analysis:', {
+            ...conditions,
+            overallResult
+        });
+
+        if (!overallResult) {
+            console.error('❌ FILTER CONDITIONS BLOCKING - One or more conditions is FALSE');
+            if (!conditions.notPaused) console.error('  → pausedByUser() is TRUE');
+            if (!conditions.enabled) console.error('  → autoRotationEnabled() is FALSE');
+            if (!conditions.hasCarousel) console.error('  → emblaCarousel() is missing');
+        } else {
+            console.log('✅ All filter conditions PASS - should allow timer ticks');
+        }
+
+        return conditions;
+    }
+
+    /**
+     * Test timer with the exact same filter logic as auto-rotation
+     */
+    public testTimerWithRealFilter(): void {
+        console.log('🧪 TESTING TIMER WITH REAL FILTER CONDITIONS');
+
+        if ((this as any).realFilterTestSub) {
+            (this as any).realFilterTestSub.unsubscribe();
+        }
+
+        // First check conditions
+        const initialConditions = this.testFilterConditions();
+
+        if (!initialConditions.notPaused || !initialConditions.enabled || !initialConditions.hasCarousel) {
+            console.error('❌ Cannot start test - initial conditions failing');
+            return;
+        }
+
+        let tickCount = 0;
+        console.log('⏱️  Starting timer with REAL filter logic');
+
+        (this as any).realFilterTestSub = timer(3000, 3000).pipe(
+            takeUntil(this.destroy$),
+            filter(() => {
+                const notPaused = this.pausedByUser() === false;
+                const enabled = this.autoRotationEnabled() === true;
+                const hasCarousel = !!this.emblaCarousel();
+
+                // EXACT logging from real auto-rotation code
+                if (!notPaused) {
+                    console.log('⏸️  Real filter tick BLOCKED - paused by user');
+                    return false;
+                }
+                if (!enabled) {
+                    console.log('⏸️  Real filter tick BLOCKED - disabled');
+                    return false;
+                }
+                if (!hasCarousel) {
+                    console.log('⏸️  Real filter tick BLOCKED - no carousel');
+                    return false;
+                }
+
+                console.log('✅ Real filter tick PASSED all conditions');
+                return true;
+            }),
+            tap(() => {
+                console.log('🎯 Real filter TAP - this should match auto-rotation behavior');
+            })
+        ).subscribe({
+            next: () => {
+                tickCount++;
+                console.log(`🔔 REAL FILTER TIMER TICK #${tickCount}`);
+
+                if (tickCount >= 3) {
+                    console.log('🏁 Real filter timer test completed');
+                    (this as any).realFilterTestSub.unsubscribe();
+                    (this as any).realFilterTestSub = null;
+                }
+            },
+            error: (err) => {
+                console.error('❌ Real filter timer error:', err);
+            },
+            complete: () => {
+                console.log('✅ Real filter timer completed');
+            }
+        });
+
+        console.log('✅ Real filter timer started - should behave exactly like auto-rotation');
+    }
+
+    /**
+     * Monitor filter conditions in real-time
+     */
+    public monitorFilterConditions(): void {
+        console.log('📡 MONITORING FILTER CONDITIONS - Real-time updates');
+
+        if ((this as any).monitorSub) {
+            (this as any).monitorSub.unsubscribe();
+        }
+
+        let lastConditions = this.testFilterConditions();
+
+        (this as any).monitorSub = timer(0, 1000).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(() => {
+            const currentConditions = {
+                notPaused: this.pausedByUser() === false,
+                enabled: this.autoRotationEnabled() === true,
+                hasCarousel: !!this.emblaCarousel(),
+            };
+
+            const overallResult = currentConditions.notPaused && currentConditions.enabled && currentConditions.hasCarousel;
+
+            // Only log when conditions change
+            if (JSON.stringify(currentConditions) !== JSON.stringify(lastConditions)) {
+                console.log('🔄 Filter conditions CHANGED:', {
+                    ...currentConditions,
+                    overallResult,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+
+                lastConditions = currentConditions;
+            }
+        });
+
+        console.log('📡 Monitoring started - will log only when conditions change');
+        console.log('Use window.debugSlideshow.stopMonitoring() to stop');
+    }
+
+    /**
+     * Stop monitoring filter conditions
+     */
+    public stopMonitoring(): void {
+        if ((this as any).monitorSub) {
+            (this as any).monitorSub.unsubscribe();
+            (this as any).monitorSub = null;
+            console.log('📡 Filter conditions monitoring stopped');
+        }
+    }
+
+    // =====================================
+    // РЕШЕНИЕ 1: DISABLE SlideProgressComponent AUTO-ADVANCE
+    // =====================================
+
+    /**
+     * Disable SlideProgressComponent auto-advance temporary
+     */
+    public disableSlideProgressAutoAdvance(): void {
+        console.log('🛑 DISABLING SlideProgressComponent auto-advance to test auto-rotation');
+
+        // Намери SlideProgressComponent и спри неговия auto-advance
+        // Това трябва да се направи в SlideProgressComponent
+        // Засега - просто логиране че трябва да се направи
+
+        console.log('⚠️  TODO: Disable SlideProgressComponent.handleProgressComplete() auto-advance');
+        console.log('⚠️  This requires changes in slide-progress.component.ts');
+        console.log('✅ After disabling, auto-rotation timer should work normally');
+    }
+
+    // =====================================
+    // РЕШЕНИЕ 2: ПРОМЯНА НА INTERACTION DETECTION
+    // =====================================
+
+    /**
+     * Update nextSlide to NOT pause auto-rotation when called by progress component
+     */
+    public updateNextSlideToIgnoreProgressAdvance(): void {
+        console.log('🔧 UPDATING nextSlide() to ignore progress component advances');
+
+        // В slideshow-container.component.ts, в nextSlide() метода:
+        // Вместо винаги да call-ва handleUserInteraction(),
+        // трябва да провери дали advance-ът идва от SlideProgressComponent
+
+        console.log('⚠️  CHANGE NEEDED in nextSlide() method:');
+        console.log('   - Add parameter: nextSlide(fromProgressComponent = false)');
+        console.log('   - Only call handleUserInteraction() if fromProgressComponent === false');
+        console.log('   - SlideProgressComponent should call nextSlide(true)');
+    }
+
+    // =====================================
+    // РЕШЕНИЕ 3: QUICK TEST - FORCE DISABLE PROGRESS
+    // =====================================
+
+    /**
+     * Quick test to verify auto-rotation works without progress interference
+     */
+    public testAutoRotationWithoutProgressConflict(): void {
+        console.log('🧪 TESTING AUTO-ROTATION WITHOUT PROGRESS CONFLICT');
+
+        // Disable our auto-rotation first
+        this.stopAutoRotation();
+        this.autoRotationEnabled.set(false);
+
+        // TODO: Also need to disable SlideProgressComponent
+        console.log('⚠️  Manually disable SlideProgressComponent auto-advance in its component');
+        console.log('⚠️  Then call this test again');
+
+        // Start clean auto-rotation test
+        setTimeout(() => {
+            console.log('🚀 Starting clean auto-rotation test (5 second interval for testing)');
+
+            this.autoRotationEnabled.set(true);
+            this.pausedByUser.set(false);
+            this.isAutoPlaying.set(true);
+
+            // Create timer with short interval for testing
+            this.autoRotationTimer$ = timer(5000, 5000).pipe(
+                takeUntil(this.destroy$),
+                tap(() => {
+                    console.log('🎯 CLEAN AUTO-ROTATION TICK - No conflicts!');
+                })
+            ).subscribe(() => {
+                const carousel = this.emblaCarousel();
+                if (carousel) {
+                    if (carousel.canScrollNext()) {
+                        carousel.scrollNext();
+                    } else {
+                        carousel.scrollTo(0);
+                    }
+                }
+            });
+
+            console.log('✅ Clean auto-rotation started - should tick every 5 seconds');
+
+        }, 1000);
     }
 }
