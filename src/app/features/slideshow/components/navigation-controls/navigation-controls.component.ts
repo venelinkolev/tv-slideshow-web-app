@@ -34,6 +34,23 @@ import { CommonModule } from '@angular/common';
 })
 export class NavigationControlsComponent implements OnInit, OnDestroy {
 
+    // ✅ NEW: Carousel integration inputs
+    readonly currentSlideIndex = input<number>(0);
+    readonly totalSlides = input<number>(0);
+    readonly isCarouselReady = input<boolean>(false);
+
+    // ✅ NEW: Loading and error state inputs for integration
+    readonly isLoading = input<boolean>(false);
+    readonly hasError = input<boolean>(false);
+
+    // ✅ NEW: Template change output
+    readonly templateChangeRequested = output<string>();
+
+    // ✅ NEW: Carousel control outputs     
+    readonly goToSlide = output<number>();
+    readonly pauseCarousel = output<void>();
+    readonly resumeCarousel = output<void>();
+
     // ✅ Angular 18 Input signals
     readonly isAutoPlaying = input<boolean>(true);
     readonly remoteControlEnabled = input<boolean>(false);
@@ -65,11 +82,23 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
         const visible = this.isVisible();
         const hovered = this.isHovered();
         const helpVisible = this.isHelpVisible();
+        const carouselReady = this.isCarouselReady();
+        const hasError = this.hasError();
+        const isLoading = this.isLoading();
 
-        // 🔧 FIX: Премахни paused логиката
+        // Show controls if carousel has error or is loading
+        if (hasError || isLoading) {
+            return remoteEnabled;
+        }
+
+        // Hide controls if carousel is not ready
+        if (!carouselReady) {
+            return false;
+        }
+
         const shouldShow = remoteEnabled && (visible || hovered || helpVisible);
 
-        console.log(`shouldShowControls: remote=${remoteEnabled}, visible=${visible}, hovered=${hovered}, help=${helpVisible} => ${shouldShow}`);
+        console.log(`shouldShowControls: remote=${remoteEnabled}, visible=${visible}, hovered=${hovered}, help=${helpVisible}, carouselReady=${carouselReady} => ${shouldShow}`);
         return shouldShow;
     });
 
@@ -158,6 +187,59 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     }
 
     /**
+    * Handle go to specific slide
+    
+    */
+    onGoToSlide(slideIndex: number): void {
+        if (!this.canNavigate() || !this.isCarouselReady()) return;
+
+        const validIndex = Math.max(0, Math.min(slideIndex, this.totalSlides() - 1));
+        console.log(`NavigationControlsComponent.onGoToSlide(${validIndex})`);
+        this.goToSlide.emit(validIndex);
+        this.resetAutoHideTimer();
+    }
+
+    /**
+     * Handle carousel pause request
+     */
+    onPauseCarousel(): void {
+        if (!this.isCarouselReady()) return;
+
+        console.log('NavigationControlsComponent.onPauseCarousel() - Pausing carousel');
+        this.pauseCarousel.emit();
+        this.resetAutoHideTimer();
+    }
+
+    /**
+     * Handle carousel resume request  
+     */
+    onResumeCarousel(): void {
+        if (!this.isCarouselReady()) return;
+
+        console.log('NavigationControlsComponent.onResumeCarousel() - Resuming carousel');
+        this.resumeCarousel.emit();
+        this.resetAutoHideTimer();
+    }
+
+    /**
+     * Handle template change request
+     */
+    onTemplateChange(templateId: string): void {
+        console.log(`NavigationControlsComponent.onTemplateChange(${templateId})`);
+        this.templateChangeRequested.emit(templateId);
+        this.showControls();
+    }
+
+    /**
+     * Get current slide info for accessibility
+     */
+    getSlideInfo(): string {
+        const current = this.currentSlideIndex() + 1;
+        const total = this.totalSlides();
+        return `Слайд ${current} от ${total}`;
+    }
+
+    /**
      * Show controls temporarily
      */
     showControls(): void {
@@ -223,6 +305,11 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
 
         console.log(`NavigationControlsComponent: Key pressed: ${event.key}`);
 
+        // Don't handle shortcuts if carousel is not ready (except help)
+        if (!this.isCarouselReady() && event.key !== 'h' && event.key !== 'H' && event.key !== 'Escape') {
+            return;
+        }
+
         switch (event.key) {
             case 'ArrowLeft':
                 event.preventDefault();
@@ -244,7 +331,7 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
             case 'F':
                 event.preventDefault();
                 this.onRequestFullscreen();
-                this.showControls(); // ✅ ДОБАВЕНО - show controls при fullscreen
+                this.showControls();
                 break;
             case 'h':
             case 'H':
@@ -256,6 +343,27 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                     event.preventDefault();
                     this.toggleHelp();
                 }
+                break;
+            // ✅ NEW: Number keys for direct slide navigation
+            case '1': case '2': case '3': case '4': case '5':
+            case '6': case '7': case '8': case '9':
+                const slideNumber = parseInt(event.key) - 1;
+                if (slideNumber < this.totalSlides()) {
+                    event.preventDefault();
+                    this.onGoToSlide(slideNumber);
+                    this.showControls();
+                }
+                break;
+            // ✅ NEW: Pause/Resume keys
+            case 'p':
+            case 'P':
+                event.preventDefault();
+                if (this.isAutoPlaying()) {
+                    this.onPauseCarousel();
+                } else {
+                    this.onResumeCarousel();
+                }
+                this.showControls();
                 break;
         }
     }

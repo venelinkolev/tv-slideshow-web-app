@@ -32,6 +32,22 @@ import { ChangeDetectionStrategy } from '@angular/core';
 })
 export class SlideProgressComponent implements OnInit, OnDestroy {
 
+    // ✅ NEW: Carousel synchronization inputs
+    readonly isCarouselReady = input<boolean>(false);
+    readonly carouselTransitionDuration = input<number>(1000);
+    readonly isCarouselTransitioning = input<boolean>(false);
+    readonly autoPlayActive = input<boolean>(true);
+
+    // ✅ NEW: Template and error state inputs
+    readonly currentTemplate = input<string>('classic');
+    readonly hasError = input<boolean>(false);
+    readonly errorMessage = input<string>('');
+
+    // ✅ NEW: Enhanced outputs for carousel control
+    readonly slideChangeRequested = output<number>();
+    readonly pauseRequested = output<void>();
+    readonly resumeRequested = output<void>();
+
     // ✅ Angular 18 Input signals
     readonly currentIndex = input.required<number>();
     readonly totalSlides = input.required<number>();
@@ -61,8 +77,17 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     readonly overallProgress = computed(() => {
         const current = this.currentIndex();
         const total = this.totalSlides();
+        const isTransitioning = this.isCarouselTransitioning();
+        const transitionDuration = this.carouselTransitionDuration();
 
         if (total === 0) return 0;
+
+        // During carousel transitions, show smooth progress
+        if (isTransitioning && transitionDuration > 0) {
+            const transitionProgress = Math.min(100, (Date.now() - this.slideStartTime) / transitionDuration * 100);
+            const baseProgress = (current / total) * 100;
+            return Math.min(100, baseProgress + (transitionProgress / total));
+        }
 
         // Calculate base progress + current slide progress
         const baseProgress = (current / total) * 100;
@@ -82,6 +107,12 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
         if (this.autoHide()) classes.push('slide-progress--auto-hide');
         if (this.totalSlides() <= 1) classes.push('slide-progress--single-slide');
 
+        // ✅ NEW: Carousel-aware classes
+        if (!this.isCarouselReady()) classes.push('slide-progress--carousel-not-ready');
+        if (this.isCarouselTransitioning()) classes.push('slide-progress--transitioning');
+        if (this.hasError()) classes.push('slide-progress--error');
+        if (!this.autoPlayActive()) classes.push('slide-progress--paused');
+
         return classes.join(' ');
     });
 
@@ -91,6 +122,51 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
 
     readonly ariaLabel = computed(() => {
         return `Слайд ${this.displayCurrentIndex()} от ${this.totalSlides()}, прогрес ${Math.round(this.overallProgress())}%`;
+    });
+
+    // ✅ NEW: Enhanced progress status for accessibility
+    readonly enhancedProgressStatus = computed(() => {
+        const current = this.displayCurrentIndex();
+        const total = this.totalSlides();
+        const progress = Math.round(this.overallProgress());
+        const template = this.currentTemplate();
+        const hasError = this.hasError();
+        const errorMsg = this.errorMessage();
+
+        if (hasError && errorMsg) {
+            return `Грешка: ${errorMsg}`;
+        }
+
+        if (!this.isCarouselReady()) {
+            return 'Слайдшоуто се зарежда...';
+        }
+
+        return `Слайд ${current} от ${total}, прогрес ${progress}%, темплейт: ${template}`;
+    });
+
+    // ✅ NEW: Carousel synchronization effect
+    private carouselSyncEffect = effect(() => {
+        const carouselReady = this.isCarouselReady();
+        const isTransitioning = this.isCarouselTransitioning();
+        const hasError = this.hasError();
+
+        untracked(() => {
+            if (hasError) {
+                this.pauseProgressTracking();
+                return;
+            }
+
+            if (!carouselReady) {
+                this.pauseProgressTracking();
+                return;
+            }
+
+            if (isTransitioning) {
+                this.pauseProgressTracking();
+            } else {
+                this.resumeProgressTracking();
+            }
+        });
     });
 
     // ✅ Auto-hide effect
@@ -137,6 +213,40 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
      */
     createArray(length: number): any[] {
         return Array(length).fill(0);
+    }
+
+    /**
+ * Pause progress tracking temporarily
+ */
+    pauseProgressTracking(): void {
+        console.log('SlideProgressComponent: Pausing progress tracking');
+        this.stopProgressTracking();
+    }
+
+    /**
+     * Resume progress tracking 
+     */
+    resumeProgressTracking(): void {
+        console.log('SlideProgressComponent: Resuming progress tracking');
+        if (this.isCarouselReady() && !this.hasError()) {
+            this.startProgressTracking();
+        }
+    }
+
+    /**
+     * Sync with carousel position immediately
+     */
+    syncWithCarousel(newIndex: number): void {
+        console.log(`SlideProgressComponent: Syncing with carousel position ${newIndex}`);
+
+        // Update progress without restarting timer
+        const total = this.totalSlides();
+        const percentage = total > 0 ? ((newIndex + 1) / total) * 100 : 0;
+        this.progressPercentageSignal.set(percentage);
+
+        // Reset slide progress for new slide
+        this.slideProgressSignal.set(0);
+        this.slideStartTime = Date.now();
     }
 
     ngOnInit(): void {
@@ -243,6 +353,8 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
      * Handle click на progress bar за manual navigation
      */
     onProgressBarClick(event: MouseEvent): void {
+        if (!this.isCarouselReady()) return;
+
         const progressElement = event.currentTarget as HTMLElement;
         const rect = progressElement.getBoundingClientRect();
         const clickX = event.clientX - rect.left;
@@ -253,10 +365,18 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
 
         console.log(`SlideProgressComponent.onProgressBarClick() - Target: ${validIndex}, Percentage: ${percentage.toFixed(1)}%`);
 
-        this.progressClick.emit({
-            targetIndex: validIndex,
-            percentage: percentage
-        });
+        // ✅ NEW: Use slideChangeRequested instead of progressClick
+        this.slideChangeRequested.emit(validIndex);
+
+        // Pause auto-rotation temporarily when user interacts
+        this.pauseRequested.emit();
+
+        // Resume after delay
+        setTimeout(() => {
+            if (!this.hasError()) {
+                this.resumeRequested.emit();
+            }
+        }, 3000);
     }
 
     /**
