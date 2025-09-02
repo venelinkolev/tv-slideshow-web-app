@@ -70,16 +70,19 @@
 
     }
     <!-- Empty State -->
-    <div class="empty-state" *ngIf="!isLoading() && !hasError() && (!products() || products().length === 0)">
+    @if (!isLoading() && !hasError() && (!products() || products().length === 0)) {
+    <div class="empty-state">
         <div class="empty-content">
             <div class="empty-icon">📦</div>
             <h2 class="empty-title">Няма налични продукти</h2>
             <p class="empty-message">Моля, добавете продукти в администрацията</p>
         </div>
     </div>
+    }
 
     <!-- Performance Monitor (само за development/debugging) -->
-    <div class="performance-info" *ngIf="isTvDevice() && false" [attr.aria-hidden]="true">
+    @if (isTvDevice() && false) {
+    <div class="performance-info" [attr.aria-hidden]="true">
         <div class="perf-item">
             <span class="label">FPS:</span>
             <span class="value" [class.warning]="currentFPS() < 25">{{ currentFPS() }}</span>
@@ -97,28 +100,37 @@
             <span class="value">{{ tvPlatform() || 'Unknown' }}</span>
         </div>
     </div>
+    }
 
     <!-- TV Status Indicators -->
-    <div class="tv-status-indicators" *ngIf="isTvDevice()" [attr.aria-hidden]="true">
+    @if (isTvDevice()) {
+    <div class="tv-status-indicators" [attr.aria-hidden]="true">
 
         <!-- Sleep Prevention Active -->
-        <div class="status-indicator sleep-prevention" *ngIf="sleepPreventionActive()" title="Sleep prevention active">
+        @if (sleepPreventionActive()) {
+        <div class="status-indicator sleep-prevention" title="Sleep prevention active">
             🛡️
         </div>
+        }
 
         <!-- Fullscreen Status -->
-        <div class="status-indicator fullscreen" *ngIf="isFullscreen()" title="Fullscreen mode">
+        @if (isFullscreen()) {
+        <div class="status-indicator fullscreen" title="Fullscreen mode">
             ⛶
         </div>
+        }
 
         <!-- Performance Level -->
-        <div class="status-indicator performance" *ngIf="performanceLevel() != null"
+        @if (performanceLevel()) {
+        <div class="status-indicator performance"
             [class]="'perf-' + getPerformanceLevelName(performanceLevel()).toLowerCase()"
             [title]="'Performance level: ' + getPerformanceLevelName(performanceLevel())">
             {{ performanceLevel() >= 3 ? '🟢' :
             performanceLevel() === 2 ? '🟡' : '🔴' }}
         </div>
+        }
     </div>
+    }
 
     <!-- Accessibility Announcements -->
     <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
