@@ -149,6 +149,7 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
         const carouselReady = this.isCarouselReady();
         const isTransitioning = this.isCarouselTransitioning();
         const hasError = this.hasError();
+        const autoPlayActive = this.autoPlayActive(); // ← ✅ ADD: Check auto-play status
 
         untracked(() => {
             if (hasError) {
@@ -157,6 +158,13 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
             }
 
             if (!carouselReady) {
+                this.pauseProgressTracking();
+                return;
+            }
+
+            // ✅ NEW: Pause progress tracking when auto-play is paused
+            if (!autoPlayActive) {
+                console.log('SlideProgress: Auto-play paused - stopping progress tracking');
                 this.pauseProgressTracking();
                 return;
             }
@@ -287,6 +295,10 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
      */
     private startProgressTracking(): void {
         if (!this.animationEnabled()) return;
+        if (!this.autoPlayActive()) {  // ← ✅ ADD: Don't start if auto-play is paused
+            console.log('SlideProgressComponent: Auto-play not active - skipping progress tracking');
+            return;
+        }
 
         console.log('SlideProgressComponent.startProgressTracking()');
 
@@ -297,6 +309,13 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
 
         // Update every 100ms за smooth animation
         this.progressInterval = window.setInterval(() => {
+            // ✅ ADD: Double-check auto-play status during tracking
+            if (!this.autoPlayActive()) {
+                console.log('SlideProgressComponent: Auto-play paused during tracking - stopping');
+                this.stopProgressTracking();
+                return;
+            }
+
             this.updateSlideProgress();
         }, 100);
     }

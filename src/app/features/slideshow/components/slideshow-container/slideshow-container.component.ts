@@ -1027,6 +1027,45 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     }
 
     /**
+ * Navigate to next slide automatically (без user interaction pause)
+ * ЗА АВТОМАТИЧНО НАВИГИРАНЕ - НЕ ПАУЗА ROTATION
+ */
+    private nextSlideAutomatic(): void {
+        console.log('SlideShowContainerComponent.nextSlideAutomatic() - Automatic navigation (no pause)');
+
+        const carousel = this.emblaCarousel();
+        const products = this.products();
+
+        if (products.length === 0) {
+            console.warn('No products available for automatic navigation');
+            return;
+        }
+
+        if (!carousel) {
+            console.warn('Embla carousel not ready - using fallback for automatic navigation');
+            this.fallbackNextSlide();
+            return;
+        }
+
+        // Check performance before slide transition
+        const fps = this.currentFPS();
+        if (fps < 15) {
+            console.warn('Performance too low for smooth transition - skipping this cycle');
+            return;
+        }
+
+        // Advance to next slide using Embla
+        if (carousel.canScrollNext()) {
+            console.log('Using Embla scrollNext() - automatic');
+            carousel.scrollNext();
+        } else {
+            // Loop back to first slide
+            console.log('Loop back to beginning - automatic');
+            carousel.scrollTo(0);
+        }
+    }
+
+    /**
      * Navigate to specific slide using Embla carousel
      * Enhanced method for direct navigation
      */
@@ -1260,16 +1299,25 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     handleProgressComplete(event: { currentIndex: number; totalSlides: number }): void {
         console.log('SlideShowContainerComponent.handleProgressComplete() - Auto advancing to next slide', event);
 
-        const products = this.products();
-        if (products.length === 0) {
-            console.warn('No products available for slide advancement');
+        const { currentIndex, totalSlides } = event;
+
+        // ✅ Enhanced: Only advance if not transitioning and auto-rotation is active
+        if (this.isTransitioning() || !this.isAutoPlaying()) {
+            console.log('Skipping progress complete - transitioning or auto-play inactive');
             return;
         }
 
-        // Навигирай към следващия slide
-        this.nextSlide();
+        // ✅ Enhanced: Verify carousel state before advancing
+        const carousel = this.emblaCarousel();
+        if (!carousel) {
+            console.warn('Cannot advance slide - carousel not ready');
+            return;
+        }
 
-        console.log(`Auto-advanced from slide ${event.currentIndex + 1} to next slide`);
+        console.log(`🚀 Progress complete - auto advancing from slide ${currentIndex}`);
+
+        // ✅ FIXED: Use automatic navigation instead of manual
+        this.nextSlideAutomatic(); // ← Instead of nextSlide()
     }
 
     /**
@@ -1724,8 +1772,11 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     /**
      * Handle next slide with auto-rotation logic
      * Enhanced version that works with Embla carousel
-     */
+     * САМО ЗА TIMER-BASED AUTO-ROTATION
+     **/
     private nextSlideWithRotation(): void {
+        console.log('SlideShowContainerComponent.nextSlideWithRotation() - Timer-based automatic navigation');
+
         const carousel = this.emblaCarousel();
         const products = this.products();
 
