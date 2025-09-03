@@ -95,6 +95,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     protected readonly canRetryError = signal<boolean>(true);
     protected readonly isRetrying = signal<boolean>(false);
 
+    // ✅ NEW: Transition state signal
+    protected readonly isTransitioning = signal<boolean>(false);
+
     // Auto-rotation timer управление
     private autoRotationTimer$?: Subscription;
     private readonly pausedByUser = signal<boolean>(false);
@@ -109,7 +112,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     /**
     * Embla carousel instance for programmatic control
     */
-    private emblaCarousel = signal<EmblaCarouselType | null>(null);
+    public emblaCarousel = signal<EmblaCarouselType | null>(null);
 
     // TV-specific reactive state  
     protected readonly performanceLevel = signal<PerformanceLevel>(PerformanceLevel.STANDARD);
@@ -493,6 +496,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             const currentIndex = this.currentSlideIndex();
 
             console.log(`Embla carousel select event: ${selectedIndex} (current: ${currentIndex})`);
+            this.isTransitioning.set(false);
 
             // Sync with our internal state САМО ако има реална промяна
             if (selectedIndex !== currentIndex) {
@@ -504,6 +508,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         // Listen for settle events (when transition completes)
         emblaCarousel.on('settle', () => {
             console.log('Embla carousel transition settled');
+            this.isTransitioning.set(false);
 
             // Performance monitoring: track transition time
             if (this.performanceMonitor) {
@@ -1181,6 +1186,71 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         if (img && img.src !== '/assets/images/product-placeholder.jpg') {
             img.src = '/assets/images/product-placeholder.jpg';
         }
+    }
+
+    /**
+     * Handle go to slide request from NavigationControls
+     */
+    onGoToSlide(targetIndex: number): void {
+        console.log(`SlideShowContainerComponent.onGoToSlide(${targetIndex})`);
+
+        const carousel = this.emblaCarousel();
+        const products = this.products();
+
+        if (!carousel || targetIndex < 0 || targetIndex >= products.length) {
+            console.warn(`Invalid slide index: ${targetIndex}`);
+            return;
+        }
+
+        this.isTransitioning.set(true);
+        carousel.scrollTo(targetIndex);
+    }
+
+    /**
+     * Handle slide change request from SlideProgress
+     */
+    onSlideChangeRequested(targetIndex: number): void {
+        console.log(`SlideShowContainerComponent.onSlideChangeRequested(${targetIndex})`);
+        this.onGoToSlide(targetIndex);
+    }
+
+    /**
+     * Handle pause auto rotation request from components
+     */
+    onPauseAutoRotation(): void {
+        console.log('SlideShowContainerComponent.onPauseAutoRotation()');
+        this.pauseAutoRotation();
+    }
+
+    /**
+     * Handle resume auto rotation request from components  
+     */
+    onResumeAutoRotation(): void {
+        console.log('SlideShowContainerComponent.onResumeAutoRotation()');
+        this.resumeAutoRotation();
+    }
+
+    /**
+     * Handle template change request
+     */
+    onTemplateChangeRequested(templateId: string): void {
+        console.log(`SlideShowContainerComponent.onTemplateChangeRequested(${templateId})`);
+
+        // Update config to persist the change  
+        if (this.configService) {
+            this.configService.updateTemplateSettings({
+                selectedTemplateId: templateId
+            }).subscribe({
+                next: (updatedConfig) => {
+                    console.log(`Template updated to: ${templateId}`);
+                },
+                error: (error) => {
+                    console.error('Failed to update template:', error);
+                }
+            });
+        }
+
+        // No need to restart carousel - config reactivity will handle the rest
     }
 
     /**
