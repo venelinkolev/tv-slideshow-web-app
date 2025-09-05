@@ -195,6 +195,10 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
         });
     });
 
+    // ✅ Pause/resume state tracking:
+    private pausedAt: number = 0;
+    private pausedProgress: number = 0;
+
     // ✅ Progress tracking variables
     private progressInterval?: number;
     private slideStartTime: number = 0;
@@ -228,6 +232,8 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
  */
     pauseProgressTracking(): void {
         console.log('SlideProgressComponent: Pausing progress tracking');
+        this.pausedAt = Date.now();
+        this.pausedProgress = this.slideProgressSignal(); // Запази текущия прогрес
         this.stopProgressTracking();
     }
 
@@ -237,10 +243,12 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     resumeProgressTracking(): void {
         console.log('SlideProgressComponent: Resuming progress tracking');
         if (this.isCarouselReady() && !this.hasError()) {
+            // Възстанови от паузираната позиция
+            const pausedDuration = Date.now() - this.pausedAt;
+            this.slideStartTime = Date.now() - (this.pausedProgress / 100 * this.slideInterval());
             this.startProgressTracking();
         }
     }
-
     /**
      * Sync with carousel position immediately
      */
@@ -336,23 +344,23 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
      * @private
      */
     private updateSlideProgress(): void {
+        // Провери дали е паузирано
+        if (!this.autoPlayActive() || this.hasError()) {
+            return; // Не обновява progress ако е паузирано
+        }
+
         const elapsed = Date.now() - this.slideStartTime;
         const interval = this.slideInterval();
-
-        if (interval <= 0) return;
-
         const slideProgressPercent = Math.min(100, (elapsed / interval) * 100);
         this.slideProgressSignal.set(slideProgressPercent);
 
-        // Emit complete event ако slide-a е завършен
+        // Fix за 92% reset проблема:
         if (slideProgressPercent >= 100) {
             this.progressComplete.emit({
                 currentIndex: this.currentIndex(),
                 totalSlides: this.totalSlides()
             });
-
-            // Reset за next slide
-            this.resetSlideProgress();
+            this.resetSlideProgress(); // Reset СЛЕД emit
         }
     }
 

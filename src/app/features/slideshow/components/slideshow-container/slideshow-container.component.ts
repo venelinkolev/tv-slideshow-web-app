@@ -132,7 +132,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
 
     readonly resumeDelay = computed((): number => {
         const config = this.config();
-        return config?.timing?.resumeDelay ?? 3000; // Default fallback
+        return config?.timing?.resumeDelay ?? 1000; // Default fallback
     });
 
     readonly slideInterval = computed((): number => {
@@ -162,8 +162,8 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
 
         // FPS-based adjustments with explicit number checks
         if (typeof fps === 'number') {
-            if (fps < 20) {
-                return Math.max(baseInterval * 2, 40000); // Double interval for very low FPS
+            if (fps < 20 && fps > 0) {
+                return Math.max(baseInterval * 1.1, 25000); // Minimum 25s for very low FPS
             } else if (fps < 30) {
                 return Math.max(baseInterval * 1.3, 30000);
             }
@@ -1317,7 +1317,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         console.log(`🚀 Progress complete - auto advancing from slide ${currentIndex}`);
 
         // ✅ FIXED: Use automatic navigation instead of manual
-        this.nextSlideAutomatic(); // ← Instead of nextSlide()
+        // this.nextSlideAutomatic(); // ← Instead of nextSlide()
     }
 
     /**
@@ -1787,10 +1787,11 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
 
         // Check performance before slide transition
         const fps = this.currentFPS();
-        if (fps < 15) {
+        if (fps < 10 && fps > 0) { // Only block if FPS is measurable and extremely low
             console.warn('Performance too low for smooth transition - skipping this cycle');
             return;
         }
+        // Ако FPS = 0 (не се измерва), продължава нормално
 
         // Advance to next slide using Embla
         if (carousel.canScrollNext()) {

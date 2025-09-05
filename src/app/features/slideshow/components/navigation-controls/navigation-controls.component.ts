@@ -324,7 +324,11 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
             case ' ':
             case 'Space':
                 event.preventDefault();
-                this.onToggleAutoPlay();
+                if (this.isAutoPlaying()) {
+                    this.onPauseCarousel();
+                } else {
+                    this.onResumeCarousel();
+                }
                 this.showControls();
                 break;
             case 'f':
