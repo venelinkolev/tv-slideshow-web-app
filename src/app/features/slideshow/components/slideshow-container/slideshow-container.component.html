@@ -54,8 +54,7 @@
         <!-- Slide Progress Indicator -->
         @if (config(); as currentConfig) {
         <app-slide-progress [currentIndex]="currentSlideIndex()" [totalSlides]="products().length"
-            [slideInterval]="currentConfig?.timing?.baseSlideDuration || 20000" [showCounter]="true"
-            [showProgressBar]="true" [autoHide]="false"
+            [slideInterval]="effectiveSlideInterval()" [showCounter]="true" [showProgressBar]="true" [autoHide]="false"
             [animationEnabled]="currentConfig?.timing?.transitionType !== 'none'"
             (progressComplete)="handleProgressComplete($event)" (progressClick)="handleProgressClick($event)"
             [isCarouselReady]="!!emblaCarousel()" [carouselTransitionDuration]="transitionDuration()"

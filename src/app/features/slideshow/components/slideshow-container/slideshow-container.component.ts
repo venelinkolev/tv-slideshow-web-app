@@ -154,9 +154,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         // FIX: Explicit null checks for performance level
         if (performanceLevel !== null && performanceLevel !== undefined) {
             if (performanceLevel <= 1) {
-                return Math.max(baseInterval * 1.5, 30000); // Minimum 30s for weak TVs
+                return Math.max(baseInterval * 1.2, 25000); // Minimum 25s for weak TVs
             } else if (performanceLevel === 2) {
-                return Math.max(baseInterval * 1.2, 25000); // Minimum 25s for basic TVs
+                return Math.max(baseInterval * 1.1, 20000); // Minimum 20s for basic TVs
             }
         }
 
@@ -1758,15 +1758,15 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         const resumeDelay = this.resumeDelay();
         console.log(`Resuming auto-rotation after ${resumeDelay}ms delay`);
 
-        setTimeout(() => {
-            if (!this.pausedByUser()) {
-                console.log('Auto-rotation already resumed');
-                return;
-            }
+        // setTimeout(() => {
+        //     if (!this.pausedByUser()) {
+        //         console.log('Auto-rotation already resumed');
+        //         return;
+        //     }
+        // }, resumeDelay);
 
-            this.pausedByUser.set(false);
-            console.log('Auto-rotation resumed');
-        }, resumeDelay);
+        this.pausedByUser.set(false);
+        console.log('Auto-rotation resumed');
     }
 
     /**

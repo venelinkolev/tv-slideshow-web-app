@@ -86,7 +86,7 @@ export class ConfigService {
             transitionDuration: 1000, // 1 second
             transitionType: 'fade',
             pauseOnInteraction: true,
-            resumeDelay: 3000,
+            resumeDelay: 1000,
             durationOverrides: {
                 hasLongDescription: 25000,
                 hasDiscount: 22000,
