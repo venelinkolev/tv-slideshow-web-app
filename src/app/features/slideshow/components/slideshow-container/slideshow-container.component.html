@@ -99,10 +99,12 @@
             <span class="label">Memory:</span>
             <span class="value" [class.warning]="memoryUsage() > 80">{{ memoryUsage() }}MB</span>
         </div>
-        <div class="perf-item" *ngIf="performanceLevel() != null">
+        @if (performanceLevel() != null) {
+        <div class="perf-item">
             <span class="label">Level:</span>
             <span class="value">{{ getPerformanceLevelName(performanceLevel()) }}</span>
         </div>
+        }
         <div class="perf-item">
             <span class="label">Platform:</span>
             <span class="value">{{ tvPlatform() || 'Unknown' }}</span>

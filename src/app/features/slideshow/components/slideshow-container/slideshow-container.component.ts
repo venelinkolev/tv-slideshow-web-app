@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+// import { environment } from '@environments/environment';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -13,6 +14,7 @@ import {
     AfterViewInit,
     Renderer2,
     PLATFORM_ID,
+    isDevMode,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, Subject, interval, combineLatest, fromEvent, firstValueFrom, timer, Subscription, BehaviorSubject } from 'rxjs';
@@ -63,6 +65,8 @@ import { EmblaCarouselDirective, EmblaCarouselType } from 'embla-carousel-angula
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterViewInit {
+
+    public isDevelopmentMode = !isDevMode();
 
     // Tracking за auto-rotation status changes
     private lastAutoRotationStatus: boolean = false;
@@ -153,6 +157,12 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         const baseInterval = this.slideInterval();
         const fps = this.currentFPS();
         const performanceLevel = this.performanceLevel();
+
+        // ✅ Development mode - use base interval
+        if (this.isDevelopmentMode) {
+            console.log(`🔧 DEV MODE: Using base interval ${baseInterval}ms (ignoring performance metrics)`);
+            return baseInterval;
+        }
 
         // FIX: Explicit null checks for performance level
         if (performanceLevel !== null && performanceLevel !== undefined) {
@@ -1799,13 +1809,19 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             return;
         }
 
-        // Check performance before slide transition
-        const fps = this.currentFPS();
-        if (fps < 10 && fps > 0) { // Only block if FPS is measurable and extremely low
-            console.warn('Performance too low for smooth transition - skipping this cycle');
-            return;
+        // ✅ Development mode - skip performance checks
+        if (this.isDevelopmentMode) {
+            console.log('🔧 DEV MODE: Skipping performance checks');
+        } else {
+            // Production performance check
+            // Check performance before slide transition
+            const fps = this.currentFPS();
+            if (fps > 0 && fps < 10) {
+                console.warn('Performance very low for smooth transition - skipping this cycle');
+                return;
+            }
+            // Ако FPS = 0 (не се измерва), продължава нормално
         }
-        // Ако FPS = 0 (не се измерва), продължава нормално
 
         // Advance to next slide using Embla
         if (carousel.canScrollNext()) {
@@ -1825,6 +1841,12 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             return;
         }
 
+        // ✅ ВРЕМЕННО: Спри performance monitoring в development
+        if (isDevMode()) {
+            console.log('🔧 DEV MODE: Skipping performance monitoring (prevents FPS=0 issues)');
+            return;
+        }
+
         // Monitor FPS less frequently 
         interval(5000).pipe( // Намалих от 2000 на 5000ms
             takeUntil(this.destroy$)
@@ -1841,7 +1863,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
                 }
 
                 const wasThrottled = this.performanceThrottled();
-                const shouldThrottle = fps < 25;
+
+                const isDevelopment = this.isDevelopmentMode;
+                const shouldThrottle = fps > 0 && fps < 15; // Only throttle if FPS is measurable and very low
 
                 if (shouldThrottle === true && wasThrottled === false) {
                     console.warn(`🐌 Performance throttling enabled - FPS: ${fps}`);
@@ -1850,6 +1874,12 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
                     console.log(`🚀 Performance throttling disabled - FPS: ${fps}`);
                     this.performanceThrottled.set(false);
                 }
+
+                // ✅ Development mode - disable throttling
+                // if (isDevelopment && fps === 0) {
+                //     console.log(`🔧 DEV MODE: Ignoring FPS = 0, disabling performance throttling`);
+                //     this.performanceThrottled.set(false);
+                // }
             }
         });
     }
