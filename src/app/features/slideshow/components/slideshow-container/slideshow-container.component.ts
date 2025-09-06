@@ -104,6 +104,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     private readonly lastUserInteraction = signal<number>(0);
     private readonly autoRotationEnabled = signal<boolean>(true);
 
+    // ViewChild декларация за SlideProgressComponent:
+    @ViewChild(SlideProgressComponent) slideProgressComponent?: SlideProgressComponent;
+
     // Performance tracking за auto-rotation
     private readonly performanceThrottled = signal<boolean>(false);
 
@@ -502,6 +505,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             if (selectedIndex !== currentIndex) {
                 console.log(`Updating currentSlideIndex: ${currentIndex} -> ${selectedIndex}`);
                 this.currentSlideIndex.set(selectedIndex);
+
+                // ✅ NEW: Sync progress bar без reset
+                this.syncProgressWithCarousel(selectedIndex);
             }
         });
 
@@ -529,6 +535,14 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         emblaCarousel.on('init', () => {
             console.log('Embla carousel fully initialized');
         });
+    }
+
+    // ✅ NEW: Метод за progress sync
+    private syncProgressWithCarousel(newIndex: number): void {
+        // Sync progress bar плавно без reset
+        if (this.slideProgressComponent) {
+            this.slideProgressComponent.syncWithCarousel(newIndex);
+        }
     }
 
     /**
@@ -1302,17 +1316,17 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         const { currentIndex, totalSlides } = event;
 
         // ✅ Enhanced: Only advance if not transitioning and auto-rotation is active
-        if (this.isTransitioning() || !this.isAutoPlaying()) {
-            console.log('Skipping progress complete - transitioning or auto-play inactive');
-            return;
-        }
+        // if (this.isTransitioning() || !this.isAutoPlaying()) {
+        //     console.log('Skipping progress complete - transitioning or auto-play inactive');
+        //     return;
+        // }
 
         // ✅ Enhanced: Verify carousel state before advancing
-        const carousel = this.emblaCarousel();
-        if (!carousel) {
-            console.warn('Cannot advance slide - carousel not ready');
-            return;
-        }
+        // const carousel = this.emblaCarousel();
+        // if (!carousel) {
+        //     console.warn('Cannot advance slide - carousel not ready');
+        //     return;
+        // }
 
         console.log(`🚀 Progress complete - auto advancing from slide ${currentIndex}`);
 

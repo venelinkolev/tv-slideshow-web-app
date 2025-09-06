@@ -263,6 +263,12 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
         // Reset slide progress for new slide
         this.slideProgressSignal.set(0);
         this.slideStartTime = Date.now();
+
+        // ✅ Restart tracking ако е активно
+        if (this.autoPlayActive() && this.isCarouselReady()) {
+            this.stopProgressTracking();
+            this.startProgressTracking();
+        }
     }
 
     ngOnInit(): void {
@@ -360,7 +366,7 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
                 currentIndex: this.currentIndex(),
                 totalSlides: this.totalSlides()
             });
-            this.resetSlideProgress(); // Reset СЛЕД emit
+            // this.resetSlideProgress(); // Reset СЛЕД emit
         }
     }
 
