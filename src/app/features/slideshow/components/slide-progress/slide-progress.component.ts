@@ -362,11 +362,12 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
 
         // Fix за 92% reset проблема:
         if (slideProgressPercent >= 100) {
-            this.progressComplete.emit({
-                currentIndex: this.currentIndex(),
-                totalSlides: this.totalSlides()
-            });
+            // this.progressComplete.emit({
+            //     currentIndex: this.currentIndex(),
+            //     totalSlides: this.totalSlides()
+            // });
             // this.resetSlideProgress(); // Reset СЛЕД emit
+            this.stopProgressTracking(); // Спри tracking след завършване
         }
     }
 

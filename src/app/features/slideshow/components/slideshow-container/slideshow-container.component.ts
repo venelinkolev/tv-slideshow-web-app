@@ -990,7 +990,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         console.log('SlideShowContainerComponent.nextSlide() - Manual navigation with pause');
 
         // Pause auto-rotation for manual interaction
-        this.handleUserInteraction();
+        this.handleUserInteraction(true);
 
         const carousel = this.emblaCarousel();
         const products = this.products();
@@ -1024,7 +1024,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         console.log('SlideShowContainerComponent.previousSlide() - Manual navigation with pause');
 
         // Pause auto-rotation for manual interaction
-        this.handleUserInteraction();
+        this.handleUserInteraction(true);
 
         const carousel = this.emblaCarousel();
         const products = this.products();
@@ -1093,7 +1093,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Navigate to specific slide using Embla carousel
      * Enhanced method for direct navigation
      */
-    goToSlide(targetIndex: number, smooth: boolean = true): void {
+    goToSlide(targetIndex: number, smooth: boolean = true, isUserInitiated: boolean = false): void {
         console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, ${smooth}) - Direct navigation`);
 
         const carousel = this.emblaCarousel();
@@ -1111,6 +1111,11 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             console.warn('Embla carousel not ready - using fallback for direct navigation');
             this.currentSlideIndex.set(validIndex);
             return;
+        }
+
+        // FIXED: If user-initiated, restart auto-rotation timer
+        if (isUserInitiated) {
+            this.handleUserInteraction(true);
         }
 
         // Use Embla's scrollTo - второто bool parameter е immediate (true = no animation)
@@ -1935,15 +1940,47 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     /**
      * Handle user interaction event
      */
-    private handleUserInteraction(): void {
+    private handleUserInteraction(isNavigation: boolean = false): void {
         const shouldPause = this.pauseOnInteraction();
         // FIX: Explicit boolean check
         if (shouldPause !== true) {
             return;
         }
 
-        this.pauseAutoRotation();
-        this.resumeAutoRotation();
+        if (isNavigation) {
+            // ✅ FIXED: For manual navigation (arrow keys) - RESTART auto-rotation timer
+            // This ensures timer is synchronized with the new slide position
+            console.log('Manual navigation detected - restarting auto-rotation timer for sync');
+            this.restartAutoRotationAfterNavigation();
+        } else {
+            // ✅ KEEP: For pause/resume (space key) - use existing pause/resume logic
+            console.log('Pause/resume interaction - using temporary pause logic');
+            this.pauseAutoRotation();
+            this.resumeAutoRotation();
+        }
+    }
+
+    /**
+    * Restart auto-rotation timer after manual navigation
+    * Ensures timer is synchronized with new slide position
+    * @private
+    */
+    private restartAutoRotationAfterNavigation(): void {
+        console.log('🔄 Restarting auto-rotation timer after manual navigation');
+
+        // Stop current timer
+        this.stopAutoRotation();
+
+        // Small delay to ensure clean state transition
+        setTimeout(() => {
+            // Only restart if conditions are still met
+            if (this.shouldAutoRotationBeRunning()) {
+                console.log('✅ Restarting auto-rotation timer with fresh timing');
+                this.startAutoRotation();
+            } else {
+                console.log('⏸️ Auto-rotation conditions not met - keeping stopped');
+            }
+        }, 50); // Short delay for clean restart
     }
 
     /**
