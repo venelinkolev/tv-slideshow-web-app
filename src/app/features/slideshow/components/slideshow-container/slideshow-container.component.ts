@@ -930,18 +930,33 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
   * Toggle auto play functionality - enhanced version
   */
     public toggleAutoPlay(): void {
-        const newState = !this.autoRotationEnabled();
+        const currentState = this.autoRotationEnabled();
+        const newState = !currentState;
+
+        console.log(`SlideShowContainerComponent.toggleAutoPlay() - ${currentState} → ${newState}`);
+
         this.autoRotationEnabled.set(newState);
 
         if (newState) {
-            console.log('Auto-rotation enabled by user');
-            this.startAutoRotation();
+            console.log('Auto-rotation enabled by toggle');
+            this.handleUserInteraction('resume');
         } else {
-            console.log('Auto-rotation disabled by user');
-            this.stopAutoRotation();
+            console.log('Auto-rotation disabled by toggle');
+            this.handleUserInteraction('pause');
         }
 
-        this.isAutoPlaying.set(newState);
+        // const newState = !this.autoRotationEnabled();
+        // this.autoRotationEnabled.set(newState);
+
+        // if (newState) {
+        //     console.log('Auto-rotation enabled by user');
+        //     this.startAutoRotation();
+        // } else {
+        //     console.log('Auto-rotation disabled by user');
+        //     this.stopAutoRotation();
+        // }
+
+        // this.isAutoPlaying.set(newState);
     }
 
     public restartSlideshow(): void {
@@ -990,7 +1005,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         console.log('SlideShowContainerComponent.nextSlide() - Manual navigation with pause');
 
         // Pause auto-rotation for manual interaction
-        this.handleUserInteraction(true);
+        this.handleUserInteraction('navigation');
 
         const carousel = this.emblaCarousel();
         const products = this.products();
@@ -1024,7 +1039,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         console.log('SlideShowContainerComponent.previousSlide() - Manual navigation with pause');
 
         // Pause auto-rotation for manual interaction
-        this.handleUserInteraction(true);
+        this.handleUserInteraction('navigation');
 
         const carousel = this.emblaCarousel();
         const products = this.products();
@@ -1093,7 +1108,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Navigate to specific slide using Embla carousel
      * Enhanced method for direct navigation
      */
-    goToSlide(targetIndex: number, smooth: boolean = true, isUserInitiated: boolean = false): void {
+    goToSlide(targetIndex: number, smooth: boolean = true): void {
         console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, ${smooth}) - Direct navigation`);
 
         const carousel = this.emblaCarousel();
@@ -1113,10 +1128,8 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             return;
         }
 
-        // FIXED: If user-initiated, restart auto-rotation timer
-        if (isUserInitiated) {
-            this.handleUserInteraction(true);
-        }
+        console.log('🔄 Direct navigation - restarting auto-rotation timer');
+        this.handleUserInteraction('navigation');
 
         // Use Embla's scrollTo - второто bool parameter е immediate (true = no animation)
         console.log(`Using Embla scrollTo(${validIndex}, ${!smooth})`);
@@ -1260,18 +1273,23 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Handle go to slide request from NavigationControls
      */
     onGoToSlide(targetIndex: number): void {
-        console.log(`SlideShowContainerComponent.onGoToSlide(${targetIndex})`);
+        console.log(`SlideShowContainerComponent.onGoToSlide(${targetIndex}) - User-initiated navigation`);
 
-        const carousel = this.emblaCarousel();
-        const products = this.products();
+        // ✅ FIXED: Always treat as user-initiated, use smooth transition
+        this.goToSlide(targetIndex, true);
 
-        if (!carousel || targetIndex < 0 || targetIndex >= products.length) {
-            console.warn(`Invalid slide index: ${targetIndex}`);
-            return;
-        }
+        // console.log(`SlideShowContainerComponent.onGoToSlide(${targetIndex})`);
 
-        this.isTransitioning.set(true);
-        carousel.scrollTo(targetIndex);
+        // const carousel = this.emblaCarousel();
+        // const products = this.products();
+
+        // if (!carousel || targetIndex < 0 || targetIndex >= products.length) {
+        //     console.warn(`Invalid slide index: ${targetIndex}`);
+        //     return;
+        // }
+
+        // this.isTransitioning.set(true);
+        // carousel.scrollTo(targetIndex);
     }
 
     /**
@@ -1286,16 +1304,20 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Handle pause auto rotation request from components
      */
     onPauseAutoRotation(): void {
-        console.log('SlideShowContainerComponent.onPauseAutoRotation()');
-        this.pauseAutoRotation();
+        console.log('SlideShowContainerComponent.onPauseAutoRotation() - User pause request');
+        this.handleUserInteraction('pause');
+        // console.log('SlideShowContainerComponent.onPauseAutoRotation()');
+        // this.pauseAutoRotation();
     }
 
     /**
      * Handle resume auto rotation request from components  
      */
     onResumeAutoRotation(): void {
-        console.log('SlideShowContainerComponent.onResumeAutoRotation()');
-        this.resumeAutoRotation();
+        console.log('SlideShowContainerComponent.onResumeAutoRotation() - User resume request');
+        this.handleUserInteraction('resume');
+        // console.log('SlideShowContainerComponent.onResumeAutoRotation()');
+        // this.resumeAutoRotation();
     }
 
     /**
@@ -1940,23 +1962,40 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     /**
      * Handle user interaction event
      */
-    private handleUserInteraction(isNavigation: boolean = false): void {
+    private handleUserInteraction(interactionType: 'navigation' | 'pause' | 'resume' | 'space_toggle' = 'space_toggle'): void {
         const shouldPause = this.pauseOnInteraction();
         // FIX: Explicit boolean check
         if (shouldPause !== true) {
+            console.log(`User interaction (${interactionType}) ignored - pause on interaction disabled`);
             return;
         }
 
-        if (isNavigation) {
-            // ✅ FIXED: For manual navigation (arrow keys) - RESTART auto-rotation timer
-            // This ensures timer is synchronized with the new slide position
-            console.log('Manual navigation detected - restarting auto-rotation timer for sync');
-            this.restartAutoRotationAfterNavigation();
-        } else {
-            // ✅ KEEP: For pause/resume (space key) - use existing pause/resume logic
-            console.log('Pause/resume interaction - using temporary pause logic');
-            this.pauseAutoRotation();
-            this.resumeAutoRotation();
+        switch (interactionType) {
+            case 'navigation':
+                // ✅ Arrow keys, number keys, direct navigation → RESTART timer
+                console.log('🔄 Manual navigation - restarting auto-rotation timer for sync');
+                this.restartAutoRotationAfterNavigation();
+                break;
+
+            case 'pause':
+                // ✅ Explicit pause request → PAUSE auto-rotation
+                console.log('⏸️ Explicit pause - stopping auto-rotation');
+                this.pauseAutoRotation();
+                break;
+
+            case 'resume':
+                // ✅ Explicit resume request → RESUME auto-rotation
+                console.log('▶️ Explicit resume - starting auto-rotation');
+                this.resumeAutoRotation();
+                break;
+
+            case 'space_toggle':
+            default:
+                // ✅ Space key → TOGGLE behavior (pause/resume with delay)
+                console.log('🔄 Space toggle - using temporary pause/resume logic');
+                this.pauseAutoRotation();
+                this.resumeAutoRotation();
+                break;
         }
     }
 

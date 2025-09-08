@@ -253,21 +253,30 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
      * Sync with carousel position immediately
      */
     syncWithCarousel(newIndex: number): void {
-        console.log(`SlideProgressComponent: Syncing with carousel position ${newIndex}`);
+        console.log(`SlideProgressComponent: Syncing with carousel position ${newIndex} (was: ${this.currentIndex()})`);
+
+        // Only sync if actually different
+        if (newIndex === this.currentIndex()) {
+            console.log('Already at target position - no sync needed');
+            return;
+        }
 
         // Update progress without restarting timer
         const total = this.totalSlides();
         const percentage = total > 0 ? ((newIndex + 1) / total) * 100 : 0;
         this.progressPercentageSignal.set(percentage);
 
-        // Reset slide progress for new slide
+        // ✅ CRITICAL FIX: Reset slide progress for new slide
         this.slideProgressSignal.set(0);
-        this.slideStartTime = Date.now();
+        this.slideStartTime = Date.now();  // ← FRESH START TIME!
 
-        // ✅ Restart tracking ако е активно
+        console.log(`Progress synced: ${newIndex + 1}/${total} (${percentage.toFixed(1)}%), fresh timer started`);
+
+        // ✅ Restart tracking with fresh timing
         if (this.autoPlayActive() && this.isCarouselReady()) {
             this.stopProgressTracking();
             this.startProgressTracking();
+            console.log('Progress tracking restarted with fresh timing');
         }
     }
 

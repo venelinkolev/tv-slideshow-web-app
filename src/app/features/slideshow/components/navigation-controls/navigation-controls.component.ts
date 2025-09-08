@@ -194,7 +194,9 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
         if (!this.canNavigate() || !this.isCarouselReady()) return;
 
         const validIndex = Math.max(0, Math.min(slideIndex, this.totalSlides() - 1));
-        console.log(`NavigationControlsComponent.onGoToSlide(${validIndex})`);
+        console.log(`NavigationControlsComponent.onGoToSlide(${validIndex}) - User navigation`);
+
+        // ✅ FIXED: Always emit as user-initiated navigation
         this.goToSlide.emit(validIndex);
         this.resetAutoHideTimer();
     }
@@ -303,27 +305,32 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     onKeyDown(event: KeyboardEvent): void {
         if (!this.remoteControlEnabled()) return;
 
-        console.log(`NavigationControlsComponent: Key pressed: ${event.key}`);
+        console.log(`NavigationControlsComponent: Key pressed: "${event.key}" (code: ${event.code})`);
 
-        // Don't handle shortcuts if carousel is not ready (except help)
         if (!this.isCarouselReady() && event.key !== 'h' && event.key !== 'H' && event.key !== 'Escape') {
+            console.log('Carousel not ready - ignoring key');
             return;
         }
 
         switch (event.key) {
             case 'ArrowLeft':
                 event.preventDefault();
+                console.log('Arrow Left → Previous slide');
                 this.onPreviousSlide();
                 this.showControls();
                 break;
+
             case 'ArrowRight':
                 event.preventDefault();
+                console.log('Arrow Right → Next slide');
                 this.onNextSlide();
                 this.showControls();
                 break;
+
             case ' ':
             case 'Space':
                 event.preventDefault();
+                console.log('Space → Toggle play/pause');
                 if (this.isAutoPlaying()) {
                     this.onPauseCarousel();
                 } else {
@@ -331,37 +338,24 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                 }
                 this.showControls();
                 break;
-            case 'f':
-            case 'F':
-                event.preventDefault();
-                this.onRequestFullscreen();
-                this.showControls();
-                break;
-            case 'h':
-            case 'H':
-                event.preventDefault();
-                this.toggleHelp();
-                break;
-            case 'Escape':
-                if (this.isHelpVisible()) {
-                    event.preventDefault();
-                    this.toggleHelp();
-                }
-                break;
-            // ✅ NEW: Number keys for direct slide navigation
+
+            // ✅ Enhanced number key handling
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9':
                 const slideNumber = parseInt(event.key) - 1;
                 if (slideNumber < this.totalSlides()) {
                     event.preventDefault();
+                    console.log(`Number ${event.key} → Go to slide ${slideNumber}`);
                     this.onGoToSlide(slideNumber);
                     this.showControls();
                 }
                 break;
-            // ✅ NEW: Pause/Resume keys
+
+            // ✅ Explicit pause/resume keys
             case 'p':
             case 'P':
                 event.preventDefault();
+                console.log('P key → Toggle play/pause');
                 if (this.isAutoPlaying()) {
                     this.onPauseCarousel();
                 } else {
