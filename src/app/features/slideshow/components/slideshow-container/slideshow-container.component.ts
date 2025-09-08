@@ -66,6 +66,17 @@ import { EmblaCarouselDirective, EmblaCarouselType } from 'embla-carousel-angula
 })
 export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterViewInit {
 
+    /**
+ * Timer state tracking for pause/resume functionality
+ */
+    private timerState = {
+        startedAt: 0,           // When current slide timer started
+        pausedAt: 0,            // When timer was paused
+        elapsedTime: 0,         // Time already elapsed when paused
+        remainingTime: 0,       // Time remaining after pause
+        isPaused: false         // Current pause state
+    };
+
     public isDevelopmentMode = !isDevMode();
 
     // Tracking за auto-rotation status changes
@@ -450,6 +461,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
                 updateNextSlide: () => this.updateNextSlideToIgnoreProgressAdvance(),
                 testClean: () => this.testAutoRotationWithoutProgressConflict(),
 
+                // Debugging Timer State
+                getTimerState: () => this.debugGetTimerState(),
+
                 // Utilities
                 clearLogs: () => console.clear()
             };
@@ -459,6 +473,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             console.log('🎯 НАЙДИ ПРОБЛЕМА (START HERE):');
             console.log('  window.debugSlideshow.testFilter()     ← Check current conditions');
             console.log('  window.debugSlideshow.testRealFilter() ← Test with real filter logic');
+            console.log('  window.debugSlideshow.getTimerState()  ← Timer state');
             console.log('  window.debugSlideshow.monitor()        ← Monitor conditions changes');
             console.log('');
             console.log('📊 STATUS:');
@@ -1000,69 +1015,89 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     /**
    * Navigate to next slide using Embla carousel
    * Enhanced version with auto-rotation integration
+   * Use goToSlide() with calculated index instead
    */
     nextSlide(): void {
-        console.log('SlideShowContainerComponent.nextSlide() - Manual navigation with pause');
 
-        // Pause auto-rotation for manual interaction
-        this.handleUserInteraction('navigation');
+        console.warn('nextSlide() deprecated - use goToSlide() for consistent behavior');
 
-        const carousel = this.emblaCarousel();
+        // Fallback to direct calculation
+        const currentIndex = this.currentSlideIndex();
         const products = this.products();
+        const nextIndex = (currentIndex + 1) % products.length;
+        this.goToSlide(nextIndex, false);
 
-        if (products.length === 0) {
-            console.warn('No products available for navigation');
-            return;
-        }
+        // console.log('SlideShowContainerComponent.nextSlide() - Manual navigation with pause');
 
-        if (!carousel) {
-            console.warn('Embla carousel not ready - using fallback navigation');
-            this.fallbackNextSlide();
-            return;
-        }
+        // // Pause auto-rotation for manual interaction
+        // this.handleUserInteraction('navigation');
 
-        // Проверка дали carousel може да навигира
-        if (carousel.canScrollNext()) {
-            console.log('Using Embla scrollNext()');
-            carousel.scrollNext();
-        } else {
-            console.log('Carousel at end - using loop navigation');
-            carousel.scrollTo(0, false); // Jump to beginning
-        }
+        // const carousel = this.emblaCarousel();
+        // const products = this.products();
+
+        // if (products.length === 0) {
+        //     console.warn('No products available for navigation');
+        //     return;
+        // }
+
+        // if (!carousel) {
+        //     console.warn('Embla carousel not ready - using fallback navigation');
+        //     this.fallbackNextSlide();
+        //     return;
+        // }
+
+        // // Проверка дали carousel може да навигира
+        // if (carousel.canScrollNext()) {
+        //     console.log('Using Embla scrollNext()');
+        //     carousel.scrollNext();
+        // } else {
+        //     console.log('Carousel at end - using loop navigation');
+        //     carousel.scrollTo(0, false); // Jump to beginning
+        // }
     }
 
     /**
      * Navigate to previous slide using Embla carousel
      * Enhanced version with auto-rotation integration
+     * Use goToSlide() with calculated index instead
      */
     previousSlide(): void {
-        console.log('SlideShowContainerComponent.previousSlide() - Manual navigation with pause');
 
-        // Pause auto-rotation for manual interaction
-        this.handleUserInteraction('navigation');
+        console.warn('previousSlide() deprecated - use goToSlide() for consistent behavior');
 
-        const carousel = this.emblaCarousel();
+        // Fallback to direct calculation
+        const currentIndex = this.currentSlideIndex();
         const products = this.products();
+        const prevIndex = currentIndex === 0 ? products.length - 1 : currentIndex - 1;
+        this.goToSlide(prevIndex, false);
 
-        if (products.length === 0) {
-            console.warn('No products available for navigation');
-            return;
-        }
+        // console.log('SlideShowContainerComponent.previousSlide() - Manual navigation with pause');
 
-        if (!carousel) {
-            console.warn('Embla carousel not ready - using fallback navigation');
-            this.fallbackPreviousSlide();
-            return;
-        }
+        // // Pause auto-rotation for manual interaction
+        // this.handleUserInteraction('navigation');
 
-        // Проверка дали carousel може да навигира
-        if (carousel.canScrollPrev()) {
-            console.log('Using Embla scrollPrev()');
-            carousel.scrollPrev();
-        } else {
-            console.log('Carousel at beginning - using loop navigation');
-            carousel.scrollTo(products.length - 1, false); // Jump to end
-        }
+        // const carousel = this.emblaCarousel();
+        // const products = this.products();
+
+        // if (products.length === 0) {
+        //     console.warn('No products available for navigation');
+        //     return;
+        // }
+
+        // if (!carousel) {
+        //     console.warn('Embla carousel not ready - using fallback navigation');
+        //     this.fallbackPreviousSlide();
+        //     return;
+        // }
+
+        // // Проверка дали carousel може да навигира
+        // if (carousel.canScrollPrev()) {
+        //     console.log('Using Embla scrollPrev()');
+        //     carousel.scrollPrev();
+        // } else {
+        //     console.log('Carousel at beginning - using loop navigation');
+        //     carousel.scrollTo(products.length - 1, false); // Jump to end
+        // }
     }
 
     /**
@@ -1108,8 +1143,8 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Navigate to specific slide using Embla carousel
      * Enhanced method for direct navigation
      */
-    goToSlide(targetIndex: number, smooth: boolean = true): void {
-        console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, ${smooth}) - Direct navigation`);
+    goToSlide(targetIndex: number, smooth: boolean = false): void {
+        console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, smooth: ${smooth}) - Direct navigation`);
 
         const carousel = this.emblaCarousel();
         const products = this.products();
@@ -1119,7 +1154,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             return;
         }
 
-        // Validate target index
         const validIndex = Math.max(0, Math.min(targetIndex, products.length - 1));
 
         if (!carousel) {
@@ -1128,14 +1162,12 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             return;
         }
 
-        console.log('🔄 Direct navigation - restarting auto-rotation timer');
+        // ✅ ALWAYS restart timer for direct navigation (same as SlideProgress)
+        console.log('🔄 Direct navigation - restarting auto-rotation with fresh timer');
         this.handleUserInteraction('navigation');
 
-        // Use Embla's scrollTo - второто bool parameter е immediate (true = no animation)
-        console.log(`Using Embla scrollTo(${validIndex}, ${!smooth})`);
+        console.log(`Using Embla scrollTo(${validIndex}, immediate: ${!smooth})`);
         carousel.scrollTo(validIndex, !smooth);
-
-        // NOTE: currentSlideIndex се обновява автоматично от select event
     }
     // =====================================
     // FALLBACK NAVIGATION METHODS
@@ -1689,76 +1721,85 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     }
 
     /**
+    * Legacy startAutoRotation method - now delegates to restart
+    * Maintained for backward compatibility
+    */
+    private startAutoRotation(): void {
+        console.log('🔄 startAutoRotation() called - delegating to restartAutoRotation()');
+        this.restartAutoRotation();
+    }
+
+    /**
      * Start auto-rotation timer with current settings
      */
-    private startAutoRotation(): void {
-        // Stop existing timer first
-        if (this.autoRotationTimer$) {
-            console.log('Stopping existing auto-rotation timer before restart');
-            this.autoRotationTimer$.unsubscribe();
-            this.autoRotationTimer$ = undefined;
-        }
+    // private startAutoRotation(): void {
+    //     // Stop existing timer first
+    //     if (this.autoRotationTimer$) {
+    //         console.log('Stopping existing auto-rotation timer before restart');
+    //         this.autoRotationTimer$.unsubscribe();
+    //         this.autoRotationTimer$ = undefined;
+    //     }
 
-        const interval = this.effectiveSlideInterval();
-        const products = this.products();
+    //     const interval = this.effectiveSlideInterval();
+    //     const products = this.products();
 
-        console.log('🔧 Starting auto-rotation setup:', {
-            interval,
-            productsCount: products.length,
-            autoRotationEnabled: this.autoRotationEnabled(),
-            pausedByUser: this.pausedByUser(),
-            hasEmblaCarousel: !!this.emblaCarousel()
-        });
+    //     console.log('🔧 Starting auto-rotation setup:', {
+    //         interval,
+    //         productsCount: products.length,
+    //         autoRotationEnabled: this.autoRotationEnabled(),
+    //         pausedByUser: this.pausedByUser(),
+    //         hasEmblaCarousel: !!this.emblaCarousel()
+    //     });
 
-        if (products.length <= 1) {
-            console.log('❌ Not enough products for auto-rotation');
-            this.isAutoPlaying.set(false);
-            return;
-        }
+    //     if (products.length <= 1) {
+    //         console.log('❌ Not enough products for auto-rotation');
+    //         this.isAutoPlaying.set(false);
+    //         return;
+    //     }
 
-        console.log(`🚀 Starting auto-rotation timer with ${interval}ms interval`);
-        this.isAutoPlaying.set(true);
+    //     console.log(`🚀 Starting auto-rotation timer with ${interval}ms interval`);
+    //     this.isAutoPlaying.set(true);
 
-        this.autoRotationTimer$ = timer(interval, interval).pipe(
-            takeUntil(this.destroy$),
-            filter(() => {
-                const notPaused = this.pausedByUser() === false;
-                const enabled = this.autoRotationEnabled() === true;
-                const hasCarousel = !!this.emblaCarousel();
+    //     this.autoRotationTimer$ = timer(interval, interval).pipe(
+    //         takeUntil(this.destroy$),
+    //         filter(() => {
+    //             const notPaused = this.pausedByUser() === false;
+    //             const enabled = this.autoRotationEnabled() === true;
+    //             const hasCarousel = !!this.emblaCarousel();
 
-                if (!notPaused) {
-                    console.log('⏸️  Auto-rotation tick skipped - paused by user');
-                    return false;
-                }
-                if (!enabled) {
-                    console.log('⏸️  Auto-rotation tick skipped - disabled');
-                    return false;
-                }
-                if (!hasCarousel) {
-                    console.log('⏸️  Auto-rotation tick skipped - no carousel');
-                    return false;
-                }
+    //             if (!notPaused) {
+    //                 console.log('⏸️  Auto-rotation tick skipped - paused by user');
+    //                 return false;
+    //             }
+    //             if (!enabled) {
+    //                 console.log('⏸️  Auto-rotation tick skipped - disabled');
+    //                 return false;
+    //             }
+    //             if (!hasCarousel) {
+    //                 console.log('⏸️  Auto-rotation tick skipped - no carousel');
+    //                 return false;
+    //             }
 
-                return true;
-            }),
-            tap(() => {
-                console.log('🎯 Auto-rotation tick - advancing to next slide');
-            })
-        ).subscribe({
-            next: () => {
-                this.nextSlideWithRotation();
-            },
-            error: (error) => {
-                console.error('❌ Auto-rotation timer error:', error);
-                this.handleAutoRotationError(error);
-            },
-            complete: () => {
-                console.log('Auto-rotation timer completed');
-            }
-        });
+    //             return true;
+    //         }),
+    //         tap(() => {
+    //             console.log('🎯 Auto-rotation tick - advancing to next slide');
+    //         })
+    //     ).subscribe({
+    //         next: () => {
+    //             this.nextSlideWithRotation();
+    //         },
+    //         error: (error) => {
+    //             console.error('❌ Auto-rotation timer error:', error);
+    //             this.handleAutoRotationError(error);
+    //         },
+    //         complete: () => {
+    //             console.log('Auto-rotation timer completed');
+    //         }
+    //     });
 
-        console.log('✅ Auto-rotation timer created successfully');
-    }
+    //     console.log('✅ Auto-rotation timer created successfully');
+    // }
 
     /**
      * Stop auto-rotation timer
@@ -1777,29 +1818,144 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     /**
      * Restart auto-rotation with new settings
      */
+    /**
+     * Restart auto-rotation with FRESH timer (for navigation)
+     * Used when: Arrow keys, number keys, manual navigation
+     */
     private restartAutoRotation(): void {
-        console.log('Restarting auto-rotation with updated settings');
+        console.log('🔄 RESTART: Starting fresh auto-rotation timer (navigation-triggered)');
+
+        this.stopAutoRotation();
+        this.resetTimerState();
+
+        setTimeout(() => {
+            if (this.shouldAutoRotationBeRunning()) {
+                this.startAutoRotationTimer(this.slideInterval(), 'restart');
+            }
+        }, 50);
+    }
+
+    /**
+     * Continue auto-rotation with REMAINING timer (for pause/resume)
+     * Used when: Space key, P key, pause/resume actions
+     */
+    private continueAutoRotation(): void {
+        if (!this.timerState.isPaused) {
+            console.log('⚠️ CONTINUE: Timer not paused - cannot continue');
+            return;
+        }
+
+        this.updateTimerState();
+        const remaining = this.timerState.remainingTime;
+
+        console.log(`🔄 CONTINUE: Resuming auto-rotation with ${remaining}ms remaining (was paused for ${Date.now() - this.timerState.pausedAt}ms)`);
+
+        if (remaining <= 0) {
+            console.log('⏭️ CONTINUE: No time remaining - immediate advance');
+            this.nextSlideWithRotation();
+            this.restartAutoRotation();
+            return;
+        }
+
+        this.timerState.isPaused = false;
+        this.timerState.startedAt = Date.now() - this.timerState.elapsedTime;
+
+        if (this.shouldAutoRotationBeRunning()) {
+            this.startAutoRotationTimer(remaining, 'continue');
+        }
+    }
+
+    /**
+ * Enhanced timer creation with type awareness
+ */
+    private startAutoRotationTimer(initialDelay: number, type: 'restart' | 'continue'): void {
+        const interval = this.slideInterval();
+
+        console.log(`🚀 Starting auto-rotation timer: ${type} mode`);
+        console.log(`   Initial delay: ${initialDelay}ms`);
+        console.log(`   Repeat interval: ${interval}ms`);
+
         this.stopAutoRotation();
 
-        // Small delay to ensure clean restart
-        setTimeout(() => {
-            this.startAutoRotation();
-        }, 100);
+        // Create timer with custom initial delay, then regular intervals
+        this.autoRotationTimer$ = timer(initialDelay, interval).pipe(
+            takeUntil(this.destroy$),
+            filter(() => {
+                const notPaused = !this.pausedByUser();
+                const enabled = this.autoRotationEnabled();
+                const hasCarousel = !!this.emblaCarousel();
+
+                if (!notPaused) {
+                    console.log('⏸️ Auto-rotation tick skipped - paused by user');
+                    return false;
+                }
+                if (!enabled) {
+                    console.log('⏸️ Auto-rotation tick skipped - disabled');
+                    return false;
+                }
+                if (!hasCarousel) {
+                    console.log('⏸️ Auto-rotation tick skipped - no carousel');
+                    return false;
+                }
+
+                return true;
+            }),
+            tap((tickCount) => {
+                if (tickCount === 0) {
+                    console.log(`🎯 Auto-rotation first tick (${type}) - advancing to next slide`);
+                } else {
+                    console.log(`🎯 Auto-rotation tick #${tickCount + 1} - advancing to next slide`);
+                }
+
+                // Reset timer state after each advance (fresh start for next slide)
+                this.resetTimerState();
+            })
+        ).subscribe({
+            next: () => {
+                this.nextSlideWithRotation();
+            },
+            error: (error) => {
+                console.error('❌ Auto-rotation timer error:', error);
+                this.handleAutoRotationError(error);
+            },
+            complete: () => {
+                console.log('Auto-rotation timer completed');
+            }
+        });
+
+        this.isAutoPlaying.set(true);
+        console.log(`✅ Auto-rotation timer created (${type} mode)`);
     }
 
     /**
      * Pause auto-rotation temporarily
      */
     public pauseAutoRotation(): void {
-        console.log('Pausing auto-rotation due to user interaction');
+        if (this.timerState.isPaused) {
+            console.log('⚠️ Auto-rotation already paused');
+            return;
+        }
+
+        this.updateTimerState();
+        this.timerState.pausedAt = Date.now();
+        this.timerState.isPaused = true;
+
+        console.log(`⏸️ Pausing auto-rotation - elapsed: ${this.timerState.elapsedTime}ms, remaining: ${this.timerState.remainingTime}ms`);
+
         this.pausedByUser.set(true);
         this.lastUserInteraction.set(Date.now());
+        this.stopAutoRotation();
     }
 
     /**
      * Resume auto-rotation after user interaction delay
      */
     public resumeAutoRotation(): void {
+        if (!this.timerState.isPaused) {
+            console.log('⚠️ Auto-rotation not paused - cannot resume');
+            return;
+        }
+
         const shouldPause = this.pauseOnInteraction();
         if (!shouldPause) {
             console.log('Auto-rotation continues - pause on interaction disabled');
@@ -1807,17 +1963,37 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         }
 
         const resumeDelay = this.resumeDelay();
-        console.log(`Resuming auto-rotation after ${resumeDelay}ms delay`);
+        console.log(`▶️ Resuming auto-rotation after ${resumeDelay}ms delay`);
 
-        // setTimeout(() => {
-        //     if (!this.pausedByUser()) {
-        //         console.log('Auto-rotation already resumed');
-        //         return;
-        //     }
-        // }, resumeDelay);
+        setTimeout(() => {
+            this.pausedByUser.set(false);
+            this.continueAutoRotation();
+            console.log('Auto-rotation resumed with time continuation');
+        }, resumeDelay);
+    }
 
-        this.pausedByUser.set(false);
-        console.log('Auto-rotation resumed');
+    /**
+ * Reset timer state for fresh start
+ */
+    private resetTimerState(): void {
+        this.timerState = {
+            startedAt: Date.now(),
+            pausedAt: 0,
+            elapsedTime: 0,
+            remainingTime: 0,
+            isPaused: false
+        };
+        console.log('Timer state reset - fresh start');
+    }
+
+    /**
+     * Calculate current elapsed and remaining time
+     */
+    private updateTimerState(): void {
+        if (!this.timerState.isPaused) {
+            this.timerState.elapsedTime = Date.now() - this.timerState.startedAt;
+            this.timerState.remainingTime = Math.max(0, this.slideInterval() - this.timerState.elapsedTime);
+        }
     }
 
     /**
@@ -1948,7 +2124,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             takeUntil(this.destroy$),
             // FIX: Explicit key checking instead of includes with potentially undefined
             filter((event: KeyboardEvent) => {
-                const allowedKeys = ['ArrowLeft', 'ArrowRight', 'Space'];
+                const allowedKeys = ['ArrowLeft', 'ArrowRight'];
                 return allowedKeys.indexOf(event.code) !== -1;
             })
         ).subscribe((event: KeyboardEvent) => {
@@ -1964,41 +2140,40 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      */
     private handleUserInteraction(interactionType: 'navigation' | 'pause' | 'resume' | 'space_toggle' = 'space_toggle'): void {
         const shouldPause = this.pauseOnInteraction();
-        // FIX: Explicit boolean check
+
         if (shouldPause !== true) {
             console.log(`User interaction (${interactionType}) ignored - pause on interaction disabled`);
             return;
         }
 
+        console.log(`🎮 User interaction detected: ${interactionType}`);
+
         switch (interactionType) {
             case 'navigation':
-                // ✅ Arrow keys, number keys, direct navigation → RESTART timer
-                console.log('🔄 Manual navigation - restarting auto-rotation timer for sync');
-                this.restartAutoRotationAfterNavigation();
+                console.log('🔄 Manual navigation - restarting auto-rotation with fresh timer');
+                this.restartAutoRotation();
                 break;
 
             case 'pause':
-                // ✅ Explicit pause request → PAUSE auto-rotation
-                console.log('⏸️ Explicit pause - stopping auto-rotation');
+                console.log('⏸️ Explicit pause - preserving timer state');
                 this.pauseAutoRotation();
                 break;
 
             case 'resume':
-                // ✅ Explicit resume request → RESUME auto-rotation
-                console.log('▶️ Explicit resume - starting auto-rotation');
+                console.log('▶️ Explicit resume - continuing with remaining time');
                 this.resumeAutoRotation();
                 break;
 
             case 'space_toggle':
             default:
-                // ✅ Space key → TOGGLE behavior (pause/resume with delay)
-                console.log('🔄 Space toggle - using temporary pause/resume logic');
-                this.pauseAutoRotation();
+                console.log('🔄 Space toggle - using pause/resume with time preservation');
+                if (!this.timerState.isPaused) {
+                    this.pauseAutoRotation();
+                }
                 this.resumeAutoRotation();
                 break;
         }
     }
-
     /**
     * Restart auto-rotation timer after manual navigation
     * Ensures timer is synchronized with new slide position
@@ -2746,5 +2921,19 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             console.log('✅ Clean auto-rotation started - should tick every 5 seconds');
 
         }, 1000);
+    }
+
+    /**
+ * Debug method to check timer state
+ */
+    public debugGetTimerState(): any {
+        this.updateTimerState();
+        return {
+            ...this.timerState,
+            slideInterval: this.slideInterval(),
+            shouldBeRunning: this.shouldAutoRotationBeRunning(),
+            isAutoPlaying: this.isAutoPlaying(),
+            pausedByUser: this.pausedByUser()
+        };
     }
 }

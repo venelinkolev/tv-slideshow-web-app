@@ -152,8 +152,14 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     onPreviousSlide(): void {
         if (!this.canNavigate()) return;
 
-        console.log('NavigationControlsComponent.onPreviousSlide() - Manual navigation');
-        this.previousSlide.emit();
+        // ✅ COPY SlideProgress logic - calculate target index directly
+        const currentIndex = this.currentSlideIndex();
+        const targetIndex = Math.max(0, currentIndex - 1);
+
+        console.log(`NavigationControlsComponent.onPreviousSlide() - Direct navigation to index ${targetIndex} (was ${currentIndex})`);
+
+        // ✅ Use goToSlide instead of previousSlide for direct targeting
+        this.goToSlide.emit(targetIndex);
         this.resetAutoHideTimer();
     }
 
@@ -163,8 +169,15 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
     onNextSlide(): void {
         if (!this.canNavigate()) return;
 
-        console.log('NavigationControlsComponent.onNextSlide() - Manual navigation');
-        this.nextSlide.emit();
+        // ✅ COPY SlideProgress logic - calculate target index directly
+        const currentIndex = this.currentSlideIndex();
+        const totalSlides = this.totalSlides();
+        const targetIndex = Math.min(totalSlides - 1, currentIndex + 1);
+
+        console.log(`NavigationControlsComponent.onNextSlide() - Direct navigation to index ${targetIndex} (was ${currentIndex})`);
+
+        // ✅ Use goToSlide instead of nextSlide for direct targeting
+        this.goToSlide.emit(targetIndex);
         this.resetAutoHideTimer();
     }
 
@@ -315,15 +328,30 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
         switch (event.key) {
             case 'ArrowLeft':
                 event.preventDefault();
-                console.log('Arrow Left → Previous slide');
-                this.onPreviousSlide();
+                console.log('Arrow Left → Previous slide (direct targeting)');
+
+                // ✅ COPY SlideProgress logic for Arrow Left
+                if (this.canNavigate()) {
+                    const currentIndex = this.currentSlideIndex();
+                    const targetIndex = Math.max(0, currentIndex - 1);
+                    console.log(`Direct navigation: ${currentIndex} → ${targetIndex}`);
+                    this.goToSlide.emit(targetIndex);
+                }
                 this.showControls();
                 break;
 
             case 'ArrowRight':
                 event.preventDefault();
-                console.log('Arrow Right → Next slide');
-                this.onNextSlide();
+                console.log('Arrow Right → Next slide (direct targeting)');
+
+                // ✅ COPY SlideProgress logic for Arrow Right
+                if (this.canNavigate()) {
+                    const currentIndex = this.currentSlideIndex();
+                    const totalSlides = this.totalSlides();
+                    const targetIndex = Math.min(totalSlides - 1, currentIndex + 1);
+                    console.log(`Direct navigation: ${currentIndex} → ${targetIndex}`);
+                    this.goToSlide.emit(targetIndex);
+                }
                 this.showControls();
                 break;
 
@@ -339,37 +367,18 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                 this.showControls();
                 break;
 
-            case 'f':
-            case 'F':
-                event.preventDefault();
-                this.onRequestFullscreen();
-                this.showControls();
-                break;
-            case 'h':
-            case 'H':
-                event.preventDefault();
-                this.toggleHelp();
-                break;
-            case 'Escape':
-                if (this.isHelpVisible()) {
-                    event.preventDefault();
-                    this.toggleHelp();
-                }
-                break;
-
-            // ✅ Enhanced number key handling
+            // ✅ Enhanced number key handling with direct targeting
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9':
                 const slideNumber = parseInt(event.key) - 1;
                 if (slideNumber < this.totalSlides()) {
                     event.preventDefault();
-                    console.log(`Number ${event.key} → Go to slide ${slideNumber}`);
-                    this.onGoToSlide(slideNumber);
+                    console.log(`Number ${event.key} → Go to slide ${slideNumber} (direct targeting)`);
+                    this.goToSlide.emit(slideNumber);
                     this.showControls();
                 }
                 break;
 
-            // ✅ Explicit pause/resume keys
             case 'p':
             case 'P':
                 event.preventDefault();
@@ -381,9 +390,29 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                 }
                 this.showControls();
                 break;
+
+            // Keep other keys unchanged
+            case 'f':
+            case 'F':
+                event.preventDefault();
+                this.onRequestFullscreen();
+                this.showControls();
+                break;
+
+            case 'h':
+            case 'H':
+                event.preventDefault();
+                this.toggleHelp();
+                break;
+
+            case 'Escape':
+                if (this.isHelpVisible()) {
+                    event.preventDefault();
+                    this.toggleHelp();
+                }
+                break;
         }
     }
-
     /**
      * Reset auto-hide timer
      * @private
