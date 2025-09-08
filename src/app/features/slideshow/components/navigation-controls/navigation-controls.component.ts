@@ -339,6 +339,24 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                 this.showControls();
                 break;
 
+            case 'f':
+            case 'F':
+                event.preventDefault();
+                this.onRequestFullscreen();
+                this.showControls();
+                break;
+            case 'h':
+            case 'H':
+                event.preventDefault();
+                this.toggleHelp();
+                break;
+            case 'Escape':
+                if (this.isHelpVisible()) {
+                    event.preventDefault();
+                    this.toggleHelp();
+                }
+                break;
+
             // ✅ Enhanced number key handling
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9':
