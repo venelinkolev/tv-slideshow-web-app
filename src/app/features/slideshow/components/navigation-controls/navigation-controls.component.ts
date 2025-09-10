@@ -337,6 +337,7 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                     console.log(`Direct navigation: ${currentIndex} → ${targetIndex}`);
                     this.goToSlide.emit(targetIndex);
                 }
+                // this.onPreviousSlide();
                 this.showControls();
                 break;
 
@@ -352,6 +353,7 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                     console.log(`Direct navigation: ${currentIndex} → ${targetIndex}`);
                     this.goToSlide.emit(targetIndex);
                 }
+                // this.onNextSlide();
                 this.showControls();
                 break;
 
