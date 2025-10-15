@@ -12,12 +12,14 @@
     </header>
 
     <!-- Loading State -->
-    @if (isLoading()) {
-    <div class="loading-container">
-        <mat-spinner diameter="60"></mat-spinner>
-        <p class="loading-text">Зареждане на данни...</p>
-    </div>
-    }
+    <ng-container>
+        @if (isLoading()) {
+        <div class="loading-container">
+            <mat-spinner diameter="60"></mat-spinner>
+            <p class="loading-text">Зареждане на данни...</p>
+        </div>
+        }
+    </ng-container>
 
     <!-- Main Content -->
     @if (!isLoading()) {
@@ -47,10 +49,12 @@
                 </mat-form-field>
 
                 @if (selectedTemplateId()) {
-                <div class="template-info">
-                    <mat-icon class="info-icon">info</mat-icon>
-                    <span>Избран темплейт: <strong>{{ selectedTemplateId() }}</strong></span>
-                </div>
+                <ng-container>
+                    <div class="template-info">
+                        <mat-icon class="info-icon">info</mat-icon>
+                        <span>Избран темплейт: <strong>{{ selectedTemplateId() }}</strong></span>
+                    </div>
+                </ng-container>
                 }
             </mat-card-content>
         </mat-card>
@@ -111,29 +115,32 @@
                     </p>
                 </div>
 
-                @if (products().length === 0) {
-                <div class="empty-state">
-                    <mat-icon>inbox</mat-icon>
-                    <p>Няма налични продукти</p>
-                </div>
-                } @else {
-                <mat-selection-list class="product-list">
-                    @for (product of products(); track product.id) {
-                    <mat-list-option [selected]="isProductSelected(product.id)" [disabled]="isSaving()"
-                        (click)="toggleProductSelection(product.id)">
-                        <div class="product-item">
-                            <div class="product-info">
-                                <span class="product-name">{{ product.name }}</span>
-                                <span class="product-price">{{ product.price }} лв.</span>
+                <ng-container>
+                    @if (products().length === 0) {
+                    <div class="empty-state">
+                        <mat-icon>inbox</mat-icon>
+                        <p>Няма налични продукти</p>
+                    </div>
+                    } @else {
+                    <mat-selection-list class="product-list">
+                        @for (product of products(); track product.id) {
+                        <mat-list-option [selected]="isProductSelected(product.id)" [disabled]="isSaving()"
+                            (click)="toggleProductSelection(product.id)">
+                            <div class="product-item">
+                                <div class="product-info">
+                                    <span class="product-name">{{ product.name }}</span>
+                                    <span class="product-price">{{ product.price }} лв.</span>
+                                </div>
+                                @if (product.imageUrl) {
+                                <img [src]="product.imageUrl" [alt]="product.name" class="product-thumbnail"
+                                    loading="lazy">
+                                }
                             </div>
-                            @if (product.imageUrl) {
-                            <img [src]="product.imageUrl" [alt]="product.name" class="product-thumbnail" loading="lazy">
-                            }
-                        </div>
-                    </mat-list-option>
+                        </mat-list-option>
+                        }
+                    </mat-selection-list>
                     }
-                </mat-selection-list>
-                }
+                </ng-container>
             </mat-card-content>
         </mat-card>
 
@@ -145,20 +152,18 @@
                     <!-- Save Button -->
                     <button mat-raised-button color="primary" (click)="onSaveConfiguration()"
                         [disabled]="isSaving() || !isConfigReady()" class="save-button">
-                        @if (isSaving()) {
-                        <mat-spinner diameter="20"></mat-spinner>
-                        <span>Запазване...</span>
-                        } @else if (saveSuccess()) {
                         <ng-container>
+                            @if (isSaving()) {
+                            <mat-spinner diameter="20"></mat-spinner>
+                            <span>Запазване...</span>
+                            } @else if (saveSuccess()) {
                             <mat-icon>check_circle</mat-icon>
                             <span>Запазено!</span>
-                        </ng-container>
-                        } @else {
-                        <ng-container>
+                            } @else {
                             <mat-icon>save</mat-icon>
                             <span>Запази Конфигурация</span>
+                            }
                         </ng-container>
-                        }
                     </button>
 
                     <!-- Preview Slideshow Button -->
@@ -175,12 +180,14 @@
                     </button>
                 </div>
 
-                @if (!isConfigReady()) {
-                <div class="validation-warning">
-                    <mat-icon>warning</mat-icon>
-                    <span>Моля, изберете темплейт и поне един продукт</span>
-                </div>
-                }
+                <ng-container>
+                    @if (!isConfigReady()) {
+                    <div class="validation-warning">
+                        <mat-icon>warning</mat-icon>
+                        <span>Моля, изберете темплейт и поне един продукт</span>
+                    </div>
+                    }
+                </ng-container>
             </mat-card-content>
         </mat-card>
 
