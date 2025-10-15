@@ -86,6 +86,13 @@
                         <input matSliderThumb [(ngModel)]="slideDuration" (ngModelChange)="onDurationChange($event)">
                     </mat-slider>
 
+                     @if (isDurationSaving()) {
+                        <div class="auto-save-indicator duration-save">
+                            <mat-spinner diameter="20"></mat-spinner>
+                            <span>Запазване...</span>
+                        </div>
+                    }
+
                     <div class="slider-hints">
                         <span>10 сек</span>
                         <span>60 сек</span>

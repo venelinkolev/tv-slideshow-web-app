@@ -79,6 +79,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     // Cleanup subscription
     private readonly destroy$ = new Subject<void>();
     private readonly templateChange$ = new Subject<string>();
+    private readonly durationChange$ = new Subject<number>();
 
     // Services injection using Angular 18 inject()
     private readonly configService = inject(ConfigService);
@@ -93,6 +94,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     readonly hasError = signal<boolean>(false);
     readonly errorMessage = signal<string>('');
     readonly isTemplateSaving = signal<boolean>(false);
+    readonly isDurationSaving = signal<boolean>(false);
 
     // ✅ Data signals
     readonly availableTemplates = signal<ProductTemplate[]>([]);
@@ -121,6 +123,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         console.log('▶️ AdminDashboardComponent.ngOnInit()');
+        
         this.templateChange$
             .pipe(
                 debounceTime(500), // Изчакваме 500ms след последната промяна
@@ -132,6 +135,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                     this.saveTemplateChange(templateId);
                 }
             });
+
+        // Duration auto-save subscription
+        this.durationChange$
+                .pipe(
+                    debounceTime(800), // По-дълго debounce за slider (800ms)
+                    distinctUntilChanged(),
+                    takeUntil(this.destroy$)
+                )
+                .subscribe({
+                    next: (duration) => {
+                        this.saveDurationChange(duration);
+                    }
+                });
+
         this.loadInitialData();
     }
 
@@ -217,9 +234,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
      * Handle slide duration change
      */
     onDurationChange(duration: number): void {
-        console.log(`⏱️ Duration changed to: ${duration}ms`);
+        console.log('⏱️ Duration changed to:', duration);
         this.slideDuration.set(duration);
-        // Auto-save с debounce будет в следующей фазе
+        
+        // Trigger auto-save през Subject
+        this.durationChange$.next(duration);
     }
 
     /**
@@ -385,6 +404,31 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                     console.error('❌ Failed to auto-save template:', error);
                     this.isTemplateSaving.set(false);
                     this.showError('Грешка при запазване на темплейта');
+                }
+            });
+    }
+
+    /**
+     * Auto-save duration change
+     */
+    private saveDurationChange(duration: number): void {
+        console.log('💾 Auto-saving duration:', duration);
+        this.isDurationSaving.set(true);
+
+        this.configService.updateTimingSettings({
+            baseSlideDuration: duration
+        })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    console.log('✅ Duration auto-saved');
+                    this.isDurationSaving.set(false);
+                    this.showSuccess(`Интервалът е запазен: ${duration / 1000} секунди`);
+                },
+                error: (error) => {
+                    console.error('❌ Failed to auto-save duration:', error);
+                    this.isDurationSaving.set(false);
+                    this.showError('Грешка при запазване на интервала');
                 }
             });
     }

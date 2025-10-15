@@ -515,6 +515,12 @@
     font-size: 0.875rem;
     color: #667eea;
     
+    .duration-save {
+        margin-top: 8px;
+        margin-bottom: 0;
+        justify-content: center; // Центриран под slider-а
+    }
+    
     mat-spinner {
         ::ng-deep circle {
             stroke: #667eea;
