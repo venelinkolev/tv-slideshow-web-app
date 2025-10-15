@@ -1,26 +1,37 @@
+// src/app/features/admin/admin.routes.ts
+
 import { Routes } from '@angular/router';
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
 
-@Component({
-    selector: 'app-admin-placeholder',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
-    <div class="tv-safe-area" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
-      <div style="text-align: center;">
-        <h1 class="tv-heading">⚙️ Admin Panel</h1>
-        <p class="tv-text" style="margin-top: 2rem;">Административният панел се зарежда...</p>
-        <p class="tv-text" style="opacity: 0.7; margin-top: 1rem;">Foundation Setup Complete ✅</p>
-      </div>
-    </div>
-  `
-})
-class AdminPlaceholderComponent { }
-
+/**
+ * Admin Module Routes
+ * 
+ * MVP Routes:
+ * - / → AdminDashboardComponent (main config panel)
+ * 
+ * Future routes (after MVP):
+ * - /templates → Template editor
+ * - /analytics → Usage analytics
+ * - /settings → Advanced settings
+ */
 export const ADMIN_ROUTES: Routes = [
-    {
-        path: '',
-        component: AdminPlaceholderComponent
+  {
+    path: '',
+    component: AdminDashboardComponent,
+    data: {
+      title: 'Admin Dashboard',
+      description: 'Slideshow configuration panel'
     }
+  }
+  // Future routes will be added here
+  // {
+  //     path: 'templates',
+  //     loadComponent: () => import('./pages/templates/templates.component')
+  //         .then(m => m.TemplatesComponent)
+  // },
+  // {
+  //     path: 'analytics',
+  //     loadComponent: () => import('./pages/analytics/analytics.component')
+  //         .then(m => m.AnalyticsComponent)
+  // }
 ];

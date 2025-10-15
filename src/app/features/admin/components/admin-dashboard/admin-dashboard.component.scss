@@ -1,0 +1,379 @@
+// src/app/features/admin/components/admin-dashboard/admin-dashboard.component.scss
+
+// ============================================
+// Admin Dashboard - MVP Styles
+// Simple, clean, functional styling
+// ============================================
+
+.admin-dashboard {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 2rem;
+    
+    // Header
+    .admin-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        .admin-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1976d2;
+            margin: 0 0 0.5rem 0;
+
+            mat-icon {
+                font-size: 2.5rem;
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+        }
+
+        .admin-subtitle {
+            font-size: 1rem;
+            color: #666;
+            margin: 0;
+        }
+    }
+
+    // Loading State
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 50vh;
+        gap: 1.5rem;
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: #666;
+        }
+    }
+
+    // Main Content
+    .admin-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        gap: 2rem;
+    }
+
+    // Configuration Cards
+    .config-card {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        mat-card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 4px 4px 0 0;
+            margin: -16px -16px 16px -16px;
+
+            mat-card-title {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 1.5rem;
+                margin: 0;
+
+                mat-icon {
+                    font-size: 1.75rem;
+                    width: 1.75rem;
+                    height: 1.75rem;
+                }
+            }
+        }
+
+        mat-card-content {
+            padding: 1.5rem;
+        }
+    }
+
+    // Template Selection
+    .full-width {
+        width: 100%;
+    }
+
+    .template-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #e3f2fd;
+        border-radius: 4px;
+        color: #1976d2;
+
+        .info-icon {
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
+
+    // Slider Styles
+    .slider-container {
+        padding: 1rem 0;
+
+        .slider-label {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        mat-slider {
+            width: 100%;
+        }
+
+        .slider-hints {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+    }
+
+    // Product Selection
+    .product-actions {
+        display: flex;
+        gap: 1rem;
+        margin-left: auto;
+    }
+
+    .products-info {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #f5f5f5;
+        border-radius: 4px;
+
+        p {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            font-size: 1rem;
+
+            .info-icon {
+                color: #4caf50;
+            }
+        }
+    }
+
+    .product-list {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+
+        mat-list-option {
+            border-bottom: 1px solid #f0f0f0;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            &:hover {
+                background: #f5f5f5;
+            }
+        }
+    }
+
+    .product-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 1rem;
+
+        .product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex: 1;
+
+            .product-name {
+                font-weight: 500;
+                font-size: 1rem;
+                color: #333;
+            }
+
+            .product-price {
+                font-size: 0.875rem;
+                color: #1976d2;
+                font-weight: 600;
+            }
+        }
+
+        .product-thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid #e0e0e0;
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #999;
+
+        mat-icon {
+            font-size: 4rem;
+            width: 4rem;
+            height: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+    }
+
+    // Actions Card
+    .actions-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+
+        button, a {
+            min-width: 200px;
+            height: 48px;
+            font-size: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+
+            mat-icon {
+                font-size: 1.25rem;
+                width: 1.25rem;
+                height: 1.25rem;
+            }
+
+            mat-spinner {
+                margin-right: 0.5rem;
+            }
+        }
+
+        .save-button {
+            &.mat-mdc-raised-button.mat-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+        }
+
+        .preview-button {
+            &.mat-mdc-raised-button.mat-accent {
+                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            }
+        }
+    }
+
+    .validation-warning {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #fff3e0;
+        border-radius: 4px;
+        color: #f57c00;
+        font-weight: 500;
+
+        mat-icon {
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
+
+    // Footer
+    .admin-footer {
+        text-align: center;
+        margin-top: 3rem;
+        padding: 2rem;
+        color: #666;
+        font-size: 0.875rem;
+
+        p {
+            margin: 0;
+        }
+    }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+    .admin-dashboard {
+        padding: 1rem;
+
+        .admin-header {
+            padding: 1rem;
+
+            .admin-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+            }
+        }
+
+        .admin-content {
+            gap: 1rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+
+            button, a {
+                width: 100%;
+            }
+        }
+
+        .product-actions {
+            flex-direction: column;
+            width: 100%;
+            margin-left: 0;
+            margin-top: 1rem;
+
+            button {
+                width: 100%;
+            }
+        }
+    }
+}
+
+// Material Snackbar Overrides
+::ng-deep {
+    .success-snackbar {
+        background: #4caf50 !important;
+        color: white !important;
+    }
+
+    .error-snackbar {
+        background: #f44336 !important;
+        color: white !important;
+    }
+}

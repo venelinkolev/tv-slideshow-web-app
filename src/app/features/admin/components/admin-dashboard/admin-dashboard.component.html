@@ -1,0 +1,195 @@
+<!-- src/app/features/admin/components/admin-dashboard/admin-dashboard.component.html -->
+
+<div class="admin-dashboard">
+
+    <!-- Header -->
+    <header class="admin-header">
+        <h1 class="admin-title">
+            <mat-icon>settings</mat-icon>
+            Админ Панел - Slideshow Конфигурация
+        </h1>
+        <p class="admin-subtitle">Настройте темплейт, продукти и времетраене на слайдовете</p>
+    </header>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <div class="loading-container">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p class="loading-text">Зареждане на данни...</p>
+    </div>
+    }
+
+    <!-- Main Content -->
+    @if (!isLoading()) {
+    <div class="admin-content">
+
+        <!-- Section 1: Template Selection -->
+        <mat-card class="config-card">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>palette</mat-icon>
+                    Избор на Темплейт
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Темплейт за Продукти</mat-label>
+                    <mat-select [(ngModel)]="selectedTemplateId" (selectionChange)="onTemplateChange($event.value)"
+                        [disabled]="isSaving()">
+                        @for (template of availableTemplates(); track template.id) {
+                        <mat-option [value]="template.id">
+                            {{ template.name }} - {{ template.description }}
+                        </mat-option>
+                        }
+                    </mat-select>
+                    <mat-hint>Изберете визуалния стил за показване на продуктите</mat-hint>
+                </mat-form-field>
+
+                @if (selectedTemplateId()) {
+                <div class="template-info">
+                    <mat-icon class="info-icon">info</mat-icon>
+                    <span>Избран темплейт: <strong>{{ selectedTemplateId() }}</strong></span>
+                </div>
+                }
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Section 2: Slide Duration -->
+        <mat-card class="config-card">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>schedule</mat-icon>
+                    Времетраене на Слайдовете
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="slider-container">
+                    <label class="slider-label">
+                        Продължителност:
+                        <strong>{{ slideDurationInSeconds() }} секунди</strong>
+                    </label>
+
+                    <mat-slider min="10000" max="60000" step="5000" showTickMarks discrete [disabled]="isSaving()">
+                        <input matSliderThumb [(ngModel)]="slideDuration" (ngModelChange)="onDurationChange($event)">
+                    </mat-slider>
+
+                    <div class="slider-hints">
+                        <span>10 сек</span>
+                        <span>60 сек</span>
+                    </div>
+                </div>
+
+                <mat-hint>Времето за показване на всеки продукт в слайдшоуто</mat-hint>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Section 3: Product Selection -->
+        <mat-card class="config-card">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>inventory_2</mat-icon>
+                    Избор на Продукти
+                </mat-card-title>
+                <div class="product-actions">
+                    <button mat-button color="primary" (click)="selectAllProducts()" [disabled]="isSaving()">
+                        Избери Всички
+                    </button>
+                    <button mat-button color="warn" (click)="deselectAllProducts()" [disabled]="isSaving()">
+                        Премахни Всички
+                    </button>
+                </div>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="products-info">
+                    <p>
+                        <mat-icon class="info-icon">check_circle</mat-icon>
+                        Избрани продукти: <strong>{{ selectedProductsCount() }}</strong> от <strong>{{ products().length
+                            }}</strong>
+                    </p>
+                </div>
+
+                @if (products().length === 0) {
+                <div class="empty-state">
+                    <mat-icon>inbox</mat-icon>
+                    <p>Няма налични продукти</p>
+                </div>
+                } @else {
+                <mat-selection-list class="product-list">
+                    @for (product of products(); track product.id) {
+                    <mat-list-option [selected]="isProductSelected(product.id)" [disabled]="isSaving()"
+                        (click)="toggleProductSelection(product.id)">
+                        <div class="product-item">
+                            <div class="product-info">
+                                <span class="product-name">{{ product.name }}</span>
+                                <span class="product-price">{{ product.price }} лв.</span>
+                            </div>
+                            @if (product.imageUrl) {
+                            <img [src]="product.imageUrl" [alt]="product.name" class="product-thumbnail" loading="lazy">
+                            }
+                        </div>
+                    </mat-list-option>
+                    }
+                </mat-selection-list>
+                }
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Section 4: Actions -->
+        <mat-card class="config-card actions-card">
+            <mat-card-content>
+                <div class="action-buttons">
+
+                    <!-- Save Button -->
+                    <button mat-raised-button color="primary" (click)="onSaveConfiguration()"
+                        [disabled]="isSaving() || !isConfigReady()" class="save-button">
+                        @if (isSaving()) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                        <span>Запазване...</span>
+                        } @else if (saveSuccess()) {
+                        <ng-container>
+                            <mat-icon>check_circle</mat-icon>
+                            <span>Запазено!</span>
+                        </ng-container>
+                        } @else {
+                        <ng-container>
+                            <mat-icon>save</mat-icon>
+                            <span>Запази Конфигурация</span>
+                        </ng-container>
+                        }
+                    </button>
+
+                    <!-- Preview Slideshow Button -->
+                    <a mat-raised-button color="accent" routerLink="/slideshow" target="_blank" [disabled]="isSaving()"
+                        class="preview-button">
+                        <mat-icon>visibility</mat-icon>
+                        Отвори Slideshow
+                    </a>
+
+                    <!-- Reset Button -->
+                    <button mat-button color="warn" (click)="onResetToDefaults()" [disabled]="isSaving()">
+                        <mat-icon>refresh</mat-icon>
+                        Възстанови по Подразбиране
+                    </button>
+                </div>
+
+                @if (!isConfigReady()) {
+                <div class="validation-warning">
+                    <mat-icon>warning</mat-icon>
+                    <span>Моля, изберете темплейт и поне един продукт</span>
+                </div>
+                }
+            </mat-card-content>
+        </mat-card>
+
+    </div>
+    }
+
+    <!-- Footer -->
+    <footer class="admin-footer">
+        <p>© 2025 TV Slideshow Application | MVP Admin Panel</p>
+    </footer>
+
+</div>
