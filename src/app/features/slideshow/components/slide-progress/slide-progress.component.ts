@@ -145,38 +145,53 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     });
 
     // ✅ NEW: Carousel synchronization effect
+    // ✅ FIXED: Carousel synchronization effect with auto-play reactive restart
     private carouselSyncEffect = effect(() => {
         const carouselReady = this.isCarouselReady();
         const isTransitioning = this.isCarouselTransitioning();
         const hasError = this.hasError();
-        const autoPlayActive = this.autoPlayActive(); // ← ✅ ADD: Check auto-play status
+        const autoPlayActive = this.autoPlayActive();
 
         untracked(() => {
+            console.log('SlideProgress carouselSyncEffect triggered:', {
+                carouselReady,
+                isTransitioning,
+                hasError,
+                autoPlayActive
+            });
+
+            // Priority 1: Error state
             if (hasError) {
+                console.log('SlideProgress: Error detected - pausing tracking');
                 this.pauseProgressTracking();
                 return;
             }
 
+            // Priority 2: Carousel not ready
             if (!carouselReady) {
+                console.log('SlideProgress: Carousel not ready - pausing tracking');
                 this.pauseProgressTracking();
                 return;
             }
 
-            // ✅ NEW: Pause progress tracking when auto-play is paused
+            // Priority 3: Auto-play state
             if (!autoPlayActive) {
                 console.log('SlideProgress: Auto-play paused - stopping progress tracking');
                 this.pauseProgressTracking();
                 return;
             }
 
+            // Priority 4: Transition state (carousel ready + auto-play active)
             if (isTransitioning) {
+                console.log('SlideProgress: Carousel transitioning - pausing tracking');
                 this.pauseProgressTracking();
             } else {
+                // ✅ CRITICAL FIX: Resume tracking when conditions are met
+                console.log('SlideProgress: All conditions met - resuming progress tracking');
                 this.resumeProgressTracking();
             }
         });
     });
-
     // ✅ Auto-hide effect
     private autoHideEffect = effect(() => {
         const autoHide = this.autoHide();
@@ -317,30 +332,30 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
      * @private
      */
     private startProgressTracking(): void {
-        if (!this.animationEnabled()) return;
-        if (!this.autoPlayActive()) {  // ← ✅ ADD: Don't start if auto-play is paused
-            console.log('SlideProgressComponent: Auto-play not active - skipping progress tracking');
+        if (!this.animationEnabled()) {
+            console.log('SlideProgressComponent: Animation disabled - skipping tracking');
             return;
         }
+
+        // ✅ REMOVED: Early exit check - carouselSyncEffect controls this now
+        // Effect-ът вече управлява дали tracking трябва да работи
 
         console.log('SlideProgressComponent.startProgressTracking()');
 
         this.stopProgressTracking(); // Cleanup existing interval
 
         const interval = this.slideInterval();
-        if (interval <= 0) return;
+        if (interval <= 0) {
+            console.log('SlideProgressComponent: Invalid interval - skipping tracking');
+            return;
+        }
 
         // Update every 100ms за smooth animation
         this.progressInterval = window.setInterval(() => {
-            // ✅ ADD: Double-check auto-play status during tracking
-            if (!this.autoPlayActive()) {
-                console.log('SlideProgressComponent: Auto-play paused during tracking - stopping');
-                this.stopProgressTracking();
-                return;
-            }
-
             this.updateSlideProgress();
         }, 100);
+
+        console.log(`SlideProgressComponent: Progress tracking started with ${interval}ms interval`);
     }
 
     /**
@@ -359,24 +374,24 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
      * @private
      */
     private updateSlideProgress(): void {
-        // Провери дали е паузирано
-        if (!this.autoPlayActive() || this.hasError()) {
-            return; // Не обновява progress ако е паузирано
+        // ✅ SIMPLIFIED: No need to check autoPlayActive here - interval stops automatically
+        // carouselSyncEffect вече управлява спирането
+
+        if (this.hasError()) {
+            console.log('SlideProgressComponent: Error state - stopping update');
+            return;
         }
 
         const elapsed = Date.now() - this.slideStartTime;
         const interval = this.slideInterval();
         const slideProgressPercent = Math.min(100, (elapsed / interval) * 100);
+
         this.slideProgressSignal.set(slideProgressPercent);
 
-        // Fix за 92% reset проблема:
-        if (slideProgressPercent >= 100) {
-            // this.progressComplete.emit({
-            //     currentIndex: this.currentIndex(),
-            //     totalSlides: this.totalSlides()
-            // });
-            // this.resetSlideProgress(); // Reset СЛЕД emit
-            this.stopProgressTracking(); // Спри tracking след завършване
+        // ✅ IMPROVED: Let carousel handle the advance, we just track
+        if (slideProgressPercent >= 99.5) { // Small threshold for timing precision
+            console.log(`SlideProgressComponent: Progress complete (${slideProgressPercent.toFixed(1)}%)`);
+            // Note: Carousel will advance and call syncWithCarousel() to reset
         }
     }
 

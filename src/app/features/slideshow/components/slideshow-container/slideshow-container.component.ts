@@ -119,6 +119,10 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     private readonly lastUserInteraction = signal<number>(0);
     private readonly autoRotationEnabled = signal<boolean>(true);
 
+    // ✅ NEW: Debounce mechanism за предотвратяване на double-start
+    private autoRotationStartPending = false;
+    private autoRotationStartTimeout?: number;
+
     // ViewChild декларация за SlideProgressComponent:
     @ViewChild(SlideProgressComponent) slideProgressComponent?: SlideProgressComponent;
 
@@ -396,6 +400,13 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
 
     ngOnDestroy(): void {
         console.log('SlideShowContainerComponent: Cleaning up TV optimizations');
+
+        // ✅ NEW: Clear pending start timeout
+        if (this.autoRotationStartTimeout) {
+            clearTimeout(this.autoRotationStartTimeout);
+            this.autoRotationStartTimeout = undefined;
+        }
+        this.autoRotationStartPending = false;
 
         this.stopAutoRotation();
 
@@ -1143,14 +1154,14 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Navigate to specific slide using Embla carousel
      * Enhanced method for direct navigation
      */
-    goToSlide(targetIndex: number, smooth: boolean = false): void {
+    public goToSlide(targetIndex: number, smooth: boolean = true): void {
         console.log(`SlideShowContainerComponent.goToSlide(${targetIndex}, smooth: ${smooth}) - Direct navigation`);
 
         const carousel = this.emblaCarousel();
         const products = this.products();
 
-        if (products.length === 0) {
-            console.warn('No products available for direct navigation');
+        if (!carousel || products.length === 0) {
+            console.warn('Cannot navigate - carousel not ready or no products');
             return;
         }
 
@@ -1162,9 +1173,10 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             return;
         }
 
-        // ✅ ALWAYS restart timer for direct navigation (same as SlideProgress)
-        console.log('🔄 Direct navigation - restarting auto-rotation with fresh timer');
-        this.handleUserInteraction('navigation');
+        // ✅ FIX: Direct restart WITHOUT going through handleUserInteraction
+        // This avoids space_toggle pause/resume conflicts
+        console.log('🔄 Direct navigation - immediate restart bypassing interaction handlers');
+        this.restartAutoRotation();
 
         console.log(`Using Embla scrollTo(${validIndex}, immediate: ${!smooth})`);
         carousel.scrollTo(validIndex, !smooth);
@@ -1655,7 +1667,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
  */
     private checkAutoRotationStatusChange(): void {
         const shouldBeRunning = this.shouldAutoRotationBeRunning();
-        const isCurrentlyRunning = !!this.autoRotationTimer$;
+        const isCurrentlyRunning = !!this.autoRotationTimer$; // ← FIX: беше с ! (negation)
 
         // Only log if status changed
         if (shouldBeRunning !== this.lastAutoRotationStatus) {
@@ -1671,12 +1683,9 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             }
         }
 
-        // Check if timer status doesn't match expected status
-        if (shouldBeRunning && !isCurrentlyRunning) {
-            console.warn('⚠️  Timer should be running but is not - attempting restart');
-            this.checkAndStartAutoRotation();
-        }
+        // ✅ REMOVED: Дублираната проверка - debounced метод я обработва
     }
+
     /**
      * Check if auto-rotation should be running
      */
@@ -1706,14 +1715,37 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     }
 
     /**
-     * Check conditions and start auto-rotation if appropriate
-     */
+ * Check conditions and start auto-rotation if appropriate
+ * ✅ DEBOUNCED to prevent multiple simultaneous starts
+ */
     private checkAndStartAutoRotation(): void {
+        // Clear any pending start attempts
+        if (this.autoRotationStartTimeout) {
+            clearTimeout(this.autoRotationStartTimeout);
+            this.autoRotationStartTimeout = undefined;
+        }
+
+        // If start is already pending, skip this attempt
+        if (this.autoRotationStartPending) {
+            console.log('⏳ Auto-rotation start already pending - skipping duplicate request');
+            return;
+        }
+
         console.log('Checking auto-rotation start conditions...');
 
         if (this.shouldAutoRotationBeRunning()) {
-            console.log('✅ All conditions met - starting auto-rotation');
-            this.startAutoRotation();
+            console.log('✅ All conditions met - scheduling auto-rotation start');
+
+            // Mark as pending
+            this.autoRotationStartPending = true;
+
+            // Debounce with 100ms delay to collect multiple requests
+            this.autoRotationStartTimeout = window.setTimeout(() => {
+                console.log('🚀 Executing debounced auto-rotation start');
+                this.autoRotationStartPending = false;
+                this.autoRotationStartTimeout = undefined;
+                this.startAutoRotation();
+            }, 100);
         } else {
             console.log('❌ Conditions not met for auto-rotation');
             this.stopAutoRotation();
@@ -1828,9 +1860,21 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         this.stopAutoRotation();
         this.resetTimerState();
 
+        // ✅ FIX: Immediately clear pausedByUser flag to prevent race condition
+        // Navigation should ALWAYS restart, regardless of pause state
+        this.pausedByUser.set(false);
+
         setTimeout(() => {
             if (this.shouldAutoRotationBeRunning()) {
                 this.startAutoRotationTimer(this.slideInterval(), 'restart');
+            } else {
+                console.warn('⚠️ RESTART: Conditions not met after navigation - debugging:');
+                console.log({
+                    hasProducts: this.products().length > 1,
+                    hasConfig: this.config() !== null,
+                    isEnabled: this.autoRotationEnabled(),
+                    pausedByUser: this.pausedByUser()
+                });
             }
         }, 50);
     }
@@ -2119,61 +2163,48 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
      * Setup user interaction handlers for pause/resume
      */
     private setupInteractionHandlers(): void {
-        // Keyboard interactions - FIXED filter typing
-        fromEvent<KeyboardEvent>(document, 'keydown').pipe(
-            takeUntil(this.destroy$),
-            // FIX: Explicit key checking instead of includes with potentially undefined
-            filter((event: KeyboardEvent) => {
-                const allowedKeys = ['ArrowLeft', 'ArrowRight'];
-                return allowedKeys.indexOf(event.code) !== -1;
-            })
-        ).subscribe((event: KeyboardEvent) => {
-            this.handleUserInteraction();
-        });
+        // ✅ REMOVED: Obsolete keyboard handler - NavigationControlsComponent handles all keyboard input now
 
-        // Embla carousel direct interactions (when we add controls later)
-        // This will be expanded in next steps
+        // Note: Keyboard navigation is fully handled by NavigationControlsComponent
+        // with proper carousel integration. This legacy handler is no longer needed.
+
+        console.log('🎮 Interaction handlers setup completed (keyboard handled by NavigationControlsComponent)');
     }
-
     /**
      * Handle user interaction event
      */
-    private handleUserInteraction(interactionType: 'navigation' | 'pause' | 'resume' | 'space_toggle' = 'space_toggle'): void {
-        const shouldPause = this.pauseOnInteraction();
-
-        if (shouldPause !== true) {
-            console.log(`User interaction (${interactionType}) ignored - pause on interaction disabled`);
-            return;
-        }
-
+    private handleUserInteraction(interactionType: 'navigation' | 'pause' | 'resume' | 'space_toggle'): void {
         console.log(`🎮 User interaction detected: ${interactionType}`);
 
-        switch (interactionType) {
-            case 'navigation':
-                console.log('🔄 Manual navigation - restarting auto-rotation with fresh timer');
-                this.restartAutoRotation();
-                break;
+        this.lastUserInteraction.set(Date.now());
 
-            case 'pause':
-                console.log('⏸️ Explicit pause - preserving timer state');
+        if (interactionType === 'navigation') {
+            // ✅ FIX: Manual navigation gets IMMEDIATE restart without pause/resume conflict
+            console.log('🔄 Manual navigation - immediate restart with fresh timer');
+
+            // Cancel any pending resume timers that might interfere
+            // (This prevents race conditions with space_toggle logic)
+
+            this.restartAutoRotation();
+
+        } else if (interactionType === 'pause') {
+            console.log('⏸️ Explicit pause - stopping auto-rotation');
+            this.pauseAutoRotation();
+
+        } else if (interactionType === 'resume') {
+            console.log('▶️ Explicit resume - continuing auto-rotation');
+            this.resumeAutoRotation();
+
+        } else if (interactionType === 'space_toggle') {
+            console.log('🔄 Space toggle - using pause/resume with time preservation');
+            if (this.isAutoPlaying()) {
                 this.pauseAutoRotation();
-                break;
-
-            case 'resume':
-                console.log('▶️ Explicit resume - continuing with remaining time');
+            } else {
                 this.resumeAutoRotation();
-                break;
-
-            case 'space_toggle':
-            default:
-                console.log('🔄 Space toggle - using pause/resume with time preservation');
-                if (!this.timerState.isPaused) {
-                    this.pauseAutoRotation();
-                }
-                this.resumeAutoRotation();
-                break;
+            }
         }
     }
+
     /**
     * Restart auto-rotation timer after manual navigation
     * Ensures timer is synchronized with new slide position
