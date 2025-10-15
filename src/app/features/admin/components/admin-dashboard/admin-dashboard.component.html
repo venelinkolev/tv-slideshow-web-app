@@ -96,14 +96,6 @@
                     <mat-icon>inventory_2</mat-icon>
                     Избор на Продукти
                 </mat-card-title>
-                <div class="product-actions">
-                    <button mat-button color="primary" (click)="selectAllProducts()" [disabled]="isSaving()">
-                        Избери Всички
-                    </button>
-                    <button mat-button color="warn" (click)="deselectAllProducts()" [disabled]="isSaving()">
-                        Премахни Всички
-                    </button>
-                </div>
             </mat-card-header>
 
             <mat-card-content>
@@ -113,6 +105,17 @@
                         Избрани продукти: <strong>{{ selectedProductsCount() }}</strong> от <strong>{{ products().length
                             }}</strong>
                     </p>
+                </div>
+
+                <div class="product-actions">
+                    <button mat-raised-button color="primary" (click)="selectAllProducts()" [disabled]="isSaving()">
+                        <mat-icon>done_all</mat-icon>
+                        Избери Всички
+                    </button>
+                    <button mat-raised-button color="warn" (click)="deselectAllProducts()" [disabled]="isSaving()">
+                        <mat-icon>clear</mat-icon>
+                        Премахни Всички
+                    </button>
                 </div>
 
                 <ng-container>
