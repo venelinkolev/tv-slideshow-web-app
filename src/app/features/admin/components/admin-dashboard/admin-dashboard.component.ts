@@ -9,9 +9,9 @@ import {
     computed,
     ChangeDetectionStrategy
 } from '@angular/core';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 // Angular Material imports
@@ -78,6 +78,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     // Cleanup subscription
     private readonly destroy$ = new Subject<void>();
+    private readonly templateChange$ = new Subject<string>();
 
     // Services injection using Angular 18 inject()
     private readonly configService = inject(ConfigService);
@@ -91,6 +92,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     readonly saveSuccess = signal<boolean>(false);
     readonly hasError = signal<boolean>(false);
     readonly errorMessage = signal<string>('');
+    readonly isTemplateSaving = signal<boolean>(false);
 
     // ✅ Data signals
     readonly availableTemplates = signal<ProductTemplate[]>([]);
@@ -119,6 +121,17 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         console.log('▶️ AdminDashboardComponent.ngOnInit()');
+        this.templateChange$
+            .pipe(
+                debounceTime(500), // Изчакваме 500ms след последната промяна
+                distinctUntilChanged(), // Запазваме само ако стойността е различна
+                takeUntil(this.destroy$)
+            )
+            .subscribe({
+                next: (templateId) => {
+                    this.saveTemplateChange(templateId);
+                }
+            });
         this.loadInitialData();
     }
 
@@ -193,9 +206,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
      * Handle template selection change
      */
     onTemplateChange(templateId: string): void {
-        console.log(`🎨 Template changed to: ${templateId}`);
+        console.log('🎨 Template changed to:', templateId);
         this.selectedTemplateId.set(templateId);
-        // Auto-save будет в следующей фазе
+
+        // Trigger auto-save через Subject
+        this.templateChange$.next(templateId);
     }
 
     /**
@@ -344,6 +359,32 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                     console.error('❌ Error resetting config:', error);
                     this.isLoading.set(false);
                     this.showError('Грешка при възстановяване на настройките');
+                }
+            });
+    }
+
+    /**
+     * Auto-save template change
+     */
+    private saveTemplateChange(templateId: string): void {
+        console.log('💾 Auto-saving template:', templateId);
+        this.isTemplateSaving.set(true);
+
+        this.configService.updateTemplateSettings({
+            selectedTemplateId: templateId
+        })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    console.log('✅ Template auto-saved');
+                    this.isTemplateSaving.set(false);
+                    // Показваме малко success notification
+                    this.showSuccess('Темплейтът е запазен автоматично');
+                },
+                error: (error) => {
+                    console.error('❌ Failed to auto-save template:', error);
+                    this.isTemplateSaving.set(false);
+                    this.showError('Грешка при запазване на темплейта');
                 }
             });
     }

@@ -48,6 +48,13 @@
                     <mat-hint>Изберете визуалния стил за показване на продуктите</mat-hint>
                 </mat-form-field>
 
+                @if (isTemplateSaving()) {
+                <div class="auto-save-indicator">
+                    <mat-spinner diameter="20"></mat-spinner>
+                    <span>Запазване...</span>
+                </div>
+                }
+
                 @if (selectedTemplateId()) {
                 <ng-container>
                     <div class="template-info">

@@ -504,3 +504,29 @@
         }
     }
 }
+
+// Auto-save indicator
+.auto-save-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -16px;
+    margin-bottom: 16px;
+    font-size: 0.875rem;
+    color: #667eea;
+    
+    mat-spinner {
+        ::ng-deep circle {
+            stroke: #667eea;
+        }
+    }
+    
+    span {
+        animation: fadeIn 0.3s ease-in;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
