@@ -13,18 +13,22 @@ import { TvOptimizationsService } from '@core/services/tv-optimizations.service'
     </main>
     
     <!-- Индикатор за offline състояние (показва се само когато е offline) -->
-    <div *ngIf="isOffline" class="offline-indicator">
+    
+    @if (isOffline) {
+    <div class="offline-indicator">
       <div class="offline-message">
         <span class="offline-icon">⚠</span>
         <span>Няма връзка с интернет</span>
       </div>
     </div>
+  }
   `,
   styles: [`
     .app-container {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
+      overflow-y: scroll;
       position: relative;
     }
     
