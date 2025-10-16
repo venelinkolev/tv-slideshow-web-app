@@ -6,13 +6,18 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError, timer } from 'rxjs';
 import { catchError, retry, timeout, tap, shareReplay, map } from 'rxjs/operators';
 
+import { environment } from '@environments/environment';
+
 import {
     Product,
     ProductFilters,
     ProductsApiResponse,
     ProductApiResponse,
     ProductBadge,
-    ProductDiscount
+    ProductDiscount,
+    GetStocksRequest,
+    GetStocksResponse,
+    StockItem,
 } from '@core/models';
 
 /**
@@ -173,39 +178,58 @@ export class ProductApiService {
     private readonly isDevelopmentMode = !this.isProduction();
 
     /**
-     * 🚀 MAIN METHOD: Get products with INSTANT mock fallback
-     * @param filters Optional product filtering (CORRECTED - matches GitHub ProductFilters)
-     * @param forceRefresh Force API call bypassing cache
-     * @returns Observable<Product[]>
+     * Get all products (with Real API + Mock fallback)
+     * 
+     * Strategy:
+     * 1. Check cache first (5 minute TTL + filter match)
+     * 2. Try Real API (getProductsFromRealApi)
+     * 3. On error → Fallback to Mock data
+     * 4. Cache successful result
+     * 
+     * @param filters - Optional filtering criteria
+     * @param forceRefresh - Force API call bypassing cache
+     * @returns Observable<Product[]> - Array of products
      */
     getProducts(filters?: ProductFilters, forceRefresh = false): Observable<Product[]> {
-        console.log('🔄 ProductApiService.getProducts()', { filters, forceRefresh, isDev: this.isDevelopmentMode });
+        console.log('📦 ProductApiService.getProducts() called', { filters, forceRefresh });
 
-        // ⚡ DEVELOPMENT MODE: Use instant mock data (NO API CALLS!)
-        if (this.isDevelopmentMode) {
-            console.log('🎯 DEVELOPMENT MODE: Using instant mock data!');
-            return this.getInstantMockData(filters);
-        }
-
-        // Check cache validity
+        // 1️⃣ Check cache first (using existing helper with filters support)
         if (!forceRefresh && this.isCacheValid(filters)) {
-            console.log('📦 Using cached products');
+            console.log('✅ Returning cached products');
             return of(this.cachedProducts!.data);
         }
 
-        // Make API call with FAST error handling
-        return this.http.get<ProductsApiResponse>(`${this.apiBaseUrl}`, {
-            params: this.buildFilterParams(filters)
-        }).pipe(
-            timeout(this.requestTimeout), // ⚡ Only 2 seconds!
-            retry(this.maxRetries), // ⚡ Only 1 retry!
-            map(response => response.data || []),
+        console.log('🔄 Cache miss or expired, fetching products...');
+
+        // 2️⃣ Try Real API first
+        return this.getProductsFromRealApi().pipe(
+            // Success → Cache and return
             tap(products => {
-                console.log(`✅ Fetched ${products.length} products from API`);
+                console.log('✅ Real API successful, caching products');
+                // Use existing helper with filters parameter
                 this.updateCache(products, filters);
             }),
-            catchError(error => this.handleApiError(error)), // ⚡ Fast fallback
-            shareReplay(1)
+
+            // Error → Fallback to Mock data
+            catchError(error => {
+                console.warn('⚠️ Real API failed, falling back to mock data');
+                console.error('Real API Error:', error);
+
+                // 3️⃣ Fallback to Mock data (use existing getMockProducts if available)
+                // Check if getMockProducts exists, otherwise use instant mock
+                return this.getMockProductsFallback(filters).pipe(
+                    tap(mockProducts => {
+                        console.log('✅ Mock data loaded as fallback');
+                        // Cache mock data with filters
+                        this.updateCache(mockProducts, filters);
+                    }),
+                    catchError(mockError => {
+                        console.error('❌ Even mock data failed!', mockError);
+                        // Last resort: return empty array
+                        return of([]);
+                    })
+                );
+            })
         );
     }
 
@@ -376,6 +400,23 @@ export class ProductApiService {
     // Private helper methods
 
     /**
+    * Helper: Get mock products fallback
+    * Uses existing getMockProducts method or instant mock data
+    * @private
+    */
+    private getMockProductsFallback(filters?: ProductFilters): Observable<Product[]> {
+        // If you have getMockProducts method, use it
+        // Otherwise return instant mock data
+        if (this.instantMockProducts && this.instantMockProducts.length > 0) {
+            console.log('📦 Using instantMockProducts as fallback');
+            return of(this.instantMockProducts);
+        }
+
+        // Fallback to empty array
+        return of([]);
+    }
+
+    /**
      * Check if cached data is still valid
      * @private
      */
@@ -450,5 +491,255 @@ export class ProductApiService {
         if (filters.hasDiscount !== undefined) params.hasDiscount = filters.hasDiscount.toString();
 
         return params;
+    }
+
+    /**
+        * 🆕 Get products from REAL API (/getstockslite endpoint)
+        * Fetches products from API3.eyanak.com and maps to Product[] interface
+        * 
+        * Features:
+        * - POST request to /getstockslite with get_pictures: true
+        * - Authorization header added automatically by AuthInterceptor
+        * - 2 second timeout for fast fallback
+        * - 1 retry attempt on failure
+        * - Maps StockItem[] to Product[] using mapper
+        * - Robust error handling for backend errors
+        * 
+        * @returns Observable<Product[]> - Array of products from API
+        */
+    getProductsFromRealApi(): Observable<Product[]> {
+        console.log('🌐 ProductApiService.getProductsFromRealApi() - Fetching from real API...');
+
+        // Construct full API URL
+        const apiUrl = `${environment.apiUrl}${environment.endpoints.getStocks}`;
+        console.log('📡 API URL:', apiUrl);
+
+        // Prepare request body
+        const requestBody: GetStocksRequest = {
+            get_pictures: true
+        };
+
+        // Make POST request to API
+        return this.http.post<GetStocksResponse>(apiUrl, requestBody).pipe(
+            // Apply timeout (2 seconds for fast fallback)
+            timeout(this.requestTimeout),
+
+            // Retry once on failure
+            retry({
+                count: this.maxRetries,
+                delay: (error, retryCount) => {
+                    console.warn(`⚠️ API request failed, retry ${retryCount}/${this.maxRetries}`, error);
+                    return timer(1000); // 1 second delay before retry
+                }
+            }),
+
+            // Map API response to Product[]
+            map((response: GetStocksResponse) => {
+                console.log('✅ Real API response received');
+
+                // 🔧 IMPROVED: Check for API error (with better handling)
+                if (response.error) {
+                    const errorMsg = typeof response.error === 'string'
+                        ? response.error.trim()
+                        : JSON.stringify(response.error);
+
+                    if (errorMsg && errorMsg !== '' && errorMsg !== '0') {
+                        console.error('❌ API returned error:', errorMsg);
+                        throw new Error(`API Error: ${errorMsg}`);
+                    }
+                }
+
+                // 🔧 IMPROVED: Check if items exist and is an array
+                if (!response.items) {
+                    console.error('❌ API response missing items field (null or undefined)');
+                    throw new Error('API response missing items array');
+                }
+
+                if (!Array.isArray(response.items)) {
+                    console.error('❌ API response items is not an array:', typeof response.items);
+                    throw new Error('Invalid API response structure: items is not an array');
+                }
+
+                // 🔧 IMPROVED: Check if items array is empty
+                if (response.items.length === 0) {
+                    console.warn('⚠️ API returned empty items array');
+                    return []; // Return empty array instead of throwing error
+                }
+
+                console.log(`📦 Received ${response.items.length} products from API`);
+
+                // Map StockItem[] to Product[]
+                const products = response.items.map(item => this.mapStockItemToProduct(item));
+
+                console.log(`✅ Mapped ${products.length} products successfully`);
+                return products;
+            }),
+
+            // Error handling
+            catchError((error: HttpErrorResponse) => {
+                console.error('❌ ProductApiService.getProductsFromRealApi() - Error:', error);
+
+                // Log detailed error info
+                if (error.status === 0) {
+                    console.error('🔌 Network error - unable to reach API server');
+                } else if (error.status === 401) {
+                    console.error('🔒 Unauthorized - token may be invalid or expired');
+                } else if (error.status === 404) {
+                    console.error('🔍 Endpoint not found - check API URL');
+                } else if (error.status) {
+                    console.error(`⚠️ HTTP Error ${error.status}: ${error.statusText}`);
+                } else {
+                    console.error(`⚠️ HTTP Error undefined: ${error.message || 'Unknown error'}`);
+                }
+
+                // Re-throw error for fallback handling
+                return throwError(() => new Error(`Failed to fetch products from API: ${error.message}`));
+            }),
+
+            // Share replay for multiple subscribers
+            shareReplay(1)
+        );
+    }
+
+    /**
+     * 🆕 MAPPER: Convert StockItem from API to Product interface
+     * Maps API response structure to internal Product model
+     * 
+     * @param item - StockItem from /getstockslite API response
+     * @returns Product object ready for slideshow display
+     */
+    private mapStockItemToProduct(item: StockItem): Product {
+        // Map basic fields
+        const product: Product = {
+            // ID: Convert number to string
+            id: item.stk_idnumb.toString(),
+
+            // Name: Primary product name
+            name: item.stk_name || 'Продукт без име',
+
+            // Price: Current selling price
+            price: item.price || 0,
+
+            // Image: Convert Base64 to Data URL
+            imageUrl: this.convertBase64ToDataUrl(item.image),
+
+            // Short Description: Use description field, fallback to name
+            shortDescription: item.description || item.stk_name || '',
+
+            // Category: Convert group ID to string
+            category: item.gr_id ? item.gr_id.toString() : 'uncategorized',
+
+            // ⚠️ CRITICAL: inStock is ALWAYS true (no quantity filtering!)
+            inStock: true,
+
+            // Optional: Long description (use description_2 if available)
+            longDescription: item.description_2 || undefined,
+
+            // Optional: Secondary image (not provided by API currently)
+            secondaryImageUrl: undefined,
+
+            // Optional: Calculate discount if basic_price > price
+            discount: this.calculateDiscount(item.basic_price, item.price),
+
+            // Optional: Create badge based on discount or other criteria
+            badge: this.createBadge(item),
+
+            // Optional: Display settings (not provided by API)
+            displaySettings: undefined,
+
+            // Timestamps (not provided by API, set to current time)
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+
+        return product;
+    }
+
+    /**
+     * 🆕 HELPER: Convert Base64 string to Data URL format
+     * Converts API Base64 image to browser-readable data URL
+     * @param base64 - Base64 encoded image string from API
+     * @returns Data URL string (data:image/png;base64,...)
+     */
+    private convertBase64ToDataUrl(base64: string): string {
+        if (!base64 || base64.trim() === '') {
+            console.warn('⚠️ Empty Base64 image provided, returning placeholder');
+            return '/assets/images/product-placeholder.jpg';
+        }
+
+        // Remove any whitespace
+        const cleanBase64 = base64.trim();
+
+        // Check if already has data URL prefix
+        if (cleanBase64.startsWith('data:image')) {
+            return cleanBase64;
+        }
+
+        // Add data URL prefix (assuming PNG, but works for JPEG too)
+        return `data:image/png;base64,${cleanBase64}`;
+    }
+
+    /**
+     * 🆕 HELPER: Calculate discount information
+     * Compares basic_price with current price to determine discount
+     * @param basicPrice - Original price from API
+     * @param currentPrice - Current/sale price from API
+     * @returns ProductDiscount object or undefined if no discount
+     */
+    private calculateDiscount(basicPrice: number, currentPrice: number): ProductDiscount | undefined {
+        // Validate prices
+        if (!basicPrice || !currentPrice || basicPrice <= 0 || currentPrice <= 0) {
+            return undefined;
+        }
+
+        // No discount if current price >= basic price
+        if (currentPrice >= basicPrice) {
+            return undefined;
+        }
+
+        // Calculate discount percentage
+        const discountAmount = basicPrice - currentPrice;
+        const discountPercentage = Math.round((discountAmount / basicPrice) * 100);
+
+        // Only show discount if >= 1%
+        if (discountPercentage < 1) {
+            return undefined;
+        }
+
+        return {
+            originalPrice: basicPrice,
+            percentage: discountPercentage,
+            // Optional: Set valid until (not provided by API, so omitted)
+        };
+    }
+
+    /**
+     * 🆕 HELPER: Create product badge based on stock item data
+     * Determines if product should have a badge (NEW, SALE, etc.)
+     * @param item - StockItem from API
+     * @returns ProductBadge object or undefined
+     */
+    private createBadge(item: StockItem): ProductBadge | undefined {
+        // Badge logic based on discount
+        if (item.basic_price && item.price && item.basic_price > item.price) {
+            const discountPercentage = Math.round(
+                ((item.basic_price - item.price) / item.basic_price) * 100
+            );
+
+            // Show SALE badge for discounts >= 10%
+            if (discountPercentage >= 10) {
+                return {
+                    text: `${discountPercentage}%`,
+                    color: 'error', // Red for sale
+                    position: 'top-right'
+                };
+            }
+        }
+
+        // Future: Add logic for NEW badge based on createdAt timestamp
+        // Future: Add logic for TOP badge based on popularity
+        // For now, only discount badges are supported
+
+        return undefined;
     }
 }
