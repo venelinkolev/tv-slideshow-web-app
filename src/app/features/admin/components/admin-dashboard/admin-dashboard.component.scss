@@ -515,10 +515,19 @@
     font-size: 0.875rem;
     color: #667eea;
     
-    .duration-save {
+    &.duration-save {
         margin-top: 8px;
         margin-bottom: 0;
-        justify-content: center; // Центриран под slider-а
+        justify-content: center;
+    }
+    
+    &.products-save {
+        margin-top: 12px;
+        margin-bottom: 12px;
+        justify-content: flex-start;
+        padding: 8px 12px;
+        background-color: rgba(102, 126, 234, 0.05);
+        border-radius: 4px;
     }
     
     mat-spinner {
@@ -530,15 +539,6 @@
     span {
         animation: fadeIn 0.3s ease-in;
     }
-}
-
-.products-save {
-    margin-top: 12px;
-    margin-bottom: 12px;
-    justify-content: flex-start;
-    padding: 8px 12px;
-    background-color: rgba(102, 126, 234, 0.05);
-    border-radius: 4px;
 }
 
 @keyframes fadeIn {

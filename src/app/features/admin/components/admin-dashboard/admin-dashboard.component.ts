@@ -421,9 +421,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: () => {
                     console.log('✅ Template auto-saved');
-                    this.isTemplateSaving.set(false);
-                    // Показваме малко success notification
-                    this.showSuccess('Темплейтът е запазен автоматично');
+
+                    // Minimum 300ms delay for spinner visibility
+                    setTimeout(() => {
+                        this.isTemplateSaving.set(false);
+                        this.showSuccess('Темплейтът е запазен автоматично');
+                    }, 300);
                 },
                 error: (error) => {
                     console.error('❌ Failed to auto-save template:', error);
@@ -447,8 +450,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: () => {
                     console.log('✅ Duration auto-saved');
-                    this.isDurationSaving.set(false);
-                    this.showSuccess(`Интервалът е запазен: ${duration / 1000} секунди`);
+
+                    // Minimum 300ms delay for spinner visibility
+                    setTimeout(() => {
+                        this.isDurationSaving.set(false);
+                        this.showSuccess(`Интервалът е запазен: ${duration / 1000} секунди`);
+                    }, 300);
                 },
                 error: (error) => {
                     console.error('❌ Failed to auto-save duration:', error);
@@ -472,14 +479,17 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: () => {
                     console.log('✅ Products auto-saved');
-                    this.isProductsSaving.set(false);
 
                     const count = productIds.length;
                     const message = count === 0
                         ? 'Всички продукти са премахнати'
                         : `Избрани продукти: ${count}`;
 
-                    this.showSuccess(message);
+                    // Minimum 300ms delay for spinner visibility
+                    setTimeout(() => {
+                        this.isProductsSaving.set(false);
+                        this.showSuccess(message);
+                    }, 300);
                 },
                 error: (error) => {
                     console.error('❌ Failed to auto-save products:', error);
