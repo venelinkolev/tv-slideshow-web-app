@@ -80,6 +80,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private readonly templateChange$ = new Subject<string>();
     private readonly durationChange$ = new Subject<number>();
+    private readonly productsChange$ = new Subject<string[]>();
 
     // Services injection using Angular 18 inject()
     private readonly configService = inject(ConfigService);
@@ -95,6 +96,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     readonly errorMessage = signal<string>('');
     readonly isTemplateSaving = signal<boolean>(false);
     readonly isDurationSaving = signal<boolean>(false);
+    readonly isProductsSaving = signal<boolean>(false);
 
     // ✅ Data signals
     readonly availableTemplates = signal<ProductTemplate[]>([]);
@@ -123,7 +125,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         console.log('▶️ AdminDashboardComponent.ngOnInit()');
-        
+
+        // Template auto-save subscription
         this.templateChange$
             .pipe(
                 debounceTime(500), // Изчакваме 500ms след последната промяна
@@ -138,16 +141,31 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
         // Duration auto-save subscription
         this.durationChange$
-                .pipe(
-                    debounceTime(800), // По-дълго debounce за slider (800ms)
-                    distinctUntilChanged(),
-                    takeUntil(this.destroy$)
-                )
-                .subscribe({
-                    next: (duration) => {
-                        this.saveDurationChange(duration);
-                    }
-                });
+            .pipe(
+                debounceTime(800), // По-дълго debounce за slider (800ms)
+                distinctUntilChanged(),
+                takeUntil(this.destroy$)
+            )
+            .subscribe({
+                next: (duration) => {
+                    this.saveDurationChange(duration);
+                }
+            });
+
+        // Products auto-save subscription
+        this.productsChange$
+            .pipe(
+                debounceTime(1000), // По-дълго debounce за bulk операции
+                distinctUntilChanged((prev, curr) =>
+                    JSON.stringify(prev) === JSON.stringify(curr)
+                ),
+                takeUntil(this.destroy$)
+            )
+            .subscribe({
+                next: (productIds) => {
+                    this.saveProductsChange(productIds);
+                }
+            });
 
         this.loadInitialData();
     }
@@ -236,7 +254,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     onDurationChange(duration: number): void {
         console.log('⏱️ Duration changed to:', duration);
         this.slideDuration.set(duration);
-        
+
         // Trigger auto-save през Subject
         this.durationChange$.next(duration);
     }
@@ -258,6 +276,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             this.selectedProductIds.set([...currentSelection, productId]);
             console.log(`➕ Product ${productId} selected`);
         }
+
+        // Trigger auto-save
+        this.productsChange$.next(this.selectedProductIds());
     }
 
     /**
@@ -274,7 +295,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         console.log('✅ Selecting all products');
         const allProductIds = this.products().map(p => p.id);
         this.selectedProductIds.set(allProductIds);
-        this.showSuccess('Всички продукти са избрани');
+
+        // Trigger auto-save
+        this.productsChange$.next(allProductIds);
     }
 
     /**
@@ -283,7 +306,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     deselectAllProducts(): void {
         console.log('❌ Deselecting all products');
         this.selectedProductIds.set([]);
-        this.showSuccess('Всички продукти са премахнати');
+
+        // Trigger auto-save
+        this.productsChange$.next([]);
     }
 
     /**
@@ -429,6 +454,37 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                     console.error('❌ Failed to auto-save duration:', error);
                     this.isDurationSaving.set(false);
                     this.showError('Грешка при запазване на интервала');
+                }
+            });
+    }
+
+    /**
+     * Auto-save products change
+     */
+    private saveProductsChange(productIds: string[]): void {
+        console.log('💾 Auto-saving products:', productIds);
+        this.isProductsSaving.set(true);
+
+        this.configService.updateProductSettings({
+            selectedProductIds: productIds
+        })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    console.log('✅ Products auto-saved');
+                    this.isProductsSaving.set(false);
+
+                    const count = productIds.length;
+                    const message = count === 0
+                        ? 'Всички продукти са премахнати'
+                        : `Избрани продукти: ${count}`;
+
+                    this.showSuccess(message);
+                },
+                error: (error) => {
+                    console.error('❌ Failed to auto-save products:', error);
+                    this.isProductsSaving.set(false);
+                    this.showError('Грешка при запазване на продуктите');
                 }
             });
     }

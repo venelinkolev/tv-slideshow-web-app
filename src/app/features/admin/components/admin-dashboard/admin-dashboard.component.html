@@ -86,11 +86,11 @@
                         <input matSliderThumb [(ngModel)]="slideDuration" (ngModelChange)="onDurationChange($event)">
                     </mat-slider>
 
-                     @if (isDurationSaving()) {
-                        <div class="auto-save-indicator duration-save">
-                            <mat-spinner diameter="20"></mat-spinner>
-                            <span>Запазване...</span>
-                        </div>
+                    @if (isDurationSaving()) {
+                    <div class="auto-save-indicator duration-save">
+                        <mat-spinner diameter="20"></mat-spinner>
+                        <span>Запазване...</span>
+                    </div>
                     }
 
                     <div class="slider-hints">
@@ -120,6 +120,13 @@
                             }}</strong>
                     </p>
                 </div>
+
+                @if (isProductsSaving()) {
+                <div class="auto-save-indicator products-save">
+                    <mat-spinner diameter="20"></mat-spinner>
+                    <span>Запазване на избора...</span>
+                </div>
+                }
 
                 <div class="product-actions">
                     <button mat-raised-button color="primary" (click)="selectAllProducts()" [disabled]="isSaving()">

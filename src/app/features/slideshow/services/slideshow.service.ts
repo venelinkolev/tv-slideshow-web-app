@@ -42,27 +42,36 @@ export class SlideShowService {
     loadProducts(): Observable<Product[]> {
         console.log('🔄 SlideShowService.loadProducts()');
 
-        // ⚡ PATCH: Get max products with fallback
+        // Get configuration
+        const config = this.configService.config();
+        const selectedProductIds = config.products.selectedProductIds || [];
         const maxProducts = this.getMaxProductCountSafe();
 
         return this.productApiService.getProducts().pipe(
             map((products: Product[]) => {
                 console.log(`✅ Received ${products.length} products from API`);
 
-                // ⚡ PATCH: Actually slice the array (this was missing!)
-                const limitedProducts = products.slice(0, maxProducts);
+                // ✅ FILTER: Only show selected products from admin panel
+                let filteredProducts: Product[];
 
-                if (products.length > maxProducts) {
-                    console.log(`✂️ Limited products from ${products.length} to ${maxProducts}`);
+                if (selectedProductIds.length > 0) {
+                    // Show ONLY selected products
+                    filteredProducts = products.filter(p => selectedProductIds.includes(p.id));
+                    console.log(`🎯 Filtered to ${filteredProducts.length} selected products (from ${selectedProductIds.length} IDs)`);
+                } else {
+                    // No selection = show first N products (fallback)
+                    filteredProducts = products.slice(0, maxProducts);
+                    console.log(`⚠️ No products selected in admin, showing first ${filteredProducts.length}`);
                 }
 
-                return limitedProducts;
+                return filteredProducts;
             }),
             tap((products: Product[]) => {
-                console.log(`✅ Заредени ${products.length} продукта`);
+                console.log(`✅ SlideShow will display ${products.length} products`);
             })
         );
     }
+
     // loadProducts(): Observable<Product[]> {
     //     console.log('🔄 SlideShowService.loadProducts()');
     //     // Получаваме лимит на продукти от конфигурацията
