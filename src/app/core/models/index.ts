@@ -18,6 +18,9 @@ export * from './enums';
 // Type guards (avoiding circular dependencies)
 export * from './type-guards';
 
+// API-related exports
+export * from './api';
+
 // Utility types for development
 export type EntityId = string;
 export type Timestamp = Date;

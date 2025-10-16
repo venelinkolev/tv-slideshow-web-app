@@ -10,6 +10,8 @@ export * from './error.interceptor';
 
 export * from './timeout.interceptor';
 
+export * from './auth.interceptor';
+
 /**
  * All interceptors are now implemented with TV-specific optimizations:
  * 

@@ -1,0 +1,83 @@
+<!-- src/app/features/auth/components/login/login.component.html -->
+
+<div class="login-container">
+    <mat-card class="login-card">
+
+        <!-- Header -->
+        <mat-card-header>
+            <mat-card-title>
+                <mat-icon>tv</mat-icon>
+                TV Slideshow - Вход
+            </mat-card-title>
+        </mat-card-header>
+
+        <!-- Form -->
+        <mat-card-content>
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+                <!-- Email Field -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Ел. поща</mat-label>
+                    <input matInput type="email" formControlName="email" placeholder="test@test.com"
+                        autocomplete="email">
+                    <mat-icon matPrefix>email</mat-icon>
+                    @if (loginForm.get('email')?.touched && loginForm.get('email')?.invalid) {
+                    <mat-error>{{ getErrorMessage('email') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <!-- Username Field -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Потребителско име</mat-label>
+                    <input matInput type="text" formControlName="username" placeholder="admin" autocomplete="username">
+                    <mat-icon matPrefix>person</mat-icon>
+                    @if (loginForm.get('username')?.touched && loginForm.get('username')?.invalid) {
+                    <mat-error>{{ getErrorMessage('username') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <!-- Password Field -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Парола</mat-label>
+                    <input matInput [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+                        placeholder="••••••••" autocomplete="current-password">
+                    <mat-icon matPrefix>lock</mat-icon>
+                    <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()"
+                        [attr.aria-label]="showPassword() ? 'Скрий паролата' : 'Покажи паролата'">
+                        <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                    @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
+                    <mat-error>{{ getErrorMessage('password') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <!-- Remember Me Checkbox -->
+                <div class="remember-me">
+                    <mat-checkbox formControlName="rememberMe">
+                        Запомни паролата
+                    </mat-checkbox>
+                </div>
+
+                <!-- Error Message -->
+                @if (errorMessage()) {
+                <div class="error-message">
+                    <mat-icon>error</mat-icon>
+                    {{ errorMessage() }}
+                </div>
+                }
+
+                <!-- Submit Button -->
+                <button mat-raised-button color="primary" type="submit" class="login-button" [disabled]="isLoading()">
+                    @if (isLoading()) {
+                    <mat-spinner diameter="20"></mat-spinner>
+                    <span>Влизане...</span>
+                    } @else {
+                    Вход
+                    }
+                </button>
+
+            </form>
+        </mat-card-content>
+
+    </mat-card>
+</div>

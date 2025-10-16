@@ -1,0 +1,197 @@
+// src/app/features/auth/components/login/login.component.scss
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  
+  mat-card-header {
+    padding: 24px 24px 16px;
+    
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.5rem;
+      color: #2d3748;
+      margin: 0;
+      
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: #667eea;
+      }
+    }
+  }
+  
+  mat-card-content {
+    padding: 24px;
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      
+      mat-form-field {
+        width: 100%;
+        
+        mat-icon[matPrefix] {
+          margin-right: 8px;
+          color: #667eea;
+        }
+        
+        // Custom outline color
+        &.mat-form-field-appearance-outline {
+          .mat-mdc-text-field-wrapper {
+            .mat-mdc-form-field-flex {
+              .mdc-notched-outline {
+                .mdc-notched-outline__leading,
+                .mdc-notched-outline__notch,
+                .mdc-notched-outline__trailing {
+                  border-color: rgba(0, 0, 0, 0.12);
+                }
+              }
+            }
+          }
+          
+          &.mat-focused {
+            .mat-mdc-text-field-wrapper {
+              .mat-mdc-form-field-flex {
+                .mdc-notched-outline {
+                  .mdc-notched-outline__leading,
+                  .mdc-notched-outline__notch,
+                  .mdc-notched-outline__trailing {
+                    border-color: #667eea;
+                    border-width: 2px;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      .remember-me {
+        margin-top: -8px;
+        
+        mat-checkbox {
+          color: #4a5568;
+          
+          ::ng-deep {
+            .mdc-checkbox__background {
+              border-color: #667eea;
+            }
+            
+            .mdc-checkbox--selected .mdc-checkbox__background {
+              background-color: #667eea;
+              border-color: #667eea;
+            }
+          }
+        }
+      }
+      
+      .error-message {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        background-color: #fee;
+        border-radius: 4px;
+        color: #c53030;
+        font-size: 0.9rem;
+        border-left: 4px solid #c53030;
+        
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+      
+      .login-button {
+        height: 48px;
+        font-size: 1rem;
+        font-weight: 500;
+        margin-top: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transition: all 0.3s ease;
+        
+        &:not(:disabled):hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        &:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        
+        // Spinner inside button
+        mat-spinner {
+          display: inline-block;
+          margin-right: 8px;
+          vertical-align: middle;
+          
+          ::ng-deep circle {
+            stroke: white;
+          }
+        }
+        
+        span {
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+}
+
+// TV-specific responsive design
+@media (min-width: 1920px) {
+  .login-card {
+    max-width: 600px;
+    
+    mat-card-header mat-card-title {
+      font-size: 2rem;
+      
+      mat-icon {
+        font-size: 40px;
+        width: 40px;
+        height: 40px;
+      }
+    }
+    
+    mat-card-content form {
+      mat-form-field {
+        font-size: 1.2rem;
+      }
+      
+      .login-button {
+        height: 56px;
+        font-size: 1.2rem;
+      }
+    }
+  }
+}
+
+// Tablet and smaller
+@media (max-width: 768px) {
+  .login-container {
+    padding: 12px;
+  }
+  
+  .login-card {
+    max-width: 100%;
+  }
+}

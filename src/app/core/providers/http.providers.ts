@@ -5,6 +5,7 @@ import { Provider } from '@angular/core';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
 // FIXED: Use @core alias for consistent imports
+import { AuthInterceptor } from '@core/interceptors/auth.interceptor';
 import { ErrorInterceptor } from '@core/interceptors/error.interceptor';
 import { TimeoutInterceptor } from '@core/interceptors/timeout.interceptor';
 
@@ -23,6 +24,13 @@ import { TimeoutInterceptor } from '@core/interceptors/timeout.interceptor';
  * };
  */
 export const HTTP_PROVIDERS: Provider[] = [
+
+    // Must be first to add authentication token before other processing
+    {
+        provide: HTTP_INTERCEPTORS,
+        useClass: AuthInterceptor,
+        multi: true
+    },
 
     // Timeout Interceptor - Task I.2 ✅ (Applied FIRST)
     // Must be first to apply timeouts before error handling
@@ -121,7 +129,7 @@ export const HTTP_PROVIDERS_TV = {
 
 // Log configuration loading
 console.log('🔧 HTTP providers configuration loaded');
-console.log('📡 Available interceptors: TimeoutInterceptor, ErrorInterceptor');
+console.log('📡 Available interceptors: AuthInterceptor, TimeoutInterceptor, ErrorInterceptor');
 console.log('⚡ Interceptor order: Timeout → Error (optimal for TV networks)');
 console.log('✅ Rule 03 COMPLETE: All interceptors implemented with TV optimizations');
 
