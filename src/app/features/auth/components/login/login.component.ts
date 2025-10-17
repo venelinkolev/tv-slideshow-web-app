@@ -130,7 +130,7 @@ export class LoginComponent implements OnInit {
         const credentials: LoginRequest = {
             email: formValue.email,
             username: formValue.username,
-            // password: formValue.password
+            password: formValue.password
         };
 
         // Attempt login

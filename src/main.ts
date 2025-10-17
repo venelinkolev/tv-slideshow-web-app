@@ -1,7 +1,7 @@
 // src/main.ts
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter, withPreloading, withRouterConfig } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { importProvidersFrom, LOCALE_ID } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -27,7 +27,7 @@ bootstrapApplication(AppComponent, {
         onSameUrlNavigation: 'reload'
       })
     ),
-    provideHttpClient(),
+    provideHttpClient(withInterceptorsFromDi()),
     importProvidersFrom(BrowserAnimationsModule),
     ...HTTP_PROVIDERS,
     // Регистрация на българския език
