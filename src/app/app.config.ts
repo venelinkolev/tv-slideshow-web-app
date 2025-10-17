@@ -30,9 +30,9 @@ export const appConfig: ApplicationConfig = {
 
     // App Initialization - Angular 18+ Modern Approach
     // Runs before application bootstrap
-    provideAppInitializer(() => {
-      const initService = inject(AppInitializationService);
-      return initService.initialize();
-    })
+    // provideAppInitializer(() => {
+    //   const initService = inject(AppInitializationService);
+    //   return initService.initialize();
+    // })
   ]
 };
