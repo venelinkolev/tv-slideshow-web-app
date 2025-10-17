@@ -19,6 +19,7 @@ import {
     GetStocksResponse,
     StockItem,
 } from '@core/models';
+import { AuthService } from './auth.service';
 
 /**
  * Product API Service for TV slideshow application - CORRECTED ARCHITECTURE
@@ -30,6 +31,7 @@ import {
 })
 export class ProductApiService {
     private readonly http = inject(HttpClient);
+    private readonly authService = inject(AuthService);
 
     // Configuration - SHORTER TIMEOUTS for faster fallback
     private readonly apiBaseUrl = '/api/products';
@@ -507,37 +509,177 @@ export class ProductApiService {
         * 
         * @returns Observable<Product[]> - Array of products from API
         */
+    // getProductsFromRealApi(): Observable<Product[]> {
+    //     console.log('🌐 ProductApiService.getProductsFromRealApi() - Fetching from real API...');
+
+    //     // Construct full API URL
+    //     const apiUrl = `${environment.apiUrl}${environment.endpoints.getStocks}`;
+    //     console.log('📡 API URL:', apiUrl);
+
+    //     // Prepare request body
+    //     const requestBody: GetStocksRequest = {
+    //         get_pictures: true
+    //     };
+
+    //     // Make POST request to API
+    //     return this.http.post<GetStocksResponse>(apiUrl, requestBody).pipe(
+    //         // Apply timeout (2 seconds for fast fallback)
+    //         timeout(this.requestTimeout),
+
+    //         // Retry once on failure
+    //         retry({
+    //             count: this.maxRetries,
+    //             delay: (error, retryCount) => {
+    //                 console.warn(`⚠️ API request failed, retry ${retryCount}/${this.maxRetries}`, error);
+    //                 return timer(1000); // 1 second delay before retry
+    //             }
+    //         }),
+
+    //         // Map API response to Product[]
+    //         map((response: GetStocksResponse) => {
+    //             console.log('✅ Real API response received');
+
+    //             // 🔧 IMPROVED: Check for API error (with better handling)
+    //             if (response.error) {
+    //                 const errorMsg = typeof response.error === 'string'
+    //                     ? response.error.trim()
+    //                     : JSON.stringify(response.error);
+
+    //                 if (errorMsg && errorMsg !== '' && errorMsg !== '0') {
+    //                     console.error('❌ API returned error:', errorMsg);
+    //                     throw new Error(`API Error: ${errorMsg}`);
+    //                 }
+    //             }
+
+    //             // 🔧 IMPROVED: Check if items exist and is an array
+    //             if (!response.items) {
+    //                 console.error('❌ API response missing items field (null or undefined)');
+    //                 throw new Error('API response missing items array');
+    //             }
+
+    //             if (!Array.isArray(response.items)) {
+    //                 console.error('❌ API response items is not an array:', typeof response.items);
+    //                 throw new Error('Invalid API response structure: items is not an array');
+    //             }
+
+    //             // 🔧 IMPROVED: Check if items array is empty
+    //             if (response.items.length === 0) {
+    //                 console.warn('⚠️ API returned empty items array');
+    //                 return []; // Return empty array instead of throwing error
+    //             }
+
+    //             console.log(`📦 Received ${response.items.length} products from API`);
+
+    //             // Map StockItem[] to Product[]
+    //             const products = response.items.map(item => this.mapStockItemToProduct(item));
+
+    //             console.log(`✅ Mapped ${products.length} products successfully`);
+    //             return products;
+    //         }),
+
+    //         // Error handling
+    //         catchError((error: HttpErrorResponse) => {
+    //             console.error('❌ ProductApiService.getProductsFromRealApi() - Error:', error);
+
+    //             // Log detailed error info
+    //             if (error.status === 0) {
+    //                 console.error('🔌 Network error - unable to reach API server');
+    //             } else if (error.status === 401) {
+    //                 console.error('🔒 Unauthorized - token may be invalid or expired');
+    //             } else if (error.status === 404) {
+    //                 console.error('🔍 Endpoint not found - check API URL');
+    //             } else if (error.status) {
+    //                 console.error(`⚠️ HTTP Error ${error.status}: ${error.statusText}`);
+    //             } else {
+    //                 console.error(`⚠️ HTTP Error undefined: ${error.message || 'Unknown error'}`);
+    //             }
+
+    //             // Re-throw error for fallback handling
+    //             return throwError(() => new Error(`Failed to fetch products from API: ${error.message}`));
+    //         }),
+
+    //         // Share replay for multiple subscribers
+    //         shareReplay(1)
+    //     );
+    // }
+
     getProductsFromRealApi(): Observable<Product[]> {
-        console.log('🌐 ProductApiService.getProductsFromRealApi() - Fetching from real API...');
+        console.log('🔍 ========================================');
+        console.log('🔍 DEBUG: getProductsFromRealApi() started');
+        console.log('🔍 ========================================');
 
         // Construct full API URL
         const apiUrl = `${environment.apiUrl}${environment.endpoints.getStocks}`;
-        console.log('📡 API URL:', apiUrl);
+        console.log('🔍 API URL:', apiUrl);
+        console.log('🔍 API URL length:', apiUrl.length);
+        console.log('🔍 API URL has trailing slash?', apiUrl.endsWith('/'));
+
+        // Get token from AuthService
+        const token = this.authService.getToken();
+        console.log('🔍 Token exists?', !!token);
+        console.log('🔍 Token length:', token?.length || 0);
+        console.log('🔍 Token starts with "Bearer"?', token?.startsWith('Bearer'));
+        console.log('🔍 Token preview:', token?.substring(0, 50) + '...');
 
         // Prepare request body
         const requestBody: GetStocksRequest = {
             get_pictures: true
         };
+        console.log('🔍 Request Body:', JSON.stringify(requestBody));
+        console.log('🔍 Request Body get_pictures type:', typeof requestBody.get_pictures);
 
-        // Make POST request to API
+        // ⚠️ NOTE: Authorization header will be added by AuthInterceptor automatically!
+        // DO NOT add it manually here to avoid conflicts!
+        console.log('🔍 Authorization header will be added by AuthInterceptor');
+        console.log('🔍 Content-Type will be "application/json" by default');
+
+        // Make POST request WITHOUT manual headers
+        // Let AuthInterceptor add the Authorization header
+        console.log('🔍 Making HTTP POST request (relying on AuthInterceptor)...');
         return this.http.post<GetStocksResponse>(apiUrl, requestBody).pipe(
-            // Apply timeout (2 seconds for fast fallback)
+            tap({
+                next: (response) => {
+                    console.log('🔍 ========================================');
+                    console.log('🔍 RAW API RESPONSE RECEIVED');
+                    console.log('🔍 ========================================');
+                    console.log('🔍 Response type:', typeof response);
+                    console.log('🔍 Response keys:', Object.keys(response || {}));
+                    console.log('🔍 Response.error:', response?.error);
+                    console.log('🔍 Response.error type:', typeof response?.error);
+                    console.log('🔍 Response.items:', response?.items ? 'EXISTS' : 'NULL/UNDEFINED');
+                    console.log('🔍 Response.items is Array?', Array.isArray(response?.items));
+                    console.log('🔍 Response.items length:', response?.items?.length || 0);
+                    console.log('🔍 Full Response (first 500 chars):', JSON.stringify(response).substring(0, 500));
+                },
+                error: (error) => {
+                    console.log('🔍 ========================================');
+                    console.log('🔍 HTTP ERROR OCCURRED');
+                    console.log('🔍 ========================================');
+                    console.log('🔍 Error type:', typeof error);
+                    console.log('🔍 Error status:', error?.status);
+                    console.log('🔍 Error statusText:', error?.statusText);
+                    console.log('🔍 Error message:', error?.message);
+                    console.log('🔍 Error url:', error?.url);
+                }
+            }),
+
+            // Apply timeout
             timeout(this.requestTimeout),
 
             // Retry once on failure
             retry({
                 count: this.maxRetries,
                 delay: (error, retryCount) => {
-                    console.warn(`⚠️ API request failed, retry ${retryCount}/${this.maxRetries}`, error);
-                    return timer(1000); // 1 second delay before retry
+                    console.warn(`⚠️ Retry ${retryCount}/${this.maxRetries}`, error);
+                    return timer(1000);
                 }
             }),
 
             // Map API response to Product[]
             map((response: GetStocksResponse) => {
-                console.log('✅ Real API response received');
+                console.log('🔍 Mapping response to Product[]...');
 
-                // 🔧 IMPROVED: Check for API error (with better handling)
+                // Check for API error
                 if (response.error) {
                     const errorMsg = typeof response.error === 'string'
                         ? response.error.trim()
@@ -549,54 +691,36 @@ export class ProductApiService {
                     }
                 }
 
-                // 🔧 IMPROVED: Check if items exist and is an array
+                // Check if items exist
                 if (!response.items) {
-                    console.error('❌ API response missing items field (null or undefined)');
+                    console.error('❌ Response.items is null/undefined');
                     throw new Error('API response missing items array');
                 }
 
                 if (!Array.isArray(response.items)) {
-                    console.error('❌ API response items is not an array:', typeof response.items);
-                    throw new Error('Invalid API response structure: items is not an array');
+                    console.error('❌ Response.items is not an array');
+                    throw new Error('Invalid API response structure');
                 }
 
-                // 🔧 IMPROVED: Check if items array is empty
                 if (response.items.length === 0) {
-                    console.warn('⚠️ API returned empty items array');
-                    return []; // Return empty array instead of throwing error
+                    console.warn('⚠️ Response.items is empty array');
+                    return [];
                 }
 
-                console.log(`📦 Received ${response.items.length} products from API`);
-
-                // Map StockItem[] to Product[]
+                console.log(`✅ Mapping ${response.items.length} items...`);
                 const products = response.items.map(item => this.mapStockItemToProduct(item));
+                console.log(`✅ Mapped ${products.length} products`);
 
-                console.log(`✅ Mapped ${products.length} products successfully`);
                 return products;
             }),
 
             // Error handling
             catchError((error: HttpErrorResponse) => {
-                console.error('❌ ProductApiService.getProductsFromRealApi() - Error:', error);
-
-                // Log detailed error info
-                if (error.status === 0) {
-                    console.error('🔌 Network error - unable to reach API server');
-                } else if (error.status === 401) {
-                    console.error('🔒 Unauthorized - token may be invalid or expired');
-                } else if (error.status === 404) {
-                    console.error('🔍 Endpoint not found - check API URL');
-                } else if (error.status) {
-                    console.error(`⚠️ HTTP Error ${error.status}: ${error.statusText}`);
-                } else {
-                    console.error(`⚠️ HTTP Error undefined: ${error.message || 'Unknown error'}`);
-                }
-
-                // Re-throw error for fallback handling
-                return throwError(() => new Error(`Failed to fetch products from API: ${error.message}`));
+                console.error('❌ catchError triggered');
+                console.error('❌ Error:', error);
+                return throwError(() => new Error(`Failed to fetch: ${error.message}`));
             }),
 
-            // Share replay for multiple subscribers
             shareReplay(1)
         );
     }
