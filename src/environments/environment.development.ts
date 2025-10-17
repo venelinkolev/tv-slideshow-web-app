@@ -14,7 +14,7 @@ export const environment = {
 
     // Authentication Configuration (separate keys for dev)
     auth: {
-        tokenExpirationHours: 24,
+        tokenExpirationHours: 1,
         rememberMeKey: 'tv-slideshow-remember-me-dev',
         credentialsKey: 'tv-slideshow-credentials-dev',
         tokenKey: 'tv-slideshow-token-dev'

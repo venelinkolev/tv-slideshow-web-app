@@ -2,17 +2,27 @@
 
 import { Injectable, inject, OnDestroy } from '@angular/core';
 import { AuthService } from './auth.service';
+import { environment } from '@environments/environment';
 
 /**
  * Token Refresh Service for TV Slideshow Application
  * Automatically refreshes authentication token before expiration
  * 
  * Features:
- * - Automatic token refresh 2 hours before expiration
- * - Hourly checks for token status
+ * - Dynamic refresh threshold based on token lifetime
+ * - Frequent checks (every 10 minutes) for reliability
  * - Re-login with stored credentials
  * - Memory-efficient interval management
  * - Automatic cleanup on service destroy
+ * 
+ * Logic:
+ * - Short-lived tokens (< 4h): Refresh at 50% of lifetime
+ * - Long-lived tokens (>= 4h): Refresh 2 hours before expiration
+ * 
+ * Examples:
+ * - 1 hour token → refresh at 30 minutes
+ * - 4 hour token → refresh at 2 hours before
+ * - 24 hour token → refresh at 22 hours (2h before)
  */
 @Injectable({
     providedIn: 'root'
@@ -23,9 +33,8 @@ export class TokenRefreshService implements OnDestroy {
     // Refresh interval reference
     private refreshInterval?: ReturnType<typeof setInterval>;
 
-    // Configuration
-    private readonly CHECK_INTERVAL_MS = 3600000; // Check every hour (60 * 60 * 1000)
-    private readonly REFRESH_THRESHOLD_HOURS = 2; // Refresh if less than 2 hours remaining
+    // ✅ OPTIMIZED: Check every 10 minutes for better responsiveness
+    private readonly CHECK_INTERVAL_MS = 600000; // 10 minutes (10 * 60 * 1000)
 
     constructor() {
         console.log('⏰ TokenRefreshService initialized');
@@ -33,7 +42,7 @@ export class TokenRefreshService implements OnDestroy {
 
     /**
      * Start automatic token refresh
-     * Checks every hour, refreshes 2 hours before expiration
+     * Checks every 10 minutes with dynamic threshold
      */
     startAutoRefresh(): void {
         console.log('⏰ TokenRefreshService: Starting automatic token refresh');
@@ -41,7 +50,7 @@ export class TokenRefreshService implements OnDestroy {
         // Clear any existing interval
         this.stopAutoRefresh();
 
-        // Set up hourly check
+        // Set up 10-minute check interval
         this.refreshInterval = setInterval(() => {
             this.checkAndRefreshToken();
         }, this.CHECK_INTERVAL_MS);
@@ -49,7 +58,12 @@ export class TokenRefreshService implements OnDestroy {
         // Run initial check immediately
         this.checkAndRefreshToken();
 
-        console.log('✅ Token refresh scheduler started (checking every hour)');
+        const tokenLifetime = environment.auth.tokenExpirationHours;
+        const threshold = this.getRefreshThresholdHours();
+        console.log(`✅ Token refresh scheduler started`);
+        console.log(`   - Check interval: every 10 minutes`);
+        console.log(`   - Token lifetime: ${tokenLifetime} hour(s)`);
+        console.log(`   - Refresh threshold: ${threshold.toFixed(2)} hour(s) before expiration`);
     }
 
     /**
@@ -64,7 +78,30 @@ export class TokenRefreshService implements OnDestroy {
     }
 
     /**
+     * Calculate dynamic refresh threshold based on token lifetime
+     * 
+     * Strategy:
+     * - Short-lived tokens (< 4h): Refresh at 50% of lifetime
+     * - Long-lived tokens (>= 4h): Refresh 2h before expiration
+     * 
+     * @returns Threshold in hours
+     * @private
+     */
+    private getRefreshThresholdHours(): number {
+        const tokenLifetime = environment.auth.tokenExpirationHours;
+
+        // For short-lived tokens (< 4 hours), refresh at 50% of lifetime
+        if (tokenLifetime < 4) {
+            return tokenLifetime * 0.5;
+        }
+
+        // For long-lived tokens (>= 4 hours), refresh 2 hours before
+        return 2;
+    }
+
+    /**
      * Check token status and refresh if needed
+     * @private
      */
     private checkAndRefreshToken(): void {
         const authState = this.authService.authState();
@@ -75,25 +112,35 @@ export class TokenRefreshService implements OnDestroy {
             return;
         }
 
-        // Calculate hours until expiration
+        // Calculate time until expiration
         const now = new Date();
         const expiration = authState.tokenExpiration;
         const millisecondsUntilExpiration = expiration.getTime() - now.getTime();
         const hoursUntilExpiration = millisecondsUntilExpiration / (1000 * 60 * 60);
+        const minutesUntilExpiration = millisecondsUntilExpiration / (1000 * 60);
 
-        console.log(`⏱️ TokenRefreshService: Token expires in ${hoursUntilExpiration.toFixed(1)} hours`);
+        // Get dynamic threshold
+        const thresholdHours = this.getRefreshThresholdHours();
+
+        // Format time display for better readability
+        const timeDisplay = hoursUntilExpiration >= 1
+            ? `${hoursUntilExpiration.toFixed(2)} hours`
+            : `${minutesUntilExpiration.toFixed(0)} minutes`;
+
+        console.log(`⏱️ TokenRefreshService: Token expires in ${timeDisplay} (threshold: ${thresholdHours.toFixed(2)}h)`);
 
         // Refresh if less than threshold remaining
-        if (hoursUntilExpiration < this.REFRESH_THRESHOLD_HOURS) {
-            console.log(`🔄 TokenRefreshService: Token expiring soon (< ${this.REFRESH_THRESHOLD_HOURS}h), refreshing...`);
+        if (hoursUntilExpiration < thresholdHours) {
+            console.log(`🔄 TokenRefreshService: Token expiring soon (< ${thresholdHours.toFixed(2)}h), refreshing...`);
             this.refreshToken();
         } else {
-            console.log(`✅ TokenRefreshService: Token is valid for ${hoursUntilExpiration.toFixed(1)} more hours`);
+            console.log(`✅ TokenRefreshService: Token is valid (${timeDisplay} remaining)`);
         }
     }
 
     /**
      * Refresh token by re-logging in with stored credentials
+     * @private
      */
     private refreshToken(): void {
         // Get stored credentials
@@ -101,6 +148,7 @@ export class TokenRefreshService implements OnDestroy {
 
         if (!credentials) {
             console.warn('⚠️ TokenRefreshService: No stored credentials for refresh');
+            console.warn('   User will need to login again when token expires');
             return;
         }
 
@@ -113,7 +161,9 @@ export class TokenRefreshService implements OnDestroy {
             password: credentials.password
         }).subscribe({
             next: () => {
+                const newExpiration = this.authService.authState().tokenExpiration;
                 console.log('✅ TokenRefreshService: Token refreshed successfully');
+                console.log(`   New token expires at: ${newExpiration?.toLocaleString('bg-BG')}`);
             },
             error: (error) => {
                 console.error('❌ TokenRefreshService: Token refresh failed:', error);
@@ -128,5 +178,26 @@ export class TokenRefreshService implements OnDestroy {
     ngOnDestroy(): void {
         console.log('🧹 TokenRefreshService: Cleaning up...');
         this.stopAutoRefresh();
+    }
+
+    /**
+     * Get current refresh configuration (for debugging/admin panel)
+     * @returns Current configuration object
+     */
+    getRefreshConfiguration(): {
+        tokenLifetimeHours: number;
+        checkIntervalMinutes: number;
+        refreshThresholdHours: number;
+        nextCheckIn: number | null;
+    } {
+        const tokenLifetime = environment.auth.tokenExpirationHours;
+        const threshold = this.getRefreshThresholdHours();
+
+        return {
+            tokenLifetimeHours: tokenLifetime,
+            checkIntervalMinutes: this.CHECK_INTERVAL_MS / 60000,
+            refreshThresholdHours: threshold,
+            nextCheckIn: this.refreshInterval ? this.CHECK_INTERVAL_MS : null
+        };
     }
 }
