@@ -129,8 +129,8 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     // Performance tracking за auto-rotation
     private readonly performanceThrottled = signal<boolean>(false);
 
-    @ViewChild(EmblaCarouselDirective, { static: false }) emblaCarouselRef!: EmblaCarouselDirective;
-
+    // @ViewChild(EmblaCarouselDirective, { static: false }) emblaCarouselRef!: EmblaCarouselDirective;
+    @ViewChild('emblaRef', { static: false }) emblaCarouselRef?: EmblaCarouselDirective;
     /**
     * Embla carousel instance for programmatic control
     */
@@ -422,9 +422,15 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
  * Initialize Embla carousel after view init
  */
     ngAfterViewInit(): void {
+        console.log('SlideShowContainerComponent: View initialized');
+
+        // ✅ Increased timeout to ensure directive is fully ready
         setTimeout(() => {
             this.initializeEmblaCarousel();
-        }, 100);
+        }, 300); // Increased from 100ms to 300ms
+
+        // Fallback check for Embla initialization
+        this.checkEmblaInitialization();
 
         // ОБНОВЕН debug interface с timer debugging:
         if (typeof window !== 'undefined') {
@@ -499,31 +505,91 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     }
 
     /**
- * Initialize Embla carousel instance
+ * Fallback check for Embla initialization
+ * Retries if first attempt failed
  */
+    private checkEmblaInitialization(): void {
+        setTimeout(() => {
+            const carousel = this.emblaCarousel();
+            if (!carousel) {
+                console.warn('⚠️ Embla not initialized after 300ms, retrying...');
+                this.initializeEmblaCarousel();
+
+                // Final check after retry
+                setTimeout(() => {
+                    const retryCarousel = this.emblaCarousel();
+                    if (!retryCarousel) {
+                        console.error('❌ CRITICAL: Embla carousel failed to initialize after retry');
+                        console.error('Debug info:', {
+                            hasRef: !!this.emblaCarouselRef,
+                            hasApi: !!this.emblaCarouselRef?.emblaApi,
+                            products: this.products().length
+                        });
+                    }
+                }, 500);
+            } else {
+                console.log('✅ Embla initialization verified');
+            }
+        }, 500);
+    }
+
+    /**
+     * Initialize Embla carousel instance
+     */
     private initializeEmblaCarousel(): void {
+        console.log('🔄 Attempting to initialize Embla carousel...');
+
         if (!this.emblaCarouselRef) {
-            console.warn('Embla carousel ref not available');
+            console.warn('❌ Embla carousel ref not available yet');
             return;
         }
+
+        console.log('✅ Embla carousel ref found:', this.emblaCarouselRef);
 
         // Get carousel instance from directive
         const carouselInstance = this.emblaCarouselRef.emblaApi;
 
         if (carouselInstance) {
-            console.log('SlideShowContainerComponent: Embla carousel initialized');
+            console.log('🎉 Embla carousel API successfully retrieved');
             this.emblaCarousel.set(carouselInstance);
             this.setupEmblaEventListeners(carouselInstance);
 
             // Set initial slide position
             const currentIndex = this.currentSlideIndex();
             if (currentIndex > 0) {
-                carouselInstance.scrollTo(currentIndex, false); // Jump without animation
+                console.log(`Setting initial slide to index ${currentIndex}`);
+                carouselInstance.scrollTo(currentIndex, false);
             }
+
+            console.log('✅ Embla carousel fully initialized and ready');
         } else {
-            console.warn('Failed to get Embla carousel instance');
+            console.error('❌ Failed to get Embla carousel API from directive');
         }
     }
+
+    // private initializeEmblaCarousel(): void {
+    //     if (!this.emblaCarouselRef) {
+    //         console.warn('Embla carousel ref not available');
+    //         return;
+    //     }
+
+    //     // Get carousel instance from directive
+    //     const carouselInstance = this.emblaCarouselRef.emblaApi;
+
+    //     if (carouselInstance) {
+    //         console.log('SlideShowContainerComponent: Embla carousel initialized');
+    //         this.emblaCarousel.set(carouselInstance);
+    //         this.setupEmblaEventListeners(carouselInstance);
+
+    //         // Set initial slide position
+    //         const currentIndex = this.currentSlideIndex();
+    //         if (currentIndex > 0) {
+    //             carouselInstance.scrollTo(currentIndex, false); // Jump without animation
+    //         }
+    //     } else {
+    //         console.warn('Failed to get Embla carousel instance');
+    //     }
+    // }
 
     /**
      * Setup Embla carousel event listeners for TV optimization
@@ -648,8 +714,71 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
                 }
             });
 
+        // ✅ NEW: Listen for config changes from other tabs
+        this.configService.getConfigChanges$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                console.log('🔔 SlideShow: Config changed in another tab, reloading...');
+                this.handleConfigChangeFromAdmin();
+            });
+
         // Start performance monitoring instead of setupPerformanceMonitoring
         this.startPerformanceMonitoring();
+    }
+
+    /**
+ * Handle config changes from admin panel (cross-tab)
+ * Gracefully reloads slideshow with new settings
+ */
+    private handleConfigChangeFromAdmin(): void {
+        console.log('🔄 Handling config change from admin panel...');
+
+        const oldConfig = this.config();
+        const newConfig = this.configService.config();
+
+        console.log('📊 Config comparison:', {
+            oldTemplate: oldConfig?.templates?.selectedTemplateId,
+            newTemplate: newConfig.templates.selectedTemplateId,
+            oldProducts: oldConfig?.products?.selectedProductIds?.length || 0,
+            newProducts: newConfig.products.selectedProductIds.length,
+            oldDuration: oldConfig?.timing?.baseSlideDuration,
+            newDuration: newConfig.timing.baseSlideDuration
+        });
+
+        // Update local config signal
+        this.config.set(newConfig);
+
+        // Check if products selection changed
+        const productsChanged =
+            JSON.stringify(oldConfig?.products?.selectedProductIds || []) !==
+            JSON.stringify(newConfig.products.selectedProductIds);
+
+        if (productsChanged) {
+            console.log('🔄 Products selection changed, reloading products...');
+            this.loadProducts();
+        }
+
+        // Check if template changed
+        const templateChanged =
+            oldConfig?.templates?.selectedTemplateId !==
+            newConfig.templates.selectedTemplateId;
+
+        if (templateChanged) {
+            console.log('🎨 Template changed, will reload on next slide');
+            // Template will reload automatically via computed signals
+        }
+
+        // Check if timing changed
+        const timingChanged =
+            oldConfig?.timing?.baseSlideDuration !==
+            newConfig.timing.baseSlideDuration;
+
+        if (timingChanged) {
+            console.log('⏱️ Slide duration changed, restarting timer...');
+            this.restartAutoRotation();
+        }
+
+        console.log('✅ Config update handled successfully');
     }
 
     /**

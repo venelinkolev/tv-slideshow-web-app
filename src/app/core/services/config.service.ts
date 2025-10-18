@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed, DOCUMENT } from '@angular/core';
 
-import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, of, Subject } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
 import {
@@ -204,6 +204,9 @@ export class ConfigService {
     private readonly configSubject = new BehaviorSubject<SlideshowConfig>(this.defaultConfig);
     readonly config$ = this.configSubject.asObservable();
 
+    // ✅ NEW: Subject за cross-tab communication
+    private readonly configChangedFromStorage$ = new Subject<void>();
+
     constructor() {
         console.log('🔧 ConfigService initializing...');
 
@@ -213,6 +216,48 @@ export class ConfigService {
 
         // ✅ Original async initialization continues unchanged
         this.initializeConfig();
+
+        // ✅ NEW: Listen for storage changes from other tabs
+        // this.setupStorageListener();
+    }
+
+    /**
+ * Setup listener for localStorage changes from other tabs/windows
+ * Automatically reloads config when admin panel saves changes
+ */
+    private setupStorageListener(): void {
+        if (typeof window === 'undefined') return;
+
+        window.addEventListener('storage', (event: StorageEvent) => {
+            // Check if it's our config key that changed
+            if (event.key === this.STORAGE_KEY && event.newValue !== event.oldValue) {
+                console.log('🔔 ConfigService: Storage change detected from another tab');
+                console.log('   Old value:', event.oldValue ? 'exists' : 'null');
+                console.log('   New value:', event.newValue ? 'exists' : 'null');
+
+                // Reload config from storage
+                this.loadConfig().subscribe({
+                    next: (config) => {
+                        console.log('✅ Config reloaded from storage:', config.name);
+                        // Emit notification
+                        this.configChangedFromStorage$.next();
+                    },
+                    error: (err) => {
+                        console.error('❌ Failed to reload config:', err);
+                    }
+                });
+            }
+        });
+
+        console.log('👂 ConfigService: Storage listener registered');
+    }
+
+    /**
+     * Observable for external components to react to config changes
+     * Useful for slideshow to reload when admin changes config
+     */
+    getConfigChanges$(): Observable<void> {
+        return this.configChangedFromStorage$.asObservable();
     }
 
     /**

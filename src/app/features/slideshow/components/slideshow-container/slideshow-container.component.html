@@ -27,7 +27,7 @@
         <div class="embla-carousel-wrapper" [class.tv-optimized]="isTvDevice()"
             [class.low-performance]="performanceLevel() != null && performanceLevel() <= 2">
 
-            <div class="embla" emblaCarousel [options]="emblaOptions()" role="region"
+            <div class="embla" emblaCarousel [options]="emblaOptions()" #emblaRef="emblaCarousel" role="region"
                 [attr.aria-label]="'Продуктов слайдшоу с ' + products().length + ' слайда'"
                 [attr.aria-live]="isAutoPlaying() ? 'polite' : 'off'">
 
