@@ -37,6 +37,11 @@ export class ConfigService {
     private readonly STORAGE_KEY = 'tv-slideshow-config';
     private readonly BACKUP_STORAGE_KEY = 'tv-slideshow-config-backup';
 
+    // Cross-tab sync protection
+    private isInternalUpdate = false;
+    private storageEventCount = 0;
+    private lastStorageEventTime = 0;
+
     // Default configuration for TV slideshow
     private readonly defaultConfig: SlideshowConfig = {
         id: 'default-config',
@@ -222,34 +227,74 @@ export class ConfigService {
     }
 
     /**
- * Setup listener for localStorage changes from other tabs/windows
- * Automatically reloads config when admin panel saves changes
- */
+     * Setup listener for localStorage changes from other tabs/windows
+     * Automatically reloads config when admin panel saves changes
+     */
     private setupStorageListener(): void {
         if (typeof window === 'undefined') return;
 
         window.addEventListener('storage', (event: StorageEvent) => {
-            // Check if it's our config key that changed
-            if (event.key === this.STORAGE_KEY && event.newValue !== event.oldValue) {
-                console.log('🔔 ConfigService: Storage change detected from another tab');
-                console.log('   Old value:', event.oldValue ? 'exists' : 'null');
-                console.log('   New value:', event.newValue ? 'exists' : 'null');
+            // ✅ FILTER: Ignore events from other keys (like backup, templates, etc.)
+            if (event.key !== this.STORAGE_KEY) {
+                return; // Silently ignore, don't log
+            }
 
-                // Reload config from storage
-                this.loadConfig().subscribe({
-                    next: (config) => {
-                        console.log('✅ Config reloaded from storage:', config.name);
-                        // Emit notification
-                        this.configChangedFromStorage$.next();
-                    },
-                    error: (err) => {
-                        console.error('❌ Failed to reload config:', err);
-                    }
-                });
+            // Increment event counter (only for our key)
+            this.storageEventCount++;
+            const timeSinceLastEvent = Date.now() - this.lastStorageEventTime;
+
+            console.log(`🔍 Storage Event #${this.storageEventCount}`, {
+                timeSinceLastEvent: `${timeSinceLastEvent}ms`,
+                key: event.key,
+                isInternal: this.isInternalUpdate,
+                oldValue: event.oldValue ? 'exists' : 'null',
+                newValue: event.newValue ? 'exists' : 'null'
+            });
+
+            // ✅ PROTECTION 1: Skip internal updates (but allow cross-tab events)
+            if (this.isInternalUpdate && timeSinceLastEvent < 1000) {
+                console.log('🚫 Skipping internal update (flag is set, recent write)');
+                return;
+            }
+
+            // Clear stale flag if event is from external source (>1s old)
+            if (this.isInternalUpdate && timeSinceLastEvent >= 1000) {
+                console.log('🔄 Clearing stale internal flag (external event detected)');
+                this.isInternalUpdate = false;
+            }
+
+            // ✅ PROTECTION 2: Debounce rapid-fire events (300ms) - only after first event
+            if (timeSinceLastEvent < 300 && this.lastStorageEventTime > 0) {
+                console.warn('⚡ Rapid fire detected - debouncing (too fast)');
+                return;
+            }
+
+            // Update last event time
+            this.lastStorageEventTime = Date.now();
+
+            // Check if value actually changed
+            if (event.newValue !== event.oldValue) {
+                console.log('🔔 ConfigService: External storage change detected');
+
+                // Small delay before reload (allows other tabs to settle)
+                setTimeout(() => {
+                    this.loadConfig().subscribe({
+                        next: (config) => {
+                            console.log('✅ Config reloaded from storage:', config.name);
+                            // Emit notification to subscribers
+                            this.configChangedFromStorage$.next();
+                        },
+                        error: (err) => {
+                            console.error('❌ Failed to reload config:', err);
+                        }
+                    });
+                }, 100);
+            } else {
+                console.log('ℹ️ Storage event received but value unchanged, skipping reload');
             }
         });
 
-        console.log('👂 ConfigService: Storage listener registered');
+        console.log('👂 ConfigService: Storage listener registered with protections');
     }
 
     /**
@@ -284,7 +329,7 @@ export class ConfigService {
                     this.configSubject.next(parsedConfig);
 
                     // Update usage statistics
-                    this.updateUsageStats(parsedConfig);
+                    // this.updateUsageStats(parsedConfig);
 
                     this.isLoadingSignal.set(false);
                     return of(parsedConfig);
@@ -341,6 +386,9 @@ export class ConfigService {
                 }
             };
 
+            // ✅ SET FLAG before writing to localStorage
+            this.isInternalUpdate = true;
+
             // Save to localStorage
             this.document.defaultView?.localStorage?.setItem(
                 this.STORAGE_KEY,
@@ -354,11 +402,20 @@ export class ConfigService {
             console.log('✅ Configuration saved successfully');
             this.isLoadingSignal.set(false);
 
-            return of(configToSave);
+            // ✅ CLEAR FLAG after delay (prevents storage event from triggering listener)
+            setTimeout(() => {
+                this.isInternalUpdate = false;
+                console.log('🔓 Internal update flag cleared');
+            }, 500);
 
+            return of(configToSave);
         } catch (error) {
             console.error('❌ Error saving configuration:', error);
             this.isLoadingSignal.set(false);
+
+            // ✅ CLEAR FLAG on error
+            this.isInternalUpdate = false;
+
             return throwError(() => error);
         }
     }
@@ -577,11 +634,21 @@ export class ConfigService {
             }
         };
 
+        // ✅ SET FLAG before writing (prevents infinite loop)
+        this.isInternalUpdate = true;
+
         // Save updated stats without triggering full validation
         this.document.defaultView?.localStorage?.setItem(
             this.STORAGE_KEY,
             JSON.stringify(updatedConfig)
         );
+
+        console.log('📊 Usage stats updated (internal write, no event propagation)');
+
+        // ✅ CLEAR FLAG after delay
+        setTimeout(() => {
+            this.isInternalUpdate = false;
+        }, 500);
     }
 
     private detectChanges(oldConfig: SlideshowConfig, newConfig: SlideshowConfig): string[] {
