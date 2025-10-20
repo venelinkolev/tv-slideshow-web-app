@@ -218,7 +218,7 @@ export class ConfigService {
         this.initializeConfig();
 
         // ✅ NEW: Listen for storage changes from other tabs
-        // this.setupStorageListener();
+        this.setupStorageListener();
     }
 
     /**
