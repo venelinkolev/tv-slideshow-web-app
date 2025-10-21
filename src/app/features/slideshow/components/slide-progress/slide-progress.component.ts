@@ -218,6 +218,9 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     private progressInterval?: number;
     private slideStartTime: number = 0;
 
+    // ✅ Config change detection flag
+    private configChangeInProgress = false;
+
     // ✅ Computed за markers array
     readonly slideMarkers = computed(() => {
         const total = this.totalSlides();
@@ -258,12 +261,37 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     resumeProgressTracking(): void {
         console.log('SlideProgressComponent: Resuming progress tracking');
         if (this.isCarouselReady() && !this.hasError()) {
-            // Възстанови от паузираната позиция
-            const pausedDuration = Date.now() - this.pausedAt;
-            this.slideStartTime = Date.now() - (this.pausedProgress / 100 * this.slideInterval());
+            // ✅ CRITICAL: Check if config change is in progress
+            if (this.configChangeInProgress) {
+                console.log('Config change in progress - using fresh start');
+                this.slideStartTime = Date.now();
+                this.slideProgressSignal.set(0);
+
+                // Clear flag after use
+                this.configChangeInProgress = false;
+            } else {
+                // ✅ SMART LOGIC: Check if this is a user pause/resume
+                const hasPausedProgress = this.pausedProgress > 0 && this.pausedAt > 0;
+                const pauseDuration = Date.now() - this.pausedAt;
+                const isRecentPause = pauseDuration < 60000; // Less than 1 minute ago
+
+                if (hasPausedProgress && isRecentPause) {
+                    // User pause/resume - restore from paused position
+                    console.log(`Restoring from paused position: ${this.pausedProgress.toFixed(1)}%`);
+                    this.slideStartTime = Date.now() - (this.pausedProgress / 100 * this.slideInterval());
+                } else {
+                    // Stale pause or first start - fresh start
+                    console.log('Fresh start (stale pause or first start)');
+                    this.slideStartTime = Date.now();
+                    this.slideProgressSignal.set(0);
+                }
+            }
+
             this.startProgressTracking();
+            console.log('✅ Progress tracking resumed');
         }
     }
+
     /**
      * Sync with carousel position immediately
      */
@@ -295,6 +323,37 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Handle config changes from admin panel (duration, products, etc.)
+     * Called by parent component when configuration changes
+     * Performs HARD RESET of all timing state
+     */
+    public handleConfigChange(): void {
+        console.log('🔄 SlideProgress.handleConfigChange() - Config changed, performing HARD RESET');
+
+        // ✅ CRITICAL: Set flag to prevent wrong restore logic
+        this.configChangeInProgress = true;
+
+        // ✅ CRITICAL: Reset ALL timing state
+        this.slideStartTime = Date.now();
+        this.slideProgressSignal.set(0);
+        this.pausedAt = 0;
+        this.pausedProgress = 0;
+
+        // ✅ Reset overall progress percentage
+        this.initializeProgress();
+
+        // ✅ Restart tracking with new interval (if conditions are met)
+        this.stopProgressTracking();
+
+        if (this.isCarouselReady() && !this.hasError() && this.autoPlayActive()) {
+            this.startProgressTracking();
+            console.log('✅ SlideProgress: Progress tracking restarted with fresh timing after config change');
+        } else {
+            console.log('⏸️ SlideProgress: Not restarting tracking - conditions not met');
+        }
+    }
+
     ngOnInit(): void {
         console.log('SlideProgressComponent.ngOnInit() - Starting progress tracking');
         this.initializeProgress();
@@ -304,6 +363,11 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         console.log('SlideProgressComponent.ngOnDestroy() - Cleaning up');
         this.stopProgressTracking();
+
+        // ✅ CRITICAL: Clear paused state to prevent stale data on re-creation
+        this.pausedProgress = 0;
+        this.pausedAt = 0;
+        this.configChangeInProgress = false;
     }
 
     /**

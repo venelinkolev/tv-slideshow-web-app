@@ -733,6 +733,14 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     private handleConfigChangeFromAdmin(): void {
         console.log('🔄 Handling config change from admin panel...');
 
+
+        // ✅ CRITICAL: ALWAYS notify progress component on ANY config change
+        // This prevents stale progress restoration issues
+        if (this.slideProgressComponent) {
+            console.log('🔔 Notifying SlideProgress about config change (preventive reset)');
+            this.slideProgressComponent.handleConfigChange();
+        }
+
         const oldConfig = this.config();
         const newConfig = this.configService.config();
 
@@ -753,6 +761,16 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             JSON.stringify(oldConfig?.products?.selectedProductIds || []) !==
             JSON.stringify(newConfig.products.selectedProductIds);
 
+        // Check if timing changed
+        const timingChanged =
+            oldConfig?.timing?.baseSlideDuration !==
+            newConfig.timing.baseSlideDuration;
+
+        if (timingChanged) {
+            console.log('⏱️ Slide duration changed, restarting timer...');
+            this.restartAutoRotation();
+        }
+
         if (productsChanged) {
             console.log('🔄 Products selection changed, reloading products...');
             this.loadProducts();
@@ -766,16 +784,6 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         if (templateChanged) {
             console.log('🎨 Template changed, will reload on next slide');
             // Template will reload automatically via computed signals
-        }
-
-        // Check if timing changed
-        const timingChanged =
-            oldConfig?.timing?.baseSlideDuration !==
-            newConfig.timing.baseSlideDuration;
-
-        if (timingChanged) {
-            console.log('⏱️ Slide duration changed, restarting timer...');
-            this.restartAutoRotation();
         }
 
         console.log('✅ Config update handled successfully');
