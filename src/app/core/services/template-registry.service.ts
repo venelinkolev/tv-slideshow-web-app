@@ -472,6 +472,69 @@ export class TemplateRegistryService {
             }
         };
 
+        const minimalTemplate: ProductTemplate = {
+            id: 'minimal',
+            name: 'Minimal Template',
+            description: 'Минималистичен fullscreen layout с фокус върху продуктовото изображение',
+            componentName: 'MinimalTemplateComponent',
+            previewImageUrl: '/assets/images/templates/minimal-preview.jpg',
+            category: TemplateCategoryEnum.MINIMAL,
+            isActive: true,
+            tvRequirements: {
+                minResolution: { width: 1920, height: 1080 },
+                performance: {
+                    requiresGPU: false,
+                    maxMemoryUsage: 40,
+                    animationComplexity: 1 // No animations
+                },
+                supportedPlatforms: ['Samsung Tizen', 'LG WebOS', 'Android TV', 'Chrome OS'],
+                browserRequirements: {
+                    chrome: 60,
+                    firefox: 55,
+                    edge: 79
+                }
+            },
+            supportedProperties: {
+                supportsImages: true,
+                supportsSecondaryImages: false,
+                supportsBadges: false, // Badge is used for price only
+                supportsDiscounts: false,
+                supportsLongDescription: false,
+                textLimits: {
+                    productName: 60,
+                    shortDescription: 200 // Full description, no truncation
+                }
+            },
+            defaultConfig: {
+                ...defaultConfig,
+                colors: {
+                    primary: '#FF9800', // Orange for name and badge
+                    secondary: '#FFFFFF', // White for description
+                    accent: '#FF9800',
+                    background: '#1a1a1a', // Dark gray
+                    text: '#FFFFFF'
+                },
+                animations: {
+                    enabled: false, // No animations for performance
+                    durationMultiplier: 0,
+                    entranceAnimation: 'none',
+                    textAnimation: 'none'
+                },
+                layout: {
+                    safeAreaMultiplier: 1.0,
+                    contentAlignment: 'center',
+                    imageAspectRatio: 'cover'
+                }
+            },
+            metadata: {
+                version: '1.0.0',
+                author: 'Venelin Kolev',
+                createdAt: new Date('2025-01-21'),
+                updatedAt: new Date('2025-01-21'),
+                tags: ['minimal', 'fullscreen', 'simple', 'tv-optimized'],
+            }
+        };
+
         // ✅ РЕГИСТРИРАЙ КОМПОНЕНТИТЕ
         try {
             this.registerTemplate(classicTemplate, ClassicTemplateComponent).subscribe({
@@ -496,8 +559,19 @@ export class TemplateRegistryService {
                 }
             });
 
-            // TODO: Добави Minimal и Bold templates когато са готови
-            console.log('🎯 Default templates initialization completed');
+            // Register Minimal Template
+            this.registerTemplate(minimalTemplate, MinimalTemplateComponent).subscribe({
+                next: (success) => {
+                    if (success) {
+                        console.log('✅ Minimal template registered successfully');
+                    }
+                },
+                error: (error) => {
+                    console.error('❌ Failed to register Minimal template:', error);
+                }
+            });
+
+            console.log('🎯 Default templates initialization completed (Classic, Modern, Minimal)');
 
         } catch (error) {
             console.error('❌ Error during template initialization:', error);

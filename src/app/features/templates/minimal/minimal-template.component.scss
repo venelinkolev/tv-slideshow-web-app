@@ -1,0 +1,239 @@
+// Minimal Template Styles - Fullscreen TV-Optimized Layout
+// ============================================================
+// CRITICAL: This template MUST fill entire screen regardless of content
+// AGGRESSIVE fullscreen enforcement for ALL parent containers
+
+// ========================================
+// NUCLEAR OPTION - Override ALL parent containers
+// ========================================
+:host-context(body),
+:host-context(.slideshow-container),
+:host-context(.slideshow-container.safe-area-enabled),
+:host-context(.slideshow-content),
+:host-context(.embla-carousel-wrapper),
+:host-context(.embla),
+:host-context(.embla__container),
+:host-context(.embla__slide) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+// Force fullscreen on host element
+:host {
+  display: block !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  z-index: 1 !important;
+}
+
+.template-minimal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  // ========================================
+  // IMAGE SECTION - FIXED Top 2/3 of screen
+  // ========================================
+  .image-section {
+    position: relative;
+    width: 100%;
+    height: 66.67vh; // FIXED HEIGHT - exactly 2/3
+    min-height: 66.67vh; // Prevent shrinking
+    max-height: 66.67vh; // Prevent growing
+    overflow: hidden;
+    background: #000000;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0; // Don't allow flexbox to shrink this
+
+    // Product Image - Center cropped
+    .product-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      object-fit: cover; // Crop image to fill space
+      object-position: center center; // Keep center visible
+      display: block;
+      margin: 0;
+      padding: 0;
+      transition: none; // No animations for performance
+    }
+
+    // Price Badge - Circular overlay
+    .price-badge {
+      position: absolute;
+      top: 80px;
+      right: 80px;
+      width: 160px;
+      height: 160px;
+      background: #FF9800;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(255, 152, 0, 0.3);
+      z-index: 10;
+      margin: 0;
+      padding: 0;
+
+      .price-value {
+        color: #FFFFFF;
+        font-size: 40px;
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.2;
+        padding: 0 12px;
+        font-family: 'Roboto', 'Arial', sans-serif;
+        margin: 0;
+      }
+    }
+  }
+
+  // ========================================
+  // INFO SECTION - FIXED Bottom 1/3 of screen
+  // ========================================
+  .info-section {
+    width: 100%;
+    height: 33.33vh; // FIXED HEIGHT - exactly 1/3
+    min-height: 33.33vh; // Prevent shrinking
+    max-height: 33.33vh; // Prevent growing
+    background: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    box-sizing: border-box;
+    text-align: center;
+    margin: 0;
+    flex-shrink: 0; // Don't allow flexbox to shrink this
+    overflow: hidden; // Prevent content overflow
+
+    // Product Name
+    .product-name {
+      color: #FF9800;
+      font-size: 52px;
+      font-weight: 700;
+      margin: 0 0 24px 0;
+      padding: 0;
+      line-height: 1.2;
+      font-family: 'Roboto', 'Arial', sans-serif;
+      max-width: 90%;
+      word-wrap: break-word;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    // Product Description
+    .product-description {
+      color: #FFFFFF;
+      font-size: 28px;
+      font-weight: 400;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+      font-family: 'Roboto', 'Arial', sans-serif;
+      max-width: 85%;
+      word-wrap: break-word;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3; // Max 3 lines
+      line-clamp: 3; // Standard property for compatibility
+      -webkit-box-orient: vertical;
+    }
+  }
+}
+
+// ========================================
+// RESPONSIVE - 4K TV Scaling
+// ========================================
+@media (min-width: 3840px) {
+  .template-minimal {
+    
+    .image-section {
+      // Scale badge for 4K
+      .price-badge {
+        top: 120px;
+        right: 120px;
+        width: 240px;
+        height: 240px;
+
+        .price-value {
+          font-size: 60px;
+        }
+      }
+    }
+
+    .info-section {
+      padding: 60px;
+
+      .product-name {
+        font-size: 78px;
+        margin-bottom: 36px;
+      }
+
+      .product-description {
+        font-size: 42px;
+      }
+    }
+  }
+}
+
+// ========================================
+// QUALITY-BASED OPTIMIZATIONS
+// ========================================
+.quality-low {
+  .product-image {
+    filter: contrast(0.95) brightness(1.05);
+  }
+}
+
+.quality-medium {
+  .product-image {
+    filter: none;
+  }
+}
+
+.quality-high {
+  .product-image {
+    filter: contrast(1.05) saturate(1.05);
+  }
+}
+
+// ========================================
+// ANIMATION CONTROLS (disabled by default)
+// ========================================
+.animations-disabled {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+// ========================================
+// ACCESSIBILITY - Reduced Motion
+// ========================================
+@media (prefers-reduced-motion: reduce) {
+  .template-minimal * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
