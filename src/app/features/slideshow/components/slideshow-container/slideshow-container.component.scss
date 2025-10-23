@@ -78,6 +78,50 @@
     }
   }
 
+  // =====================================
+// FULLSCREEN TEMPLATE MODE
+// Zero padding/margin for fullscreen templates (minimal, etc.)
+// Ensures edge-to-edge display without TV safe area constraints
+// =====================================
+&.fullscreen-template {
+  // ✅ CRITICAL: Remove ALL padding/margin from main container
+  padding: 0 !important;
+  margin: 0 !important;
+  
+  // ✅ Cascade zero padding/margin down the entire hierarchy
+  .slideshow-content,
+  .embla-carousel-wrapper,
+  .embla,
+  .embla__container,
+  .embla__slide {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  // ✅ Remove scale effect and ensure full opacity for template loader
+  .embla__slide app-template-loader {
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: scale(1) !important;  // Remove subtle scale effect
+    opacity: 1 !important;            // Full opacity always
+  }
+  
+  // ✅ Ensure active slides also have zero padding/margin
+  .embla__slide--active app-template-loader {
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: scale(1) !important;
+    opacity: 1 !important;
+  }
+  
+  // ✅ Override any dynamic safe area styles
+  &[style*="padding"],
+  &[style*="margin"] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
   // Performance Level Adaptations
   &.low-performance {
     * {

@@ -49,6 +49,59 @@
   }
 }
 
+// =====================================
+// FULLSCREEN MODE SUPPORT
+// Remove padding when parent has .fullscreen-template class
+// Uses :host-context() to detect parent container state
+// =====================================
+:host-context(.fullscreen-template) .template-loader {
+  // ✅ CRITICAL: Remove padding from template loader
+  padding: 0 !important;
+  margin: 0 !important;
+  
+  // ✅ Ensure nested containers also have zero padding
+  .dynamic-template-container {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  // ✅ Remove padding from loading state in fullscreen mode
+  .template-loader__loading-state {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  // ✅ Remove padding from error state in fullscreen mode
+  .template-loader__error-state {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  // ✅ Inline fallback template also zero padding
+  .inline-fallback-template {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+// =====================================
+// ADDITIONAL FULLSCREEN OPTIMIZATIONS
+// Ensure edge-to-edge rendering for fullscreen templates
+// =====================================
+:host-context(.fullscreen-template) {
+  // ✅ Host element itself - no padding
+  display: block;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100%;
+  height: 100%;
+  
+  // ✅ All child elements - cascade zero padding
+  * {
+    box-sizing: border-box;
+  }
+}
+
 // ========================================
 // LOADING STATE STYLES
 // ========================================

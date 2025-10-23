@@ -1,24 +1,30 @@
 <div class="slideshow-container">
     <!-- Индикатор за зареждане -->
-    <div *ngIf="isLoading" class="loading-indicator">
+    @if (isLoading) {
+    <div class="loading-indicator">
         <div class="loading-spinner"></div>
         <div class="loading-text">Зареждане на продукти...</div>
     </div>
+    }
 
     <!-- Съобщение за грешка -->
-    <div *ngIf="hasError" class="error-container">
+    @if (hasError) {
+    <div class="error-container">
         <div class="error-icon">!</div>
         <div class="error-message">Възникна проблем при зареждането. Опитваме отново...</div>
     </div>
+    }
 
     <!-- Основен контейнер за слайдшоу - ще бъде заменен с карусел -->
-    <div *ngIf="!isLoading && !hasError" class="slideshow-content">
+    @if (!isLoading && !hasError) {
+    <div class="slideshow-content">
         <!-- Тук ще бъде добавен carousel компонента в следващите задачи -->
         <app-slideshow-container />
         <!-- <div class="slideshow-placeholder">
-            <h2>TV Slideshow</h2>
-            <p>Подготвен за {{products.length}} продукта</p>
-            <p class="tv-info">Оптимизирано за телевизионни дисплеи</p>
-        </div> -->
+                 <h2>TV Slideshow</h2>
+                 <p>Подготвен за {{products.length}} продукта</p>
+                 <p class="tv-info">Оптимизирано за телевизионни дисплеи</p>
+                </div> -->
     </div>
+    }
 </div>

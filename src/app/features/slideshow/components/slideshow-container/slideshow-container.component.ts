@@ -203,6 +203,32 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
     // Computed values for TV optimizations
     protected readonly tvSettings = computed(() => this.config()?.tvOptimizations);
     protected readonly safeAreaEnabled = computed(() => this.tvSettings()?.safeArea?.enabled ?? true);
+
+    /**
+     * Check if current template requires fullscreen mode (zero padding/margin).
+     * Fullscreen templates bypass TV safe area padding for edge-to-edge display.
+     * 
+     * Currently supported fullscreen templates:
+     * - 'minimal': Minimalist template with 2/3 image, 1/3 info layout
+     * 
+     * @returns {boolean} True if current template should render in fullscreen mode
+     */
+    protected readonly isFullscreenTemplate = computed(() => {
+        const templateId = this.config()?.templates?.selectedTemplateId;
+
+        // List of template IDs that require fullscreen mode (no safe area padding)
+        const fullscreenTemplateIds = ['minimal'];
+
+        const isFullscreen = fullscreenTemplateIds.includes(templateId || '');
+
+        // ✅ Development logging
+        if (isFullscreen) {
+            console.log(`🎬 Fullscreen mode ENABLED for template: ${templateId}`);
+        }
+
+        return isFullscreen;
+    });
+
     // protected readonly remoteControlEnabled = computed(() => this.tvSettings()?.remoteControl?.enabled ?? true);
     protected readonly remoteControlEnabled = computed(() => {
         const config = this.config();
