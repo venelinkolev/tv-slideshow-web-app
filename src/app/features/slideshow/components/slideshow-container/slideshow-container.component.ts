@@ -251,6 +251,12 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
 
     // TV-specific styling computed values
     protected readonly safeAreaStyles = computed(() => {
+        // Fullscreen templates bypass safe area margins
+        if (this.isFullscreenTemplate()) {
+            console.log('🎬 Fullscreen template detected - disabling safe area margins');
+            return {};
+        }
+
         const tvSettings = this.tvSettings();
         if (!this.safeAreaEnabled() || !tvSettings?.safeArea) {
             return {};
