@@ -57,6 +57,9 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     readonly autoHide = input<boolean>(false);
     readonly animationEnabled = input<boolean>(true);
 
+    // ✅ NEW: Production mode toggle для minimal UI
+    readonly productionMode = input<boolean>(false);
+
     // ✅ Angular 18 Output signals
     readonly progressComplete = output<{ currentIndex: number; totalSlides: number }>();
     readonly progressClick = output<{ targetIndex: number; percentage: number }>();
@@ -97,6 +100,24 @@ export class SlideProgressComponent implements OnInit, OnDestroy {
     });
 
     readonly displayCurrentIndex = computed(() => this.currentIndex() + 1);
+
+    // ✅ SVG circular progress configuration
+    readonly CIRCLE_RADIUS = 20; // Radius за 50px diameter circle (50/2 - stroke width buffer)
+    readonly CIRCLE_STROKE_WIDTH = 3; // Дебелина на прогрес линията
+
+    // ✅ Computed signals за SVG circular progress
+    readonly circleCircumference = computed(() => {
+        return 2 * Math.PI * this.CIRCLE_RADIUS;
+    });
+
+    readonly circleStrokeDashoffset = computed(() => {
+        const progress = this.slideProgress(); // 0-100%
+        const circumference = this.circleCircumference();
+        // Offset намалява от пълна обиколка до 0 (запълва се clockwise)
+        return circumference - (progress / 100) * circumference;
+    });
+
+    readonly currentSlideNumber = computed(() => this.currentIndex() + 1);
 
     readonly progressBarClasses = computed(() => {
         const classes = ['slide-progress'];

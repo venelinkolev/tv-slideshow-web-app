@@ -1,3 +1,38 @@
+@if (!productionMode()) {
+
+<!-- Minimal circular progress indicator -->
+<div class="slide-progress-production" [attr.aria-label]="'Слайд ' + currentSlideNumber() + ' от ' + totalSlides()"
+    role="status">
+
+    <!-- SVG Circular Progress -->
+    <svg class="progress-circle" viewBox="0 0 50 50" width="50" height="50">
+
+        <!-- Background circle (статичен фон) -->
+        <circle class="progress-circle__background" cx="25" cy="25" [attr.r]="CIRCLE_RADIUS" fill="none"
+            [attr.stroke-width]="CIRCLE_STROKE_WIDTH" />
+
+        <!-- Progress circle (запълващ се прогрес) -->
+        <circle class="progress-circle__progress" cx="25" cy="25" [attr.r]="CIRCLE_RADIUS" fill="none"
+            [attr.stroke-width]="CIRCLE_STROKE_WIDTH" [attr.stroke-dasharray]="circleCircumference()"
+            [attr.stroke-dashoffset]="circleStrokeDashoffset()"
+            [style.transition]="animationEnabled() ? 'stroke-dashoffset 0.3s ease-out' : 'none'" />
+
+        <!-- Slide number text (в центъра на кръга) -->
+        <text class="progress-circle__text" x="25" y="25" text-anchor="middle" dominant-baseline="central">
+            {{ currentSlideNumber() }}
+        </text>
+    </svg>
+
+    <!-- Screen reader текст -->
+    <span class="sr-only">
+        Слайд {{ currentSlideNumber() }} от {{ totalSlides() }},
+        прогрес {{ round(slideProgress()) }}%
+    </span>
+</div>
+}
+
+@else {
+
 <!-- SlideProgressComponent Template -->
 <div class="slide-progress-container" [class]="progressBarClasses()" [attr.aria-label]="ariaLabel()"
     [attr.aria-hidden]="!isVisible()" role="progressbar" [attr.aria-valuenow]="round(overallProgress())"
@@ -141,3 +176,4 @@
 }
 
 </div>
+}

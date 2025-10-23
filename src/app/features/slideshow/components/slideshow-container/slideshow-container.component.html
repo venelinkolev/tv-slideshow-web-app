@@ -63,7 +63,7 @@
             [isCarouselTransitioning]="isTransitioning()" [autoPlayActive]="isAutoPlaying()"
             [currentTemplate]="currentTemplate()" [hasError]="hasError()" [errorMessage]="errorMessage()"
             (slideChangeRequested)="onSlideChangeRequested($event)" (pauseRequested)="onPauseAutoRotation()"
-            (resumeRequested)="onResumeAutoRotation()" />
+            (resumeRequested)="onResumeAutoRotation()" [productionMode]="false" />
         }
 
         <!-- Navigation Controls (скрити по подразбиране, показват се при remote control) -->
