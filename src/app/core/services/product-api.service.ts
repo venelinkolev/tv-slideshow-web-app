@@ -3,7 +3,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Observable, of, throwError, timer } from 'rxjs';
+import { Observable, of, throwError, timer, forkJoin } from 'rxjs';
 import { catchError, retry, timeout, tap, shareReplay, map } from 'rxjs/operators';
 
 import { environment } from '@environments/environment';
@@ -18,6 +18,10 @@ import {
     GetStocksRequest,
     GetStocksResponse,
     StockItem,
+    ProductGroup,
+    GetGroupsResponse,
+    ProductGroupWithProducts,
+    GroupsWithProductsResponse,
 } from '@core/models';
 
 /**
@@ -599,6 +603,219 @@ export class ProductApiService {
             // Share replay for multiple subscribers
             shareReplay(1)
         );
+    }
+
+    /**
+     * 🆕 Get product groups from REAL API (/groups endpoint)
+     * Fetches product categories/groups from API3.eyanak.com
+     * 
+     * Features:
+     * - GET request to /groups endpoint
+     * - Authorization header added automatically by AuthInterceptor
+     * - 2 second timeout for fast fallback
+     * - 1 retry attempt on failure
+     * - Returns ProductGroup[] directly (no mapping needed for now)
+     * - Robust error handling for backend errors
+     * 
+     * @returns Observable<ProductGroup[]> - Array of product groups from API
+     */
+    getProductGroups(): Observable<ProductGroup[]> {
+        console.log('🏷️ ProductApiService.getProductGroups() - Fetching from real API...');
+
+        // Construct full API URL
+        const apiUrl = `${environment.apiUrl}${environment.endpoints.groups}`;
+        console.log('📡 API URL:', apiUrl);
+
+        // Make GET request to API
+        return this.http.get<GetGroupsResponse>(apiUrl).pipe(
+            // Apply timeout (2 seconds for fast fallback)
+            timeout(this.requestTimeout),
+
+            // Retry once on failure
+            retry({
+                count: this.maxRetries,
+                delay: (error, retryCount) => {
+                    console.warn(`⚠️ Groups API request failed, retry ${retryCount}/${this.maxRetries}`, error);
+                    return timer(1000); // 1 second delay before retry
+                }
+            }),
+
+            // Map API response to ProductGroup[]
+            map((response: GetGroupsResponse) => {
+                console.log('✅ Groups API response received');
+
+                // Check for API error
+                if (response.error && response.error.message) {
+                    const errorMsg = response.error.message.trim();
+                    if (errorMsg && errorMsg !== '' && errorMsg !== '0') {
+                        console.error('❌ Groups API returned error:', errorMsg);
+                        throw new Error(`API Error: ${errorMsg}`);
+                    }
+                }
+
+                // Check if items exist and is an array
+                if (!response.items) {
+                    console.error('❌ Groups API response missing items field');
+                    throw new Error('Groups API response missing items array');
+                }
+
+                if (!Array.isArray(response.items)) {
+                    console.error('❌ Groups API response items is not an array:', typeof response.items);
+                    throw new Error('Invalid Groups API response structure: items is not an array');
+                }
+
+                // Check if items array is empty
+                if (response.items.length === 0) {
+                    console.warn('⚠️ Groups API returned empty items array');
+                    return []; // Return empty array instead of throwing error
+                }
+
+                console.log(`📦 Received ${response.items.length} product groups from API`);
+
+                // Return groups directly (no mapping needed for now)
+                return response.items;
+            }),
+
+            // Error handling
+            catchError((error: HttpErrorResponse) => {
+                console.error('❌ ProductApiService.getProductGroups() - Error:', error);
+
+                // Log detailed error info
+                if (error.status === 0) {
+                    console.error('🔌 Network error - unable to reach Groups API server');
+                } else if (error.status === 401) {
+                    console.error('🔒 Unauthorized - token may be invalid or expired');
+                } else if (error.status === 404) {
+                    console.error('🔍 Groups endpoint not found - check API URL');
+                } else if (error.status) {
+                    console.error(`⚠️ HTTP Error ${error.status}: ${error.statusText}`);
+                } else {
+                    console.error(`⚠️ HTTP Error: ${error.message || 'Unknown error'}`);
+                }
+
+                // Re-throw error (fallback handling can be added later if needed)
+                return throwError(() => new Error(`Failed to fetch product groups from API: ${error.message}`));
+            }),
+
+            // Share replay for multiple subscribers
+            shareReplay(1)
+        );
+    }
+
+    /**
+     * 🆕 Get product groups WITH their associated products
+     * Combines groups and products data into a unified response
+     * 
+     * Features:
+     * - Parallel API calls using forkJoin (groups + products)
+     * - Maps products to their respective groups by gr_id
+     * - Returns enriched groups with product arrays
+     * - Calculates statistics (total products, empty groups, etc.)
+     * - Robust error handling for both API calls
+     * 
+     * Flow:
+     * 1. Fetch groups from /groups endpoint
+     * 2. Fetch products from /getstockslite endpoint (parallel)
+     * 3. Map products to groups using helper method
+     * 4. Build response with statistics
+     * 
+     * @returns Observable<GroupsWithProductsResponse> - Groups with mapped products
+     */
+    getGroupsWithProducts(): Observable<GroupsWithProductsResponse> {
+        console.log('🔗 ProductApiService.getGroupsWithProducts() - Fetching groups with products...');
+
+        // Execute parallel API calls using forkJoin
+        return forkJoin({
+            groups: this.getProductGroups(),
+            products: this.getProductsFromRealApi()
+        }).pipe(
+            // Map the combined results
+            map(({ groups, products }) => {
+                console.log(`✅ Received ${groups.length} groups and ${products.length} products`);
+
+                // Map products to their respective groups
+                const groupsWithProducts = this.mapProductsToGroups(groups, products);
+
+                // Calculate statistics
+                const totalProducts = products.length;
+                const totalGroups = groups.length;
+                const emptyGroupsCount = groupsWithProducts.filter(g => g.group_products.length === 0).length;
+
+                console.log(`📊 Statistics: ${totalProducts} products, ${totalGroups} groups, ${emptyGroupsCount} empty groups`);
+
+                // Build response
+                const response: GroupsWithProductsResponse = {
+                    success: true,
+                    error: {
+                        code: 0,
+                        message: ''
+                    },
+                    data: groupsWithProducts,
+                    totalProducts,
+                    totalGroups,
+                    emptyGroupsCount,
+                    mappedAt: new Date()
+                };
+
+                return response;
+            }),
+
+            // Error handling
+            catchError((error: any) => {
+                console.error('❌ ProductApiService.getGroupsWithProducts() - Error:', error);
+
+                // Return error response
+                const errorResponse: GroupsWithProductsResponse = {
+                    success: false,
+                    error: {
+                        code: error.status || -1,
+                        message: error.message || 'Failed to fetch groups with products'
+                    },
+                    data: [],
+                    totalProducts: 0,
+                    totalGroups: 0,
+                    emptyGroupsCount: 0,
+                    mappedAt: new Date()
+                };
+
+                return of(errorResponse);
+            }),
+
+            // Share replay for multiple subscribers
+            shareReplay(1)
+        );
+    }
+
+    /**
+     * 🔧 HELPER: Map products to their respective groups
+     * Maps Product[] to ProductGroup[] based on gr_id matching
+     * 
+     * @param groups - Array of ProductGroup from API
+     * @param products - Array of Product from API
+     * @returns ProductGroupWithProducts[] - Groups with mapped products
+     * @private
+     */
+    private mapProductsToGroups(
+        groups: ProductGroup[],
+        products: Product[]
+    ): ProductGroupWithProducts[] {
+        console.log('🗺️ Mapping products to groups...');
+
+        return groups.map(group => {
+            // Filter products that belong to this group
+            // Match: product.category (string) === group.id.toString()
+            const groupProducts = products.filter(
+                product => product.category === group.id.toString()
+            );
+
+            console.log(`  📦 Group "${group.name}" (ID: ${group.id}): ${groupProducts.length} products`);
+
+            // Return group with products
+            return {
+                ...group,  // Spread all fields from ProductGroup
+                group_products: groupProducts  // Add products array
+            };
+        });
     }
 
     /**

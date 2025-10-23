@@ -3,3 +3,4 @@
 
 export * from './auth.interface';
 export * from './stock-item.interface';
+export * from './product-group.interface';

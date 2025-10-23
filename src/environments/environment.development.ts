@@ -9,7 +9,8 @@ export const environment = {
 
     endpoints: {
         login: '/login',
-        getStocks: '/getstockslite'
+        getStocks: '/getstockslite',
+        groups: '/groups',
     },
 
     // Authentication Configuration (separate keys for dev)
