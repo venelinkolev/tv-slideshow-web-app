@@ -1,4 +1,5 @@
 import { ProductBadge, ProductDiscount } from './product.interface';
+import { MenuTemplateConfig } from './menu-template-config.interface';
 
 /**
  * Main slideshow configuration interface
@@ -122,6 +123,13 @@ export interface SlideshowTemplateSettings {
 
     /** Fallback template ID */
     fallbackTemplateId: string;
+
+    /** Template-specific configuration (optional, per template type) */
+    templateSpecificConfig?: {
+        /** Menu template configuration */
+        menu?: MenuTemplateConfig;
+        // Future: other templates can add their specific configs here
+    };
 }
 
 /**

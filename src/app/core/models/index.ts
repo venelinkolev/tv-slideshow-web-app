@@ -9,6 +9,9 @@ export * from './template.interface';
 // Configuration exports
 export * from './slideshow-config.interface';
 
+// Menu Template configuration exports
+export * from './menu-template-config.interface';
+
 // API response exports
 export * from './api-response.interface';
 

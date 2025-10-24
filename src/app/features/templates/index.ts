@@ -9,6 +9,10 @@ export * from './classic/classic-template.component';
 export * from './modern/modern-template.component';
 export * from './minimal/minimal-template.component';
 export * from './bold/bold-template.component';
+export * from './menu/menu-template.component';
+
+// Menu Template helpers
+export * from './menu/helpers/menu-template-helpers';
 
 // Services and utilities (if they exist)
 // export * from './template-registry.service';
