@@ -217,7 +217,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         const templateId = this.config()?.templates?.selectedTemplateId;
 
         // List of template IDs that require fullscreen mode (no safe area padding)
-        const fullscreenTemplateIds = ['minimal', 'classic', 'modern'];
+        const fullscreenTemplateIds = ['minimal', 'classic', 'modern', 'menu'];
 
         const isFullscreen = fullscreenTemplateIds.includes(templateId || '');
 

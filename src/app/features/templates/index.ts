@@ -13,7 +13,3 @@ export * from './menu/menu-template.component';
 
 // Menu Template helpers
 export * from './menu/helpers/menu-template-helpers';
-
-// Services and utilities (if they exist)
-// export * from './template-registry.service';
-// export * from './utils/template-factory.util';

@@ -23,7 +23,8 @@ import {
     ClassicTemplateComponent,
     ModernTemplateComponent,
     MinimalTemplateComponent,
-    BoldTemplateComponent
+    BoldTemplateComponent,
+    MenuTemplateComponent,
 } from '../../features/templates';
 
 /**
@@ -535,6 +536,70 @@ export class TemplateRegistryService {
             }
         };
 
+        // 🍽️ MENU TEMPLATE CONFIGURATION
+        const menuTemplate: ProductTemplate = {
+            id: 'menu',
+            name: 'Menu Template',
+            description: 'Меню template за показване на групирани продукти по категории',
+            componentName: 'MenuTemplateComponent',
+            previewImageUrl: '/assets/images/templates/menu-preview.jpg',
+            category: TemplateCategoryEnum.CLASSIC, // Using CLASSIC category (можеш да добавиш MENU в enum ако искаш)
+            isActive: true,
+            tvRequirements: {
+                minResolution: { width: 1920, height: 1080 },
+                performance: {
+                    requiresGPU: false,
+                    maxMemoryUsage: 80, // Higher because loads multiple products
+                    animationComplexity: 0 // No animations
+                },
+                supportedPlatforms: ['Samsung Tizen', 'LG WebOS', 'Android TV', 'Chrome OS'],
+                browserRequirements: {
+                    chrome: 60,
+                    firefox: 55,
+                    edge: 79
+                }
+            },
+            supportedProperties: {
+                supportsImages: true,
+                supportsSecondaryImages: false,
+                supportsBadges: false,
+                supportsDiscounts: false,
+                supportsLongDescription: false,
+                textLimits: {
+                    productName: 100,
+                    shortDescription: 150
+                }
+            },
+            defaultConfig: {
+                ...defaultConfig,
+                colors: {
+                    primary: '#FFA726', // Orange for group headers
+                    secondary: '#FFD54F', // Yellow for prices
+                    accent: '#FFFFFF',
+                    background: 'rgba(255, 255, 255, 0.5)', // White overlay
+                    text: '#FFFFFF'
+                },
+                animations: {
+                    enabled: false, // No animations for 24/7 stability
+                    durationMultiplier: 0,
+                    entranceAnimation: 'none',
+                    textAnimation: 'none'
+                },
+                layout: {
+                    safeAreaMultiplier: 1.0,
+                    contentAlignment: 'center',
+                    imageAspectRatio: 'cover'
+                }
+            },
+            metadata: {
+                version: '1.0.0',
+                author: 'Venelin Kolev',
+                createdAt: new Date('2025-01-24'),
+                updatedAt: new Date('2025-01-24'),
+                tags: ['menu', 'grouped', 'restaurant', 'cafe', 'multiple-products', 'tv-optimized'],
+            }
+        };
+
         // ✅ РЕГИСТРИРАЙ КОМПОНЕНТИТЕ
         try {
             this.registerTemplate(classicTemplate, ClassicTemplateComponent).subscribe({
@@ -571,7 +636,19 @@ export class TemplateRegistryService {
                 }
             });
 
-            console.log('🎯 Default templates initialization completed (Classic, Modern, Minimal)');
+            // Register Menu Template
+            this.registerTemplate(menuTemplate, MenuTemplateComponent).subscribe({
+                next: (success) => {
+                    if (success) {
+                        console.log('✅ Menu template registered successfully');
+                    }
+                },
+                error: (error) => {
+                    console.error('❌ Failed to register Menu template:', error);
+                }
+            });
+
+            console.log('🎯 Default templates initialization completed (Classic, Modern, Minimal, Menu)');
 
         } catch (error) {
             console.error('❌ Error during template initialization:', error);
