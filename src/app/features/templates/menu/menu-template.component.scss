@@ -1,0 +1,431 @@
+// Menu Template Component Styles
+// TV-optimized styling for 24/7 commercial display
+// Full-screen background with grouped products in columns
+
+// ============================================================================
+// 1. CONTAINER & LAYOUT
+// ============================================================================
+
+.menu-template {
+  // Full-screen container
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  
+  // CSS Custom Properties (set dynamically by Angular)
+  --menu-font-size: 36px;
+  --menu-column-count: 3;
+  
+  // Base font settings
+  font-family: 'Roboto', 'Arial', sans-serif;
+  font-size: var(--menu-font-size);
+  color: #FFFFFF;
+  
+  // Disable user interactions (TV environment)
+  user-select: none;
+  pointer-events: none;
+}
+
+// ============================================================================
+// 2. BACKGROUND LAYER
+// ============================================================================
+
+.menu-background {
+  // Full-screen absolute positioning
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  
+  // Background image styling
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
+  // Apply blur and darken for readability
+  filter: blur(8px) brightness(0.4);
+  
+  // Fallback background color
+  background-color: #1a1a1a;
+}
+
+.menu-background-overlay {
+  // White overlay for better text contrast
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+// ============================================================================
+// 3. CONTENT AREA
+// ============================================================================
+
+.menu-content {
+  // Position above background
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  
+  // TV-safe margins (40px default)
+  padding: max(2vw, 40px);
+  
+  // Flexbox for centering states (loading, error, empty)
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ============================================================================
+// 4. MENU GRID (Main Display)
+// ============================================================================
+
+.menu-grid {
+  // CSS Grid layout for columns
+  display: grid;
+  grid-template-columns: var(--menu-column-count, repeat(3, 1fr));
+  gap: max(3vw, 60px);
+  width: 100%;
+  height: 100%;
+  align-content: start;
+  
+  // Ensure grid items don't overflow
+  overflow: hidden;
+}
+
+// ============================================================================
+// 5. GROUP STYLING
+// ============================================================================
+
+.menu-group {
+  // Group container
+  display: flex;
+  flex-direction: column;
+  gap: max(1.5vw, 24px);
+  
+  // Prevent overflow
+  overflow: hidden;
+}
+
+.group-header {
+  // Group title styling
+  font-size: calc(var(--menu-font-size) * 1.4);
+  font-weight: 700;
+  color: #FFA726;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-bottom: max(0.8vw, 16px);
+  border-bottom: 3px solid rgba(255, 167, 38, 0.5);
+  
+  // Text shadow for better visibility
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+// ============================================================================
+// 6. PRODUCTS LIST
+// ============================================================================
+
+.products-list {
+  // Remove default list styling
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  
+  // Spacing between products
+  display: flex;
+  flex-direction: column;
+  gap: max(1vw, 16px);
+}
+
+.product-item {
+  // Product item container
+  display: flex;
+  flex-direction: column;
+  gap: max(0.4vw, 8px);
+}
+
+.product-info {
+  // Product name and price line
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  
+  // Ensure price stays on right
+  justify-content: space-between;
+}
+
+.product-name {
+  // Product name styling
+  font-size: var(--menu-font-size);
+  font-weight: 500;
+  color: #FFFFFF;
+  line-height: 1.4;
+  flex-shrink: 1;
+  
+  // Text shadow for readability
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.product-dots {
+  // Dotted line between name and price
+  flex-grow: 1;
+  border-bottom: 2px dotted rgba(255, 255, 255, 0.4);
+  min-width: 20px;
+  margin: 0 8px;
+  align-self: flex-end;
+  margin-bottom: 6px;
+}
+
+.product-price {
+  // Price styling
+  font-size: calc(var(--menu-font-size) * 1.1);
+  font-weight: 700;
+  color: #FFD54F;
+  white-space: nowrap;
+  flex-shrink: 0;
+  
+  // Text shadow for emphasis
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.product-description {
+  // Optional product description
+  font-size: calc(var(--menu-font-size) * 0.75);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.3;
+  margin: 0;
+  padding-left: 8px;
+  
+  // Limit to 2 lines with ellipsis
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+  // Text shadow
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+// ============================================================================
+// 7. LOADING STATE
+// ============================================================================
+
+.menu-loading {
+  // Center loading indicator
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: max(1.5vw, 32px);
+}
+
+.loading-spinner {
+  // Simple CSS spinner
+  width: 80px;
+  height: 80px;
+  border: 8px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFA726;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  // Loading text styling
+  font-size: max(2vw, 32px);
+  font-weight: 600;
+  color: #FFFFFF;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0;
+}
+
+// ============================================================================
+// 8. ERROR STATE
+// ============================================================================
+
+.menu-error {
+  // Center error message
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: max(1.5vw, 24px);
+  max-width: 800px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: max(5vw, 80px);
+  line-height: 1;
+}
+
+.error-title {
+  font-size: max(3vw, 48px);
+  font-weight: 700;
+  color: #FF6B6B;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.error-message {
+  font-size: max(1.5vw, 28px);
+  font-weight: 400;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.5;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.error-retry-button {
+  // Retry button styling
+  padding: max(1vw, 16px) max(2vw, 32px);
+  font-size: max(1.5vw, 24px);
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: #FFA726;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 167, 38, 0.4);
+  
+  // Enable pointer events for button
+  pointer-events: auto;
+  
+  &:hover {
+    background-color: #FF9800;
+  }
+  
+  &:active {
+    transform: translateY(2px);
+  }
+}
+
+// ============================================================================
+// 9. EMPTY STATE
+// ============================================================================
+
+.menu-empty {
+  // Center empty state message
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: max(1.5vw, 24px);
+  max-width: 600px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: max(5vw, 80px);
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.empty-title {
+  font-size: max(3vw, 48px);
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.empty-message {
+  font-size: max(1.5vw, 28px);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  line-height: 1.5;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+// ============================================================================
+// 10. DEBUG INFO (Development Only)
+// ============================================================================
+
+.menu-debug {
+  // Debug overlay in bottom-right corner
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #00FF00;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  pointer-events: none;
+  
+  p {
+    margin: 0;
+  }
+}
+
+// ============================================================================
+// 11. RESPONSIVE SCALING (4K Displays)
+// ============================================================================
+
+@media (min-width: 3840px) {
+  .menu-template {
+    // Increase base font size for 4K
+    --menu-font-size: 54px;
+  }
+  
+  .menu-content {
+    // Larger safe margins for 4K
+    padding: max(3vw, 60px);
+  }
+  
+  .menu-grid {
+    // Larger gap between columns
+    gap: max(4vw, 80px);
+  }
+  
+  .group-header {
+    // Thicker border for 4K
+    border-bottom-width: 4px;
+  }
+}
+
+// ============================================================================
+// 12. TV-SPECIFIC OPTIMIZATIONS
+// ============================================================================
+
+// Disable text selection (TV doesn't need it)
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+// Disable context menu (TV doesn't need it)
+*::-webkit-context-menu {
+  display: none;
+}
+
+// Smooth text rendering for TV screens
+.menu-template {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+// ============================================================================
+// END OF STYLES
+// ============================================================================

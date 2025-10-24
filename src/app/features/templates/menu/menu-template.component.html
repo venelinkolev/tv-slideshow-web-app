@@ -1,0 +1,93 @@
+<!-- Menu Template Component HTML -->
+<!-- Full-screen menu display with background image and grouped products -->
+
+<div class="menu-template" [ngStyle]="menuStyles()">
+
+    <!-- Background Layer with Product Image -->
+    <div class="menu-background" [style.background-image]="'url(' + backgroundImageUrl() + ')'"
+        (error)="onImageError($event)">
+        <!-- Dark overlay for better text readability -->
+        <div class="menu-background-overlay"></div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="menu-content">
+
+        <!-- Loading State -->
+        @if (isLoading()) {
+        <div class="menu-loading">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Зареждане на меню...</p>
+        </div>
+        }
+
+        <!-- Error State -->
+        @else if (hasError()) {
+        <div class="menu-error">
+            <div class="error-icon">⚠️</div>
+            <h2 class="error-title">Грешка при зареждане</h2>
+            <p class="error-message">{{ errorMessage() }}</p>
+            <button class="error-retry-button" (click)="retry()">
+                Опитай отново
+            </button>
+        </div>
+        }
+
+        <!-- Menu Display (Ready State) -->
+        @else if (isReady()) {
+        <div class="menu-grid" [style.grid-template-columns]="gridTemplateColumns()">
+
+            <!-- Group Column -->
+            @for (group of filteredGroups(); track group.id) {
+            <div class="menu-group">
+
+                <!-- Group Header -->
+                <h2 class="group-header">{{ group.name }}</h2>
+
+                <!-- Products List -->
+                <ul class="products-list">
+                    @for (product of group.group_products; track product.id) {
+                    <li class="product-item">
+                        <div class="product-info">
+                            <span class="product-name">{{ product.name }}</span>
+                            <span class="product-dots"></span>
+                            <span class="product-price">{{ formatPrice(product.price) }}</span>
+                        </div>
+
+                        <!-- Optional: Product description (if needed) -->
+                        @if (product.shortDescription && product.shortDescription.length > 0) {
+                        <p class="product-description">{{ product.shortDescription }}</p>
+                        }
+                    </li>
+                    }
+                </ul>
+
+            </div>
+            }
+
+        </div>
+        }
+
+        <!-- Empty State (no groups after filtering) -->
+        @else {
+        <div class="menu-empty">
+            <div class="empty-icon">📋</div>
+            <h2 class="empty-title">Няма налични продукти</h2>
+            <p class="empty-message">Моля, конфигурирайте менюто от админ панела.</p>
+        </div>
+        }
+
+    </div>
+
+    <!-- Debug Info (only in development) -->
+    <!-- Remove this section in production -->
+    @if (false) {
+    <div class="menu-debug">
+        <p>Groups: {{ filteredGroups().length }}</p>
+        <p>Products: {{ totalProducts() }}</p>
+        <p>Font Size: {{ fontSize() }}px</p>
+        <p>Columns: {{ columnCount() }}</p>
+    </div>
+    }
+
+</div>

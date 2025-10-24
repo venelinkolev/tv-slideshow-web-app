@@ -68,7 +68,7 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
     // Lifecycle management
     private readonly destroy$ = new Subject<void>();
 
-    // State signals
+    // State signals (private writable)
     private readonly allGroupsSignal = signal<ProductGroupWithProducts[]>([]);
     private readonly filteredGroupsSignal = signal<ProductGroupWithProducts[]>([]);
     private readonly backgroundImageUrlSignal = signal<string>('');
@@ -97,6 +97,15 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
         const cols = this.columnCount();
         return `repeat(${cols}, 1fr)`;
     });
+
+    /**
+     * Menu dynamic styles for CSS custom properties
+     * Computed from fontSize and columnCount signals
+     */
+    protected readonly menuStyles = computed(() => ({
+        '--menu-font-size': `${this.fontSize()}px`,
+        '--menu-column-count': `${this.columnCount()}`
+    }));
 
     ngOnInit(): void {
         console.log('🍽️ MenuTemplateComponent.ngOnInit() - Initializing menu template');
@@ -161,86 +170,75 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Apply menu configuration (filters, background, fonts)
+     * Apply menu configuration (filtering, background, font size, columns)
      */
-    private applyMenuConfiguration(config: MenuTemplateConfig): void {
-        console.log('⚙️ Applying menu configuration...', config);
+    private applyMenuConfiguration(menuConfig: MenuTemplateConfig): void {
+        console.log('⚙️ Applying menu configuration:', menuConfig);
 
         // Get current slide (MVP: always first slide)
-        const currentSlide = config.slides[0];
-
+        const currentSlide = menuConfig.slides[0];
         if (!currentSlide) {
-            this.handleError('No slide configuration found');
+            this.handleError('No slides configured in menu template');
             return;
         }
 
         // Filter groups and products based on selections
-        const filtered = filterGroupsBySelection(
-            this.allGroupsSignal(),
-            currentSlide.groupSelections
-        );
+        const allGroups = this.allGroupsSignal();
+        const filtered = filterGroupsBySelection(allGroups, currentSlide.groupSelections);
 
+        console.log(`🔍 Filtered to ${filtered.length} groups from ${allGroups.length} total`);
         this.filteredGroupsSignal.set(filtered);
 
         // Set background image
-        this.setBackgroundImage(config.backgroundProductId);
+        const backgroundProductId = currentSlide.backgroundProductId || menuConfig.backgroundProductId;
+        if (backgroundProductId) {
+            this.setBackgroundImage(backgroundProductId, allGroups);
+        }
 
         // Calculate font size
         const groupCount = filtered.length;
-        const productCount = getTotalProductCount(filtered);
+        const totalProducts = getTotalProductCount(filtered);
+        const fontConfig = menuConfig.fontScaling;
 
-        const fontSize = calculateOptimalFontSize(
+        const calculatedFontSize = calculateOptimalFontSize(
             groupCount,
-            productCount,
-            config.fontScaling.autoScale,
-            config.fontScaling.manualFontSize,
-            {
-                min: config.fontScaling.minFontSize,
-                max: config.fontScaling.maxFontSize
-            }
+            totalProducts,
+            fontConfig.autoScale,
+            fontConfig.manualFontSize,
+            { min: fontConfig.minFontSize, max: fontConfig.maxFontSize }
         );
 
-        this.fontSizeSignal.set(fontSize);
+        console.log(`📏 Font size: ${calculatedFontSize}px (groups: ${groupCount}, products: ${totalProducts})`);
+        this.fontSizeSignal.set(calculatedFontSize);
 
         // Calculate column count
         const columns = calculateColumnCount(groupCount);
+        console.log(`📊 Column count: ${columns}`);
         this.columnCountSignal.set(columns);
 
-        console.log('📊 Menu configuration applied:', {
-            groups: groupCount,
-            products: productCount,
-            fontSize,
-            columns
-        });
+        console.log('✅ Menu configuration applied successfully');
     }
 
     /**
-     * Set background image from product ID
+     * Set background image from product
      */
-    private setBackgroundImage(productId: string): void {
-        if (!productId) {
-            console.warn('⚠️ No background product ID specified');
-            this.backgroundImageUrlSignal.set('/assets/images/menu-default-background.jpg');
-            return;
-        }
-
-        // Find product by ID
-        const product = findProductById(this.allGroupsSignal(), productId);
+    private setBackgroundImage(productId: string, groups: ProductGroupWithProducts[]): void {
+        const product = findProductById(groups, productId);
 
         if (product && product.imageUrl) {
+            console.log(`🖼️ Setting background from product: ${product.name}`);
             this.backgroundImageUrlSignal.set(product.imageUrl);
-            console.log('🖼️ Background image set:', product.imageUrl);
         } else {
-            console.warn('⚠️ Background product not found, using default');
+            console.warn(`⚠️ Background product not found (ID: ${productId}), using fallback`);
             this.backgroundImageUrlSignal.set('/assets/images/menu-default-background.jpg');
         }
     }
 
     /**
-     * Handle errors during data loading
+     * Handle errors
      */
     private handleError(message: string): void {
-        console.error('❌ Menu Template Error:', message);
+        console.error(`❌ MenuTemplate Error: ${message}`);
         this.errorMessageSignal.set(message);
         this.isLoadingSignal.set(false);
     }
@@ -248,7 +246,7 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
     /**
      * Format price for display (Bulgarian format)
      */
-    formatPrice(price: number): string {
+    protected formatPrice(price: number): string {
         return new Intl.NumberFormat('bg-BG', {
             style: 'currency',
             currency: 'BGN',
@@ -260,18 +258,15 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
     /**
      * Handle image loading errors
      */
-    onImageError(event: Event): void {
-        console.warn('⚠️ Background image failed to load');
-        const img = event.target as HTMLImageElement;
-        if (img) {
-            img.src = '/assets/images/menu-default-background.jpg';
-        }
+    protected onImageError(event: Event): void {
+        console.warn('⚠️ Background image failed to load, using fallback');
+        this.backgroundImageUrlSignal.set('/assets/images/menu-default-background.jpg');
     }
 
     /**
-     * Retry loading menu data
+     * Retry loading data (for error state button)
      */
-    retry(): void {
+    public retry(): void {
         console.log('🔄 Retrying menu data load...');
         this.loadMenuData();
     }
