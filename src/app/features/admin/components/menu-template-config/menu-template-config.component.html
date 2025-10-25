@@ -73,7 +73,7 @@
                 <div class="background-preview">
                     <h4>Преглед на фона:</h4>
                     <div class="preview-container">
-                        <img [src]="backgroundProduct()?.name ? '/assets/images/product-placeholder.jpg' : ''" 
+                        <img [src]="getBackgroundProductImage()" 
                              [alt]="backgroundProduct()?.name" 
                              class="preview-image"
                              loading="lazy">

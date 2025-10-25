@@ -530,6 +530,28 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Get background product image URL
+     */
+    getBackgroundProductImage(): string {
+        const product = this.backgroundProduct();
+        if (!product) {
+            return '/assets/images/product-placeholder.jpg';
+        }
+        
+        // Find the actual product with imageUrl from all groups
+        const allGroups = this.allGroups();
+        for (const group of allGroups) {
+            const actualProduct = group.group_products.find(p => p.id === product.id);
+            if (actualProduct && actualProduct.imageUrl) {
+                return actualProduct.imageUrl;
+            }
+        }
+        
+        // Fallback to placeholder
+        return '/assets/images/product-placeholder.jpg';
+    }
+
+    /**
      * Retry loading data
      */
     retry(): void {

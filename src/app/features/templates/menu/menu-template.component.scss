@@ -45,22 +45,22 @@
   background-position: center;
   background-repeat: no-repeat;
   
-  // Apply blur and darken for readability
-  filter: blur(8px) brightness(0.4);
+  // Apply blur and darken for readability (reduced blur)
+  filter: blur(4px) brightness(0.7);
   
   // Fallback background color
   background-color: #1a1a1a;
 }
 
 .menu-background-overlay {
-  // White overlay for better text contrast
+  // White overlay for better text contrast (reduced opacity)
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(2px);
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(1px);
 }
 
 // ============================================================================
@@ -73,9 +73,6 @@
   z-index: 2;
   width: 100%;
   height: 100%;
-  
-  // TV-safe margins (40px default)
-  padding: max(2vw, 40px);
   
   // Flexbox for centering states (loading, error, empty)
   display: flex;
@@ -92,12 +89,19 @@
   display: grid;
   grid-template-columns: var(--menu-column-count, repeat(3, 1fr));
   gap: max(3vw, 60px);
-  width: 100%;
-  height: 100%;
+  width: 97%;
+  height: 95%;
   align-content: start;
   
   // Ensure grid items don't overflow
   overflow: hidden;
+  
+  // Add padding and rounded corners to menu container
+  padding: 40px;
+  border-radius: 24px;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 // ============================================================================
