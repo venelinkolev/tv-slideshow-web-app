@@ -103,7 +103,15 @@
             </mat-card-content>
         </mat-card>
 
-        <!-- Section 3: Product Selection -->
+        <!-- Section 3: Template-Specific Configuration -->
+        @if (isMenuTemplate()) {
+        <!-- Menu Template Configuration -->
+        <app-menu-template-config 
+            (configChange)="onMenuConfigChange($event)"
+            (configValid)="onMenuConfigValid($event)">
+        </app-menu-template-config>
+        } @else {
+        <!-- Standard Product Selection for other templates -->
         <mat-card class="config-card">
             <mat-card-header>
                 <mat-card-title>
@@ -167,6 +175,7 @@
                 </ng-container>
             </mat-card-content>
         </mat-card>
+        }
 
         <!-- Section 4: Actions -->
         <mat-card class="config-card actions-card">

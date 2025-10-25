@@ -1,0 +1,726 @@
+// src/app/features/admin/components/menu-template-config/menu-template-config.component.scss
+
+// Menu Template Configuration Component Styles
+// Professional admin panel styling with Material Design integration
+
+// ============================================================================
+// 1. CONTAINER & LAYOUT
+// ============================================================================
+
+.menu-template-config {
+  // Main container
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  
+  // Typography
+  font-family: 'Roboto', 'Arial', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  
+  // Background
+  background-color: #fafafa;
+  min-height: 100vh;
+}
+
+// ============================================================================
+// 2. HEADER SECTION
+// ============================================================================
+
+.config-header {
+  margin-bottom: 32px;
+  text-align: center;
+  
+  .config-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #1976d2;
+    
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+  }
+  
+  .config-subtitle {
+    margin: 0;
+    font-size: 16px;
+    color: #666;
+    font-weight: 400;
+  }
+}
+
+// ============================================================================
+// 3. LOADING & ERROR STATES
+// ============================================================================
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  
+  .loading-text {
+    margin-top: 24px;
+    font-size: 16px;
+    color: #666;
+    font-weight: 500;
+  }
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  background-color: #fff3e0;
+  border-radius: 8px;
+  border: 1px solid #ffcc02;
+  
+  .error-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #f57c00;
+    margin-bottom: 16px;
+  }
+  
+  .error-title {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #e65100;
+  }
+  
+  .error-message {
+    margin: 0 0 24px 0;
+    font-size: 14px;
+    color: #bf360c;
+    max-width: 400px;
+  }
+}
+
+// ============================================================================
+// 4. CONFIGURATION SECTIONS
+// ============================================================================
+
+.config-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.config-section {
+  // Material Card base styling
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  
+  // Card header styling
+  mat-card-header {
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 16px 24px;
+    
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1976d2;
+      
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+    
+    mat-card-subtitle {
+      margin: 4px 0 0 0;
+      font-size: 14px;
+      color: #666;
+      font-weight: 400;
+    }
+  }
+  
+  // Card content styling
+  mat-card-content {
+    padding: 24px;
+  }
+}
+
+// ============================================================================
+// 5. BACKGROUND SELECTION
+// ============================================================================
+
+.full-width {
+  width: 100%;
+}
+
+.product-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  
+  .product-name {
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .product-price {
+    font-weight: 600;
+    color: #1976d2;
+    font-size: 14px;
+  }
+}
+
+.background-preview {
+  margin-top: 16px;
+  
+  h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .preview-container {
+    position: relative;
+    width: 200px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #e0e0e0;
+    
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .preview-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .preview-text {
+        margin: 0;
+        font-weight: 600;
+        color: #333;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+  
+  .preview-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    color: #666;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// ============================================================================
+// 6. SELECTION SUMMARY
+// ============================================================================
+
+.selection-summary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #495057;
+    
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #1976d2;
+    }
+    
+    strong {
+      font-weight: 600;
+      color: #1976d2;
+    }
+  }
+}
+
+// ============================================================================
+// 7. GROUPS TREE
+// ============================================================================
+
+.groups-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-panel {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  
+  mat-expansion-panel-header {
+    padding: 12px 16px;
+    background-color: #fafafa;
+    
+    mat-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      
+      .group-name {
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .group-count {
+        font-size: 12px;
+        color: #666;
+        background-color: #e3f2fd;
+        padding: 2px 8px;
+        border-radius: 12px;
+      }
+    }
+  }
+  
+  .group-content {
+    padding: 16px;
+    background-color: #fff;
+    
+    .group-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .products-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .product-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background-color: #fafafa;
+      border: 1px solid #f0f0f0;
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: #f5f5f5;
+      }
+      
+      .product-info {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        .product-name {
+          font-weight: 500;
+          color: #333;
+        }
+        
+        .product-price {
+          font-weight: 600;
+          color: #1976d2;
+          font-size: 14px;
+        }
+      }
+      
+      .product-thumbnail {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 8. FONT SCALING
+// ============================================================================
+
+.font-scaling-toggle {
+  margin-bottom: 24px;
+  
+  .toggle-hint {
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+  }
+}
+
+.manual-font-size {
+  margin-bottom: 24px;
+  
+  .font-size-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .font-size-hints {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #666;
+  }
+}
+
+.font-preview {
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  
+  h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .preview-text {
+    padding: 12px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #333;
+    text-align: center;
+  }
+  
+  .preview-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// ============================================================================
+// 9. CONFIGURATION SUMMARY
+// ============================================================================
+
+.summary-section {
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  
+  .config-summary {
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+      
+      .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background-color: #fff;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+          color: #1976d2;
+        }
+        
+        .summary-content {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          
+          .summary-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 500;
+          }
+          
+          .summary-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+          }
+        }
+      }
+    }
+    
+    .validation-status {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      
+      .status-valid {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #2e7d32;
+        font-weight: 500;
+        
+        mat-icon {
+          color: #4caf50;
+        }
+      }
+      
+      .status-invalid {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #d32f2f;
+        font-weight: 500;
+        
+        mat-icon {
+          color: #f44336;
+        }
+      }
+    }
+    
+    .auto-save-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: #e3f2fd;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #1976d2;
+      
+      mat-spinner {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 10. FOOTER
+// ============================================================================
+
+.config-footer {
+  margin-top: 32px;
+  padding: 16px;
+  text-align: center;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  
+  .footer-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #1976d2;
+    }
+  }
+}
+
+// ============================================================================
+// 11. RESPONSIVE DESIGN
+// ============================================================================
+
+@media (max-width: 768px) {
+  .menu-template-config {
+    padding: 16px;
+  }
+  
+  .config-header {
+    .config-title {
+      font-size: 24px;
+    }
+  }
+  
+  .selection-summary {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .group-content {
+    .group-actions {
+      flex-direction: column;
+      gap: 8px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-template-config {
+    padding: 12px;
+  }
+  
+  .config-section {
+    mat-card-content {
+      padding: 16px;
+    }
+  }
+  
+  .background-preview {
+    .preview-container {
+      width: 150px;
+      height: 90px;
+    }
+  }
+}
+
+// ============================================================================
+// 12. MATERIAL DESIGN OVERRIDES
+// ============================================================================
+
+// Custom Material Design styling
+::ng-deep {
+  .menu-template-config {
+    // Mat Card overrides
+    .mat-mdc-card {
+      border-radius: 12px;
+    }
+    
+    // Mat Expansion Panel overrides
+    .mat-expansion-panel {
+      border-radius: 8px !important;
+      
+      .mat-expansion-panel-header {
+        border-radius: 8px 8px 0 0 !important;
+      }
+    }
+    
+    // Mat Checkbox overrides
+    .mat-mdc-checkbox {
+      .mat-mdc-checkbox-label {
+        font-weight: 500;
+      }
+    }
+    
+    // Mat Slider overrides
+    .mat-mdc-slider {
+      .mat-mdc-slider-track {
+        background-color: #1976d2;
+      }
+      
+      .mat-mdc-slider-thumb {
+        background-color: #1976d2;
+      }
+    }
+    
+    // Mat Select overrides
+    .mat-mdc-select {
+      .mat-mdc-select-value {
+        font-weight: 500;
+      }
+    }
+    
+    // Mat Button overrides
+    .mat-mdc-button,
+    .mat-mdc-raised-button {
+      border-radius: 6px;
+      font-weight: 500;
+    }
+  }
+}
+
+// ============================================================================
+// 13. ANIMATIONS & TRANSITIONS
+// ============================================================================
+
+.group-panel {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.product-item {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.config-section {
+  transition: box-shadow 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+}
+
+// ============================================================================
+// END OF STYLES
+// ============================================================================

@@ -37,6 +37,8 @@ import { Product } from '@core/models/product.interface';
 import { ProductTemplate } from '@core/models/template.interface';
 import { SlideshowConfig } from '@core/models/slideshow-config.interface';
 import { BaseProductTemplateComponent } from "@features/templates";
+import { MenuTemplateConfig } from '@core/models/menu-template-config.interface';
+import { MenuTemplateConfigComponent } from '../menu-template-config/menu-template-config.component';
 
 /**
  * AdminDashboardComponent - MVP Admin Panel
@@ -69,6 +71,7 @@ import { BaseProductTemplateComponent } from "@features/templates";
         MatSnackBarModule,
         MatIconModule,
         // BaseProductTemplateComponent
+        MenuTemplateConfigComponent
     ],
     templateUrl: './admin-dashboard.component.html',
     styleUrl: './admin-dashboard.component.scss',
@@ -117,6 +120,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     readonly selectedProductsCount = computed(() =>
         this.selectedProductIds().length
+    );
+
+    // Menu Template specific computed values
+    readonly isMenuTemplate = computed(() => 
+        this.selectedTemplateId() === 'menu'
     );
 
     constructor() {
@@ -524,5 +532,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             verticalPosition: 'bottom',
             panelClass: ['error-snackbar']
         });
+    }
+
+    /**
+     * Handle Menu Template configuration change
+     */
+    onMenuConfigChange(config: MenuTemplateConfig): void {
+        console.log('🍽️ Menu Template configuration changed:', config);
+        // Menu Template config is auto-saved by the child component
+        // No additional action needed here
+    }
+
+    /**
+     * Handle Menu Template configuration validation
+     */
+    onMenuConfigValid(isValid: boolean): void {
+        console.log('🍽️ Menu Template configuration valid:', isValid);
+        // Update validation state if needed
     }
 }

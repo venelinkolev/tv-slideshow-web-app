@@ -545,3 +545,62 @@
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+// ============================================
+// MENU TEMPLATE CONFIGURATION INTEGRATION
+// ============================================
+
+// Menu Template specific styling
+app-menu-template-config {
+    display: block;
+    margin: 1.5rem 0;
+    
+    // Override the component's internal padding to match admin dashboard
+    .menu-template-config {
+        padding: 0;
+        background-color: transparent;
+        min-height: auto;
+    }
+    
+    // Ensure proper spacing between sections
+    .config-content {
+        gap: 1.5rem;
+    }
+    
+    // Match admin dashboard card styling
+    .config-section {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        
+        mat-card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    }
+}
+
+// Template-specific configuration indicator
+.template-config-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    
+    mat-icon {
+        color: #1976d2;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+    }
+    
+    span {
+        font-size: 14px;
+        color: #1976d2;
+        font-weight: 500;
+    }
+}

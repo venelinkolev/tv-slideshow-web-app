@@ -1,0 +1,322 @@
+<!-- src/app/features/admin/components/menu-template-config/menu-template-config.component.html -->
+
+<div class="menu-template-config">
+
+    <!-- Header -->
+    <div class="config-header">
+        <h2 class="config-title">
+            <mat-icon>restaurant_menu</mat-icon>
+            Menu Template Конфигурация
+        </h2>
+        <p class="config-subtitle">Настройте групите, продуктите и фона за менюто</p>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <div class="loading-container">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p class="loading-text">Зареждане на групи и продукти...</p>
+    </div>
+    }
+
+    <!-- Error State -->
+    @else if (hasError()) {
+    <div class="error-container">
+        <mat-icon class="error-icon">error</mat-icon>
+        <h3 class="error-title">Грешка при зареждане</h3>
+        <p class="error-message">{{ errorMessage() }}</p>
+        <button mat-raised-button color="primary" (click)="retry()">
+            <mat-icon>refresh</mat-icon>
+            Опитай отново
+        </button>
+    </div>
+    }
+
+    <!-- Main Configuration -->
+    @else {
+    <div class="config-content">
+
+        <!-- Section 1: Background Selection -->
+        <mat-card class="config-section">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>image</mat-icon>
+                    Фон на Менюто
+                </mat-card-title>
+                <mat-card-subtitle>Изберете продукт, чието изображение ще се използва като фон</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-content>
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Фонов продукт</mat-label>
+                    <mat-select [(ngModel)]="backgroundProductId" (selectionChange)="onBackgroundProductChange($event.value)">
+                        <mat-optgroup label="По групи">
+                            @for (group of allGroups(); track group.id) {
+                            <mat-optgroup [label]="group.name">
+                                @for (product of group.group_products; track product.id) {
+                                <mat-option [value]="product.id">
+                                    <div class="product-option">
+                                        <span class="product-name">{{ product.name }}</span>
+                                        <span class="product-price">{{ product.price }} лв.</span>
+                                    </div>
+                                </mat-option>
+                                }
+                            </mat-optgroup>
+                            }
+                        </mat-optgroup>
+                    </mat-select>
+                    <mat-hint>Изберете продукт за фон на менюто</mat-hint>
+                </mat-form-field>
+
+                <!-- Background Preview -->
+                @if (backgroundProduct()) {
+                <div class="background-preview">
+                    <h4>Преглед на фона:</h4>
+                    <div class="preview-container">
+                        <img [src]="backgroundProduct()?.name ? '/assets/images/product-placeholder.jpg' : ''" 
+                             [alt]="backgroundProduct()?.name" 
+                             class="preview-image"
+                             loading="lazy">
+                        <div class="preview-overlay">
+                            <p class="preview-text">Меню текст</p>
+                        </div>
+                    </div>
+                    <p class="preview-info">
+                        <mat-icon>info</mat-icon>
+                        Избран: <strong>{{ backgroundProduct()?.name }}</strong>
+                    </p>
+                </div>
+                }
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Section 2: Group & Product Selection -->
+        <mat-card class="config-section">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>category</mat-icon>
+                    Групи и Продукти
+                </mat-card-title>
+                <mat-card-subtitle>Изберете кои групи и продукти да се показват в менюто</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-content>
+                <!-- Selection Summary -->
+                <div class="selection-summary">
+                    <div class="summary-item">
+                        <mat-icon>folder</mat-icon>
+                        <span>Групи: <strong>{{ configSummary().groups }}</strong></span>
+                    </div>
+                    <div class="summary-item">
+                        <mat-icon>inventory_2</mat-icon>
+                        <span>Продукти: <strong>{{ configSummary().products }}</strong></span>
+                    </div>
+                    <div class="summary-item">
+                        <mat-icon>text_fields</mat-icon>
+                        <span>Размер на шрифта: <strong>{{ configSummary().fontSize }}px</strong></span>
+                    </div>
+                </div>
+
+                <!-- Groups and Products Tree -->
+                <div class="groups-tree">
+                    @for (group of allGroups(); track group.id) {
+                    <mat-expansion-panel class="group-panel">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                <mat-checkbox 
+                                    [checked]="isGroupSelected(group.id)"
+                                    (change)="onGroupToggle(group.id, $event.checked)"
+                                    (click)="$event.stopPropagation()">
+                                </mat-checkbox>
+                                <span class="group-name">{{ group.name }}</span>
+                                <span class="group-count">({{ group.group_products.length }} продукти)</span>
+                            </mat-panel-title>
+                        </mat-expansion-panel-header>
+
+                        <div class="group-content">
+                            <!-- Group Actions -->
+                            <div class="group-actions">
+                                <button mat-button color="primary" size="small" 
+                                        (click)="selectAllProductsInGroup(group.id)"
+                                        [disabled]="!isGroupSelected(group.id)">
+                                    <mat-icon>done_all</mat-icon>
+                                    Избери всички
+                                </button>
+                                <button mat-button color="warn" size="small"
+                                        (click)="deselectAllProductsInGroup(group.id)"
+                                        [disabled]="!isGroupSelected(group.id)">
+                                    <mat-icon>clear_all</mat-icon>
+                                    Премахни всички
+                                </button>
+                            </div>
+
+                            <!-- Products List -->
+                            <div class="products-list">
+                                @for (product of group.group_products; track product.id) {
+                                <div class="product-item">
+                                    <mat-checkbox 
+                                        [checked]="isProductSelected(group.id, product.id)"
+                                        (change)="onProductToggle(group.id, product.id, $event.checked)"
+                                        [disabled]="!isGroupSelected(group.id)">
+                                    </mat-checkbox>
+                                    <div class="product-info">
+                                        <span class="product-name">{{ product.name }}</span>
+                                        <span class="product-price">{{ product.price }} лв.</span>
+                                    </div>
+                                    @if (product.imageUrl) {
+                                    <img [src]="product.imageUrl" [alt]="product.name" 
+                                         class="product-thumbnail" loading="lazy">
+                                    }
+                                </div>
+                                }
+                            </div>
+                        </div>
+                    </mat-expansion-panel>
+                    }
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Section 3: Font Scaling Configuration -->
+        <mat-card class="config-section">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>text_fields</mat-icon>
+                    Размер на Шрифта
+                </mat-card-title>
+                <mat-card-subtitle>Настройте как размерът на шрифта се адаптира към съдържанието</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-content>
+                <!-- Auto Scale Toggle -->
+                <div class="font-scaling-toggle">
+                    <mat-checkbox 
+                        [checked]="autoScale()"
+                        (change)="onFontScaleToggle($event.checked)">
+                        Автоматично мащабиране на шрифта
+                    </mat-checkbox>
+                    <p class="toggle-hint">
+                        Когато е включено, размерът на шрифта се изчислява автоматично спрямо броя групи и продукти
+                    </p>
+                </div>
+
+                <!-- Manual Font Size (when auto-scale is off) -->
+                @if (!autoScale()) {
+                <div class="manual-font-size">
+                    <label class="font-size-label">
+                        Размер на шрифта: <strong>{{ manualFontSize() }}px</strong>
+                    </label>
+                    <mat-slider 
+                        min="16" 
+                        max="48" 
+                        step="2" 
+                        discrete 
+                        showTickMarks
+                        [(ngModel)]="manualFontSize"
+                        (ngModelChange)="onFontSizeChange($event)">
+                        <input matSliderThumb>
+                    </mat-slider>
+                    <div class="font-size-hints">
+                        <span>16px</span>
+                        <span>48px</span>
+                    </div>
+                </div>
+                }
+
+                <!-- Font Size Preview -->
+                <div class="font-preview">
+                    <h4>Преглед на размера:</h4>
+                    <div class="preview-text" [style.font-size.px]="estimatedFontSize()">
+                        Примерен текст в менюто
+                    </div>
+                    <p class="preview-info">
+                        <mat-icon>info</mat-icon>
+                        Очакван размер: <strong>{{ estimatedFontSize() }}px</strong>
+                    </p>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Section 4: Configuration Summary -->
+        <mat-card class="config-section summary-section">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>summarize</mat-icon>
+                    Резюме на Конфигурацията
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="config-summary">
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <mat-icon>image</mat-icon>
+                            <div class="summary-content">
+                                <span class="summary-label">Фон</span>
+                                <span class="summary-value">{{ configSummary().background }}</span>
+                            </div>
+                        </div>
+
+                        <div class="summary-item">
+                            <mat-icon>folder</mat-icon>
+                            <div class="summary-content">
+                                <span class="summary-label">Групи</span>
+                                <span class="summary-value">{{ configSummary().groups }}</span>
+                            </div>
+                        </div>
+
+                        <div class="summary-item">
+                            <mat-icon>inventory_2</mat-icon>
+                            <div class="summary-content">
+                                <span class="summary-label">Продукти</span>
+                                <span class="summary-value">{{ configSummary().products }}</span>
+                            </div>
+                        </div>
+
+                        <div class="summary-item">
+                            <mat-icon>text_fields</mat-icon>
+                            <div class="summary-content">
+                                <span class="summary-label">Размер на шрифта</span>
+                                <span class="summary-value">{{ configSummary().fontSize }}px</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Validation Status -->
+                    <div class="validation-status">
+                        @if (isConfigValid()) {
+                        <div class="status-valid">
+                            <mat-icon>check_circle</mat-icon>
+                            <span>Конфигурацията е валидна и готова за запазване</span>
+                        </div>
+                        } @else {
+                        <div class="status-invalid">
+                            <mat-icon>warning</mat-icon>
+                            <span>Моля, попълнете всички задължителни полета</span>
+                        </div>
+                        }
+                    </div>
+
+                    <!-- Auto-save Indicator -->
+                    @if (isSaving()) {
+                    <div class="auto-save-indicator">
+                        <mat-spinner diameter="20"></mat-spinner>
+                        <span>Запазване на промените...</span>
+                    </div>
+                    }
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+    </div>
+    }
+
+    <!-- Footer -->
+    <div class="config-footer">
+        <p class="footer-text">
+            <mat-icon>info</mat-icon>
+            Промените се запазват автоматично. Менюто ще се обнови в slideshow-а.
+        </p>
+    </div>
+
+</div>
