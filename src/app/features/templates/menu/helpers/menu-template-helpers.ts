@@ -19,7 +19,8 @@ export function calculateOptimalFontSize(
     totalProductCount: number,
     autoScale: boolean,
     manualSize?: number,
-    constraints: { min: number; max: number } = { min: 16, max: 48 }
+    constraints: { min: number; max: number } = { min: 16, max: 48 },
+    columnCount?: number
 ): number {
     // If manual size is set and autoScale is off, use manual size
     if (!autoScale && manualSize) {
@@ -29,12 +30,30 @@ export function calculateOptimalFontSize(
     // Base font size for average content
     const BASE_SIZE = 36;
 
-    // Penalties for content volume
-    const GROUP_PENALTY = 2; // Reduce 2px per group
-    const PRODUCT_PENALTY = 0.5; // Reduce 0.5px per product
+    // ✅ INCREASED penalties for better fit
+    // Penalties for content volume - more aggressive
+    const GROUP_PENALTY = 1.5; // Reduce 1.5px per group
+    const PRODUCT_PENALTY = 0.5; // Reduce 0.5px per product (increased from 0.3)
+    
+    // Additional penalty for more columns (less horizontal space per column)
+    let columnPenalty = 0;
+    if (columnCount) {
+        if (columnCount >= 5) columnPenalty = 10;  // 5+ columns
+        else if (columnCount === 4) columnPenalty = 5;  // 4 columns
+        else if (columnCount === 3) columnPenalty = 2;  // 3 columns
+        else columnPenalty = 0;  // 2 columns (default)
+    }
+
+    // ✅ CRITICAL: Additional penalty for high product density
+    // When there are many products, reduce font more aggressively
+    let densityPenalty = 0;
+    if (totalProductCount > 15) {
+        // For >15 products, add extra penalty to ensure they all fit
+        densityPenalty = Math.floor((totalProductCount - 15) * 0.2);
+    }
 
     // Calculate reduction
-    const reduction = (groupCount * GROUP_PENALTY) + (totalProductCount * PRODUCT_PENALTY);
+    const reduction = (groupCount * GROUP_PENALTY) + (totalProductCount * PRODUCT_PENALTY) + columnPenalty + densityPenalty;
 
     // Calculate final size
     const calculated = BASE_SIZE - reduction;
@@ -44,23 +63,72 @@ export function calculateOptimalFontSize(
 }
 
 /**
- * Calculate optimal number of columns based on content
+ * Calculate optimal number of columns based on content volume
+ * 
+ * Takes into account both group count and total products
+ * to ensure content fits without being cut off
  * 
  * @param groupCount - Number of groups to display
+ * @param totalProductCount - Total number of products (for density calculation)
  * @param screenWidth - Screen width in pixels (optional, defaults to window.innerWidth)
- * @returns Number of columns (2-6)
+ * @returns Number of columns (2-6) - capped to prevent off-screen overflow
  */
-export function calculateColumnCount(groupCount: number, screenWidth?: number): number {
+export function calculateColumnCount(
+    groupCount: number, 
+    totalProductCount: number = 0,
+    screenWidth?: number
+): number {
     const width = screenWidth || (typeof window !== 'undefined' ? window.innerWidth : 1920);
 
-    // Base on group count first
-    if (groupCount <= 2) return 2;
-    if (groupCount <= 4) return 3;
-    if (groupCount <= 6) return 4;
-    if (groupCount <= 9) return 5;
+    // Optimal products per column varies based on expected column count
+    // CRITICAL: With fewer columns, each column is WIDER, so can fit more products
+    let PRODUCTS_PER_COLUMN = 10; // Conservative for fewer columns
+    
+    // First pass: estimate columns based on groups
+    let estimatedColumns = 3; // default
+    if (groupCount <= 2) estimatedColumns = 2;
+    else if (groupCount <= 4) estimatedColumns = 3;
+    else if (groupCount <= 6) estimatedColumns = 4;
+    else if (groupCount <= 9) estimatedColumns = 5;
+    else estimatedColumns = 6;
 
-    // For very large menus, cap at 6 columns
-    return 6;
+    // Adjust products per column based on estimated column count
+    // FIXED: Inverse logic - FEWER columns = WIDER columns = can fit MORE products per column
+    // CRITICAL: Made more conservative to prevent content overflow
+    // With 2 columns, screen is wide BUT with products from 2 different groups distributed,
+    // we need to be conservative (~8-10 products max per column for comfortable display)
+    if (estimatedColumns == 2) PRODUCTS_PER_COLUMN = 8; // Conservative for 2 columns
+    else if (estimatedColumns == 3) PRODUCTS_PER_COLUMN = 10;
+    else if (estimatedColumns <= 4) PRODUCTS_PER_COLUMN = 8;
+    else PRODUCTS_PER_COLUMN = 7; // 5+ columns means very narrow
+
+    // Calculate minimum columns needed based on products
+    const columnsByProducts = Math.ceil(totalProductCount / PRODUCTS_PER_COLUMN);
+    
+    // Use the higher of the two calculations to ensure content fits
+    let calculatedColumns = Math.max(estimatedColumns, columnsByProducts);
+    
+    // ✅ CRITICAL: Additional safety check
+    // If we're getting close to the limit (80% of capacity), add an extra column to be safe
+    if (totalProductCount > (calculatedColumns * PRODUCTS_PER_COLUMN * 0.80)) {
+        calculatedColumns = Math.min(6, calculatedColumns + 1);
+    }
+    
+    // ✅ OPTIMIZATION: Reduce if we might create empty columns
+    // If average products per column would be too few (< 6), reduce columns to prevent empty space
+    const avgProductsPerColumn = totalProductCount / calculatedColumns;
+    if (avgProductsPerColumn < 6 && calculatedColumns > 2) {
+        // Only reduce if it won't cause overflow
+        const reducedColumns = calculatedColumns - 1;
+        const reducedAvg = totalProductCount / reducedColumns;
+        if (reducedAvg <= 12) { // Safe to reduce (max 12 products per column)
+            calculatedColumns = reducedColumns;
+        }
+    }
+    
+    // Cap at 6 columns to prevent off-screen overflow
+    // This ensures all columns remain visible on TV screens
+    return Math.min(6, Math.max(2, calculatedColumns));
 }
 
 /**

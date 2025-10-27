@@ -85,20 +85,32 @@
 // ============================================================================
 
 .menu-grid {
-  // CSS Grid layout for columns
-  display: grid;
-  grid-template-columns: var(--menu-column-count, repeat(3, 1fr));
-  gap: max(3vw, 60px);
-  width: calc(100% - 60px);
-  height: calc(100% - 60px);
-  align-content: start;
+  // CSS Multi-Column Layout (колони)
+  display: block;
   
-  // Ensure grid items don't overflow
-  overflow: hidden;
+  // ✅ Using column-count ONLY for precise control
+  // REMOVED column-width to prevent conflicts
+  // Angular calculates optimal column count based on content
+  column-count: var(--menu-column-count, 3);
+  -moz-column-count: var(--menu-column-count, 3);
+  -webkit-column-count: var(--menu-column-count, 3);
+  
+  column-gap: max(3vw, 60px);
+  -moz-column-gap: max(3vw, 60px);
+  -webkit-column-gap: max(3vw, 60px);
+  
+  column-fill: auto;
+  -moz-column-fill: auto;
+  -webkit-column-fill: auto;
+  
+  width: calc(100% - 50px);
+  height: calc(100% - 50px);
+  
+  overflow: visible;
   
   // Add padding and rounded corners to menu container
-  padding: 40px;
-  border-radius: 24px;
+  padding: 30px;
+  border-radius: 16px;
   background-color: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(4px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -110,12 +122,16 @@
 
 .menu-group {
   // Group container
-  display: flex;
-  flex-direction: column;
-  gap: max(1.5vw, 24px);
+  display: block;
+  width: 100%;
   
-  // Prevent overflow
-  overflow: hidden;
+  // Spacing
+  margin-bottom: max(2.5vw, 40px);
+  
+  overflow: visible;
+  
+  // ✅ Разрешаваме групата да се разцепва - НИКАКВИ break правила!
+  // Multi-column ще разцепи естествено ако мястото не стига
 }
 
 .group-header {
@@ -131,6 +147,8 @@
   
   // Text shadow for better visibility
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  
+  // ✅ НИКАКВИ break правила - позволяваме естествено flow
 }
 
 // ============================================================================
@@ -147,6 +165,8 @@
   display: flex;
   flex-direction: column;
   gap: max(1vw, 16px);
+  
+  // ✅ Листът може да се разцепва между колони
 }
 
 .product-item {
@@ -154,6 +174,11 @@
   display: flex;
   flex-direction: column;
   gap: max(0.4vw, 8px);
+
+   // ✅ КРИТИЧНО: Забраняваме продукта да се разцепва между колони!
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
 }
 
 .product-info {

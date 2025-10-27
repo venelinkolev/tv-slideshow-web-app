@@ -92,12 +92,6 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
     readonly totalProducts = computed(() => getTotalProductCount(this.filteredGroups()));
     readonly isReady = computed(() => !this.isLoading() && !this.hasError() && this.hasGroups());
 
-    // Grid template columns for CSS
-    readonly gridTemplateColumns = computed(() => {
-        const cols = this.columnCount();
-        return `repeat(${cols}, 1fr)`;
-    });
-
     /**
      * Menu dynamic styles for CSS custom properties
      * Computed from fontSize and columnCount signals
@@ -195,26 +189,28 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
             this.setBackgroundImage(backgroundProductId, allGroups);
         }
 
-        // Calculate font size
+        // Calculate content metrics
         const groupCount = filtered.length;
         const totalProducts = getTotalProductCount(filtered);
         const fontConfig = menuConfig.fontScaling;
 
+        // Calculate column count FIRST (considering both groups and products)
+        const columns = calculateColumnCount(groupCount, totalProducts);
+        console.log(`📊 Column count: ${columns} (groups: ${groupCount}, products: ${totalProducts})`);
+        this.columnCountSignal.set(columns);
+
+        // Calculate font size SECOND (now considering column count)
         const calculatedFontSize = calculateOptimalFontSize(
             groupCount,
             totalProducts,
             fontConfig.autoScale,
             fontConfig.manualFontSize,
-            { min: fontConfig.minFontSize, max: fontConfig.maxFontSize }
+            { min: fontConfig.minFontSize, max: fontConfig.maxFontSize },
+            columns
         );
 
-        console.log(`📏 Font size: ${calculatedFontSize}px (groups: ${groupCount}, products: ${totalProducts})`);
+        console.log(`📏 Font size: ${calculatedFontSize}px (groups: ${groupCount}, products: ${totalProducts}, columns: ${columns})`);
         this.fontSizeSignal.set(calculatedFontSize);
-
-        // Calculate column count
-        const columns = calculateColumnCount(groupCount);
-        console.log(`📊 Column count: ${columns}`);
-        this.columnCountSignal.set(columns);
 
         console.log('✅ Menu configuration applied successfully');
     }

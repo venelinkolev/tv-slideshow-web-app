@@ -35,7 +35,7 @@
 
         <!-- Menu Display (Ready State) -->
         @else if (isReady()) {
-        <div class="menu-grid" [style.grid-template-columns]="gridTemplateColumns()">
+        <div class="menu-grid">
 
             <!-- Group Column -->
             @for (group of filteredGroups(); track group.id) {
