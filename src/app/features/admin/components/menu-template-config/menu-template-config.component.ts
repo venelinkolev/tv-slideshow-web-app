@@ -130,7 +130,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     readonly availableProducts = computed(() => {
         const groups = this.allGroups();
         const allProducts: Array<{ id: string; name: string; groupId: number; groupName: string }> = [];
-        
+
         groups.forEach(group => {
             group.group_products.forEach(product => {
                 allProducts.push({
@@ -141,14 +141,14 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
                 });
             });
         });
-        
+
         return allProducts;
     });
 
     readonly backgroundProduct = computed(() => {
         const productId = this.backgroundProductIdSignal();
         if (!productId) return null;
-        
+
         return this.availableProducts().find(p => p.id === productId) || null;
     });
 
@@ -165,7 +165,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     readonly estimatedFontSize = computed(() => {
         const groupCount = this.selectedGroupIdsSignal().length;
         const productCount = this.totalSelectedProducts();
-        
+
         if (this.autoScaleSignal()) {
             // Simple font scaling algorithm
             const baseSize = 36;
@@ -180,15 +180,15 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
 
     readonly isConfigValid = computed(() => {
         return this.backgroundProductIdSignal().length > 0 &&
-               this.selectedGroupIdsSignal().length > 0 &&
-               this.totalSelectedProducts() > 0;
+            this.selectedGroupIdsSignal().length > 0 &&
+            this.totalSelectedProducts() > 0;
     });
 
     readonly configSummary = computed(() => {
         const groups = this.selectedGroupIdsSignal().length;
         const products = this.totalSelectedProducts();
         const fontSize = this.estimatedFontSize();
-        
+
         return {
             groups,
             products,
@@ -199,13 +199,13 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         console.log('🍽️ MenuTemplateConfigComponent.ngOnInit() - Initializing menu config');
-        
+
         // Load current configuration
         this.loadCurrentConfig();
-        
+
         // Load groups with products from API
         this.loadGroupsWithProducts();
-        
+
         // Setup auto-save with debouncing
         this.setupAutoSave();
     }
@@ -221,30 +221,30 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
      */
     private loadCurrentConfig(): void {
         console.log('📂 Loading current menu configuration...');
-        
+
         const config = this.configService.config();
         const menuConfig = config.templates.templateSpecificConfig?.menu;
-        
+
         if (menuConfig) {
             console.log('✅ Found existing menu configuration');
-            
+
             // Load background product
             this.backgroundProductIdSignal.set(menuConfig.backgroundProductId || '');
-            
+
             // Load font scaling settings
             this.autoScaleSignal.set(menuConfig.fontScaling.autoScale);
             this.manualFontSizeSignal.set(menuConfig.fontScaling.manualFontSize || 36);
-            
+
             // Load slide selections (MVP: first slide only)
             const firstSlide = menuConfig.slides[0];
             if (firstSlide) {
                 const groupIds = firstSlide.groupSelections.map(gs => gs.groupId);
                 const productIds: Record<number, string[]> = {};
-                
+
                 firstSlide.groupSelections.forEach(gs => {
                     productIds[gs.groupId] = gs.productIds;
                 });
-                
+
                 this.selectedGroupIdsSignal.set(groupIds);
                 this.selectedProductIdsSignal.set(productIds);
             }
@@ -279,14 +279,14 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (response: GroupsWithProductsResponse) => {
                     console.log('✅ Groups with products loaded:', response);
-                    
+
                     if (response.success && response.data) {
                         this.allGroupsSignal.set(response.data);
                         console.log(`📊 Loaded ${response.data.length} groups with ${response.totalProducts} total products`);
                     } else {
                         this.handleError('Failed to load product groups from API');
                     }
-                    
+
                     this.isLoadingSignal.set(false);
                 },
                 error: (error) => {
@@ -304,7 +304,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
         this.configChange$
             .pipe(
                 debounceTime(1000), // 1 second debounce
-                distinctUntilChanged((prev, curr) => 
+                distinctUntilChanged((prev, curr) =>
                     JSON.stringify(prev) === JSON.stringify(curr)
                 ),
                 takeUntil(this.destroy$)
@@ -330,10 +330,10 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
      */
     onGroupToggle(groupId: number, isSelected: boolean): void {
         console.log(`📁 Group ${groupId} ${isSelected ? 'selected' : 'deselected'}`);
-        
+
         const currentIds = this.selectedGroupIdsSignal();
         let newIds: number[];
-        
+
         if (isSelected) {
             newIds = [...currentIds, groupId];
         } else {
@@ -343,7 +343,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
             delete currentProducts[groupId];
             this.selectedProductIdsSignal.set({ ...currentProducts });
         }
-        
+
         this.selectedGroupIdsSignal.set(newIds);
         this.emitConfigChange();
     }
@@ -353,22 +353,22 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
      */
     onProductToggle(groupId: number, productId: string, isSelected: boolean): void {
         console.log(`📦 Product ${productId} in group ${groupId} ${isSelected ? 'selected' : 'deselected'}`);
-        
+
         const currentProducts = this.selectedProductIdsSignal();
         const groupProducts = currentProducts[groupId] || [];
-        
+
         let newGroupProducts: string[];
         if (isSelected) {
             newGroupProducts = [...groupProducts, productId];
         } else {
             newGroupProducts = groupProducts.filter(id => id !== productId);
         }
-        
+
         this.selectedProductIdsSignal.set({
             ...currentProducts,
             [groupId]: newGroupProducts
         });
-        
+
         this.emitConfigChange();
     }
 
@@ -382,9 +382,12 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle manual font size change
+     * Handle manual font size input from slider
      */
-    onFontSizeChange(fontSize: number): void {
+    onManualFontSizeInput(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const fontSize = Number(input.value);
+
         console.log('📏 Manual font size changed to:', fontSize);
         this.manualFontSizeSignal.set(fontSize);
         this.emitConfigChange();
@@ -418,15 +421,15 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     selectAllProductsInGroup(groupId: number): void {
         const group = this.allGroups().find(g => g.id === groupId);
         if (!group) return;
-        
+
         const allProductIds = group.group_products.map(p => p.id);
         const currentProducts = this.selectedProductIdsSignal();
-        
+
         this.selectedProductIdsSignal.set({
             ...currentProducts,
             [groupId]: allProductIds
         });
-        
+
         this.emitConfigChange();
     }
 
@@ -436,7 +439,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     deselectAllProductsInGroup(groupId: number): void {
         const currentProducts = this.selectedProductIdsSignal();
         delete currentProducts[groupId];
-        
+
         this.selectedProductIdsSignal.set({ ...currentProducts });
         this.emitConfigChange();
     }
@@ -494,18 +497,18 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
                 menu: config
             }
         })
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-            next: () => {
-                console.log('✅ Menu configuration auto-saved');
-                this.isSavingSignal.set(false);
-            },
-            error: (error) => {
-                console.error('❌ Failed to auto-save menu configuration:', error);
-                this.isSavingSignal.set(false);
-                this.showError('Грешка при запазване на конфигурацията');
-            }
-        });
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    console.log('✅ Menu configuration auto-saved');
+                    this.isSavingSignal.set(false);
+                },
+                error: (error) => {
+                    console.error('❌ Failed to auto-save menu configuration:', error);
+                    this.isSavingSignal.set(false);
+                    this.showError('Грешка при запазване на конфигурацията');
+                }
+            });
     }
 
     /**
@@ -537,7 +540,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
         if (!product) {
             return '/assets/images/product-placeholder.jpg';
         }
-        
+
         // Find the actual product with imageUrl from all groups
         const allGroups = this.allGroups();
         for (const group of allGroups) {
@@ -546,7 +549,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
                 return actualProduct.imageUrl;
             }
         }
-        
+
         // Fallback to placeholder
         return '/assets/images/product-placeholder.jpg';
     }

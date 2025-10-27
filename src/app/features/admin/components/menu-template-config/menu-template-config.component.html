@@ -49,7 +49,8 @@
             <mat-card-content>
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Фонов продукт</mat-label>
-                    <mat-select [(ngModel)]="backgroundProductId" (selectionChange)="onBackgroundProductChange($event.value)">
+                    <mat-select [(ngModel)]="backgroundProductId"
+                        (selectionChange)="onBackgroundProductChange($event.value)">
                         <mat-optgroup label="По групи">
                             @for (group of allGroups(); track group.id) {
                             <mat-optgroup [label]="group.name">
@@ -73,10 +74,8 @@
                 <div class="background-preview">
                     <h4>Преглед на фона:</h4>
                     <div class="preview-container">
-                        <img [src]="getBackgroundProductImage()" 
-                             [alt]="backgroundProduct()?.name" 
-                             class="preview-image"
-                             loading="lazy">
+                        <img [src]="getBackgroundProductImage()" [alt]="backgroundProduct()?.name" class="preview-image"
+                            loading="lazy">
                         <div class="preview-overlay">
                             <p class="preview-text">Меню текст</p>
                         </div>
@@ -123,8 +122,7 @@
                     <mat-expansion-panel class="group-panel">
                         <mat-expansion-panel-header>
                             <mat-panel-title>
-                                <mat-checkbox 
-                                    [checked]="isGroupSelected(group.id)"
+                                <mat-checkbox [checked]="isGroupSelected(group.id)"
                                     (change)="onGroupToggle(group.id, $event.checked)"
                                     (click)="$event.stopPropagation()">
                                 </mat-checkbox>
@@ -136,15 +134,15 @@
                         <div class="group-content">
                             <!-- Group Actions -->
                             <div class="group-actions">
-                                <button mat-button color="primary" size="small" 
-                                        (click)="selectAllProductsInGroup(group.id)"
-                                        [disabled]="!isGroupSelected(group.id)">
+                                <button mat-button color="primary" size="small"
+                                    (click)="selectAllProductsInGroup(group.id)"
+                                    [disabled]="!isGroupSelected(group.id)">
                                     <mat-icon>done_all</mat-icon>
                                     Избери всички
                                 </button>
                                 <button mat-button color="warn" size="small"
-                                        (click)="deselectAllProductsInGroup(group.id)"
-                                        [disabled]="!isGroupSelected(group.id)">
+                                    (click)="deselectAllProductsInGroup(group.id)"
+                                    [disabled]="!isGroupSelected(group.id)">
                                     <mat-icon>clear_all</mat-icon>
                                     Премахни всички
                                 </button>
@@ -154,8 +152,7 @@
                             <div class="products-list">
                                 @for (product of group.group_products; track product.id) {
                                 <div class="product-item">
-                                    <mat-checkbox 
-                                        [checked]="isProductSelected(group.id, product.id)"
+                                    <mat-checkbox [checked]="isProductSelected(group.id, product.id)"
                                         (change)="onProductToggle(group.id, product.id, $event.checked)"
                                         [disabled]="!isGroupSelected(group.id)">
                                     </mat-checkbox>
@@ -164,8 +161,8 @@
                                         <span class="product-price">{{ product.price }} лв.</span>
                                     </div>
                                     @if (product.imageUrl) {
-                                    <img [src]="product.imageUrl" [alt]="product.name" 
-                                         class="product-thumbnail" loading="lazy">
+                                    <img [src]="product.imageUrl" [alt]="product.name" class="product-thumbnail"
+                                        loading="lazy">
                                     }
                                 </div>
                                 }
@@ -190,9 +187,7 @@
             <mat-card-content>
                 <!-- Auto Scale Toggle -->
                 <div class="font-scaling-toggle">
-                    <mat-checkbox 
-                        [checked]="autoScale()"
-                        (change)="onFontScaleToggle($event.checked)">
+                    <mat-checkbox [checked]="autoScale()" (change)="onFontScaleToggle($event.checked)">
                         Автоматично мащабиране на шрифта
                     </mat-checkbox>
                     <p class="toggle-hint">
@@ -206,18 +201,11 @@
                     <label class="font-size-label">
                         Размер на шрифта: <strong>{{ manualFontSize() }}px</strong>
                     </label>
-                    <mat-slider 
-                        min="16" 
-                        max="48" 
-                        step="2" 
-                        discrete 
-                        showTickMarks
-                        [(ngModel)]="manualFontSize"
-                        (ngModelChange)="onFontSizeChange($event)">
-                        <input matSliderThumb>
+                    <mat-slider min="10" max="48" step="2" discrete showTickMarks>
+                        <input matSliderThumb [value]="manualFontSize()" (input)="onManualFontSizeInput($event)">
                     </mat-slider>
                     <div class="font-size-hints">
-                        <span>16px</span>
+                        <span>10px</span>
                         <span>48px</span>
                     </div>
                 </div>
