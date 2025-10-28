@@ -11,6 +11,9 @@
         <!-- Price Badge - Circular overlay on top-right of image -->
         <div class="price-badge">
             <span class="price-value">{{ getDisplayPrice() }}</span>
+            @if (getDisplayPriceEur()) {
+            <span class="price-value-eur">{{ getDisplayPriceEur() }}</span>
+            }
         </div>
 
     </div>

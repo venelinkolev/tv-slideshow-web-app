@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy } from '@angular/core';
 
 import { Product } from '@core/models';
+import { convertBgnToEur, shouldShowEurCurrency } from '@core/utils/currency.utils';
 
 
 /**
@@ -68,6 +69,21 @@ export abstract class BaseProductTemplateComponent {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }).format(price);
+    }
+
+    /**
+ * Format price in EUR (temporary promotional feature)
+ * Returns null if EUR display is disabled
+ * 
+ * @param price - Price in BGN to convert
+ * @returns Formatted EUR price or null if disabled
+ */
+    protected formatPriceEur(price: number): string | null {
+
+        if (!shouldShowEurCurrency()) {
+            return null;
+        }
+        return convertBgnToEur(price);
     }
 
     /**

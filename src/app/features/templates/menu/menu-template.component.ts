@@ -29,6 +29,7 @@ import {
     validateMenuConfig,
     getTotalProductCount
 } from './helpers/menu-template-helpers';
+import { convertBgnToEur, shouldShowEurCurrency } from '@core/utils/currency.utils';
 
 /**
  * Menu Template Component
@@ -249,6 +250,17 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }).format(price);
+    }
+
+    /**
+     * Format price in EUR (temporary promotional feature)
+     * Returns null if EUR display is disabled
+     */
+    protected formatPriceEur(price: number): string | null {
+        if (!shouldShowEurCurrency()) {
+            return null;
+        }
+        return convertBgnToEur(price);
     }
 
     /**

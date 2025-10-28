@@ -24,6 +24,9 @@
 
             <!-- Product Price -->
             <div class="product-price">{{ getDisplayPrice() }}</div>
+            @if (getDisplayPriceEur()) {
+            <div class="product-price-eur">{{ getDisplayPriceEur() }}</div>
+            }
 
             <!-- Product Description -->
             @if (product().shortDescription) {

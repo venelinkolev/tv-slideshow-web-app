@@ -40,6 +40,13 @@ export class ClassicTemplateComponent extends BaseProductTemplateComponent imple
     }
 
     /**
+     * Get product display price in EUR (if enabled)
+     */
+    getDisplayPriceEur(): string | null {
+        return this.formatPriceEur(this.product().price);
+    }
+
+    /**
      * Get truncated description for classic layout display
      */
     getDisplayDescription(): string {

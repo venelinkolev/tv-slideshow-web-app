@@ -46,6 +46,10 @@ export class MinimalTemplateComponent extends BaseProductTemplateComponent imple
     return this.formatPrice(this.product().price);
   }
 
+  getDisplayPriceEur(): string | null {
+    return this.formatPriceEur(this.product().price);
+  }
+
   /**
    * Get product name for display
    */
