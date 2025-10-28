@@ -19,7 +19,7 @@ export function calculateOptimalFontSize(
     totalProductCount: number,
     autoScale: boolean,
     manualSize?: number,
-    constraints: { min: number; max: number } = { min: 16, max: 48 },
+    constraints: { min: number; max: number } = { min: 12, max: 48 },
     columnCount?: number
 ): number {
     // If manual size is set and autoScale is off, use manual size
@@ -28,7 +28,7 @@ export function calculateOptimalFontSize(
     }
 
     // Base font size for average content
-    const BASE_SIZE = 36;
+    const BASE_SIZE = 34;
 
     // ✅ OPTIMIZED penalties for better fit
     // Penalties for content volume - aggressive scaling
