@@ -127,7 +127,7 @@ export const DEFAULT_MENU_CONFIG: MenuTemplateConfig = {
     ],
     fontScaling: {
         autoScale: true,
-        minFontSize: 8,
+        minFontSize: 12,
         maxFontSize: 48
     }
 };

@@ -473,7 +473,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
         const fontScaling: FontScalingConfig = {
             autoScale: this.autoScaleSignal(),
             manualFontSize: this.manualFontSizeSignal(),
-            minFontSize: 8,
+            minFontSize: 12,
             maxFontSize: 48
         };
 

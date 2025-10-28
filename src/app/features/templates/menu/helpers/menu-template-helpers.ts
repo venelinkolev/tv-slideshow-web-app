@@ -261,12 +261,12 @@ export function validateMenuConfig(config: MenuTemplateConfig): {
     } else {
         const { minFontSize, maxFontSize } = config.fontScaling;
 
-        if (minFontSize < 8 || minFontSize > 72) {
-            errors.push('Minimum font size must be between 8 and 72 pixels');
+        if (minFontSize < 12 || minFontSize > 72) {
+            errors.push('Minimum font size must be between 12 and 72 pixels');
         }
 
-        if (maxFontSize < 8 || maxFontSize > 72) {
-            errors.push('Maximum font size must be between 8 and 72 pixels');
+        if (maxFontSize < 12 || maxFontSize > 72) {
+            errors.push('Maximum font size must be between 12 and 72 pixels');
         }
 
         if (minFontSize >= maxFontSize) {
