@@ -370,6 +370,40 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         return config?.templates?.selectedTemplateId || 'classic';
     });
 
+    /**
+     * Calculate current slide count based on template type
+     * - Menu template: Uses slides from menu configuration
+     * - Other templates: Uses products array length
+     */
+    readonly currentSlideCount = computed(() => {
+        const templateId = this.config()?.templates?.selectedTemplateId;
+
+        // For Menu Template - count slides from menu config
+        if (templateId === 'menu') {
+            const menuConfig = this.config()?.templates?.templateSpecificConfig?.menu;
+            const slideCount = menuConfig?.slides?.length || 1;
+            console.log(`📊 Menu Template slide count: ${slideCount}`);
+            return slideCount;
+        }
+
+        // For other templates - count products
+        const productCount = this.products().length;
+        console.log(`📊 Product-based slide count: ${productCount}`);
+        return productCount;
+    });
+
+    /**
+     * Determine if slide rotation should be enabled
+     * Rotation is only enabled when there are 2+ slides
+     */
+    readonly shouldEnableRotation = computed(() => {
+        const slideCount = this.currentSlideCount();
+        const shouldRotate = slideCount > 1;
+
+        console.log(`🔄 Rotation ${shouldRotate ? 'ENABLED' : 'DISABLED'} (${slideCount} slide${slideCount !== 1 ? 's' : ''})`);
+        return shouldRotate;
+    });
+
     readonly showProgressIndicators = computed(() => {
         const config = this.config();
         return config?.general?.showProgressIndicators || false;
@@ -1862,9 +1896,10 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
         const products = this.products();
         const config = this.config();
         const enabled = this.autoRotationEnabled();
+        const rotationAllowed = this.shouldEnableRotation(); // ✅ НОВА проверка
 
         const conditions = {
-            hasProducts: products.length > 1,
+            hasMultipleSlides: rotationAllowed, // ✅ ПРОМЕНЕНО: вместо hasProducts
             hasConfig: config !== null && config !== undefined,
             isEnabled: enabled === true,
             notPausedByUser: this.pausedByUser() === false
@@ -1877,7 +1912,7 @@ export class SlideShowContainerComponent implements OnInit, OnDestroy, AfterView
             this.lastConditionsCheck = { ...conditions };
         }
 
-        return conditions.hasProducts &&
+        return conditions.hasMultipleSlides &&
             conditions.hasConfig &&
             conditions.isEnabled &&
             conditions.notPausedByUser;

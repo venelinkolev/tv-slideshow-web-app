@@ -123,9 +123,47 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     );
 
     // Menu Template specific computed values
-    readonly isMenuTemplate = computed(() => 
+    readonly isMenuTemplate = computed(() =>
         this.selectedTemplateId() === 'menu'
     );
+
+    /**
+ * Calculate current slide count for rotation check
+ */
+    readonly currentSlideCount = computed(() => {
+        const templateId = this.selectedTemplateId();
+
+        // For Menu Template - get slides from menu config
+        if (templateId === 'menu') {
+            const config = this.configService.config();
+            const menuConfig = config?.templates?.templateSpecificConfig?.menu;
+            return menuConfig?.slides?.length || 1;
+        }
+
+        // For other templates - product count
+        return this.selectedProductIds().length;
+    });
+
+    /**
+     * Check if rotation should be enabled (2+ slides)
+     */
+    readonly shouldShowRotationSettings = computed(() => {
+        return this.currentSlideCount() > 1;
+    });
+
+    /**
+     * Info message when rotation is disabled
+     */
+    readonly rotationDisabledMessage = computed(() => {
+        const templateId = this.selectedTemplateId();
+        const slideCount = this.currentSlideCount();
+
+        if (templateId === 'menu') {
+            return `Меню темплейтът има само ${slideCount} слайд. Добавете още слайдове за да активирате ротация.`;
+        }
+
+        return `Изберете поне 2 продукта за да активирате ротация на слайдовете.`;
+    });
 
     constructor() {
         console.log('🔧 AdminDashboardComponent initializing...');
