@@ -201,11 +201,11 @@
                     <label class="font-size-label">
                         Размер на шрифта: <strong>{{ manualFontSize() }}px</strong>
                     </label>
-                    <mat-slider min="10" max="48" step="2" discrete showTickMarks>
+                    <mat-slider min="8" max="48" step="1" discrete showTickMarks>
                         <input matSliderThumb [value]="manualFontSize()" (input)="onManualFontSizeInput($event)">
                     </mat-slider>
                     <div class="font-size-hints">
-                        <span>10px</span>
+                        <span>8px</span>
                         <span>48px</span>
                     </div>
                 </div>

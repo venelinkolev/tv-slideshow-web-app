@@ -30,10 +30,13 @@ export function calculateOptimalFontSize(
     // Base font size for average content
     const BASE_SIZE = 36;
 
-    // ✅ INCREASED penalties for better fit
-    // Penalties for content volume - more aggressive
-    const GROUP_PENALTY = 1.5; // Reduce 1.5px per group
-    const PRODUCT_PENALTY = 0.5; // Reduce 0.5px per product (increased from 0.3)
+    // ✅ OPTIMIZED penalties for better fit
+    // Penalties for content volume - aggressive scaling
+    const GROUP_PENALTY = 2.0; // Increased from 1.5 - groups take more space (headers!)
+    const GROUP_HEADER_WEIGHT = 1.5; // Each group header ≈ 1.5 products in vertical space
+    const PRODUCT_PENALTY = 0.6; // Increased from 0.5 - more aggressive
+
+    console.log(`📏 [calculateOptimalFontSize] START - Groups: ${groupCount}, Products: ${totalProductCount}, Columns: ${columnCount || 'auto'}`);
 
     // Additional penalty for more columns (less horizontal space per column)
     let columnPenalty = 0;
@@ -55,22 +58,38 @@ export function calculateOptimalFontSize(
         }
     }
 
-    // ✅ CRITICAL: Additional penalty for high product density
-    // When there are many products, reduce font more aggressively
+    // ✅ CRITICAL: Calculate effective product count (including group header weight)
+    const effectiveProductCount = totalProductCount + (groupCount * GROUP_HEADER_WEIGHT);
+
+    console.log(`📏 [calculateOptimalFontSize] Effective units: ${totalProductCount} products + (${groupCount} groups × ${GROUP_HEADER_WEIGHT}) = ${effectiveProductCount.toFixed(1)}`);
+
+    // Additional penalty for high density
     let densityPenalty = 0;
-    if (totalProductCount > 15) {
-        // For >15 products, add extra penalty to ensure they all fit
-        densityPenalty = Math.floor((totalProductCount - 15) * 0.2);
+    if (effectiveProductCount > 20) {
+        // For >20 effective units, add extra penalty to ensure they all fit
+        densityPenalty = Math.floor((effectiveProductCount - 20) * 0.3); // Increased from 0.2
+        console.log(`📏 [calculateOptimalFontSize] High density penalty: ${densityPenalty}px (effective units > 20)`);
     }
 
-    // Calculate reduction (including density compensation)
-    const reduction = (groupCount * GROUP_PENALTY) + (totalProductCount * PRODUCT_PENALTY) + columnPenalty + densityPenalty + densityCompensation;
+    // Calculate reduction using EFFECTIVE product count
+    const reduction = (groupCount * GROUP_PENALTY) + (effectiveProductCount * PRODUCT_PENALTY) + columnPenalty + densityPenalty;
+
+    console.log(`📏 [calculateOptimalFontSize] Reduction breakdown:`);
+    console.log(`   - Groups: ${groupCount} × ${GROUP_PENALTY} = ${groupCount * GROUP_PENALTY}px`);
+    console.log(`   - Effective products: ${effectiveProductCount.toFixed(1)} × ${PRODUCT_PENALTY} = ${(effectiveProductCount * PRODUCT_PENALTY).toFixed(1)}px`);
+    console.log(`   - Columns: ${columnPenalty}px`);
+    console.log(`   - Density: ${densityPenalty}px`);
+    console.log(`   - TOTAL reduction: ${reduction.toFixed(1)}px`);
 
     // Calculate final size
     const calculated = BASE_SIZE - reduction;
 
     // Clamp to constraints
-    return Math.max(constraints.min, Math.min(constraints.max, calculated));
+    const finalSize = Math.max(constraints.min, Math.min(constraints.max, calculated));
+
+    console.log(`📏 [calculateOptimalFontSize] Result: ${BASE_SIZE} - ${reduction.toFixed(1)} = ${calculated.toFixed(1)}px → clamped to ${finalSize}px (min: ${constraints.min}, max: ${constraints.max})`);
+
+    return finalSize;
 }
 
 /**
@@ -90,6 +109,16 @@ export function calculateColumnCount(
     screenWidth?: number
 ): number {
     const width = screenWidth || (typeof window !== 'undefined' ? window.innerWidth : 1920);
+    console.log(`\n🔢 [calculateColumnCount] START - Groups: ${groupCount}, Products: ${totalProductCount}, Screen: ${width}px`);
+
+    // ✅ CRITICAL FIX: Group headers take vertical space!
+    // Each group header is ~1.4x larger than product font + padding/border
+    // Treat each group header as equivalent to ~2 products in vertical space
+    const GROUP_HEADER_WEIGHT = 2; // каждый group header = 2 products worth of space
+    const effectiveProductCount = totalProductCount + (groupCount * GROUP_HEADER_WEIGHT);
+
+    console.log(`📊 [calculateColumnCount] Group header compensation: ${groupCount} groups × ${GROUP_HEADER_WEIGHT} = +${groupCount * GROUP_HEADER_WEIGHT} effective units`);
+    console.log(`📊 [calculateColumnCount] Effective product count: ${totalProductCount} + ${groupCount * GROUP_HEADER_WEIGHT} = ${effectiveProductCount}`);
 
     // Optimal products per column varies based on expected column count
     // CRITICAL: With fewer columns, each column is WIDER, so can fit more products
@@ -104,59 +133,36 @@ export function calculateColumnCount(
     else estimatedColumns = 6;
 
     // Adjust products per column based on estimated column count
-    // FIXED: Inverse logic - FEWER columns = WIDER columns = can fit MORE products per column
-    // CRITICAL: Made more conservative to prevent content overflow
-    // With 2 columns, screen is wide BUT with products from 2 different groups distributed,
-    // we need to be conservative (~8-10 products max per column for comfortable display)
-    if (estimatedColumns == 2) PRODUCTS_PER_COLUMN = 8; // Conservative for 2 columns
-    else if (estimatedColumns == 3) PRODUCTS_PER_COLUMN = 10;
-    else if (estimatedColumns <= 4) PRODUCTS_PER_COLUMN = 8;
-    else PRODUCTS_PER_COLUMN = 7; // 5+ columns means very narrow
+    // OPTIMIZED: More aggressive to prevent invisible products
+    console.log(`📊 [calculateColumnCount] Estimated columns: ${estimatedColumns}`);
 
-    // Calculate minimum columns needed based on products
-    const columnsByProducts = Math.ceil(totalProductCount / PRODUCTS_PER_COLUMN);
+    if (estimatedColumns == 2) PRODUCTS_PER_COLUMN = 12; // Increased from 8
+    else if (estimatedColumns == 3) PRODUCTS_PER_COLUMN = 11; // Increased from 10
+    else if (estimatedColumns <= 4) PRODUCTS_PER_COLUMN = 9; // Increased from 8
+    else PRODUCTS_PER_COLUMN = 8; // 5+ columns - increased from 7
+
+    console.log(`📊 [calculateColumnCount] Products per column: ${PRODUCTS_PER_COLUMN}`);
+
+    // Calculate minimum columns needed based on EFFECTIVE products (including group headers)
+    const columnsByProducts = Math.ceil(effectiveProductCount / PRODUCTS_PER_COLUMN);
 
     // Use the higher of the two calculations to ensure content fits
     let calculatedColumns = Math.max(estimatedColumns, columnsByProducts);
 
-    // ✅ CRITICAL: Additional safety check
-    // If we're getting close to the limit (80% of capacity), add an extra column to be safe
-    if (totalProductCount > (calculatedColumns * PRODUCTS_PER_COLUMN * 0.80)) {
+    // ✅ CRITICAL: Additional safety check - INCREASED to 90% for better coverage
+    // If we're getting close to the limit (90% of capacity), add an extra column to be safe
+    const capacity = calculatedColumns * PRODUCTS_PER_COLUMN;
+    const threshold = capacity * 0.90; // 90% capacity threshold
+
+    console.log(`📊 [calculateColumnCount] Capacity check: ${effectiveProductCount} effective units, capacity: ${capacity}, threshold (90%): ${threshold}`);
+
+    if (effectiveProductCount > threshold) {
+        console.log(`⚠️ [calculateColumnCount] Products exceed 90% capacity! Adding +1 column`);
         calculatedColumns = Math.min(6, calculatedColumns + 1);
     }
 
-    // ✅ OPTIMIZATION: Reduce if we might create empty columns
-    // If average products per column would be too few (< 6), reduce columns to prevent empty space
-    const avgProductsPerColumn = totalProductCount / calculatedColumns;
-    if (avgProductsPerColumn < 6 && calculatedColumns > 2) {
-        // Only reduce if it won't cause overflow
-        const reducedColumns = calculatedColumns - 1;
-        const reducedAvg = totalProductCount / reducedColumns;
-        if (reducedAvg <= 12) { // Safe to reduce (max 12 products per column)
-            calculatedColumns = reducedColumns;
-        }
-    }
-
-    // ✅ NEW: INTELLIGENT BALANCING - Check last column fill percentage
-    // CSS multi-column distributes GROUPS, not individual products
-    // So we must ensure we don't create more columns than we can reasonably fill
-    const productsPerColumn = Math.ceil(totalProductCount / calculatedColumns);
-    const lastColumnProducts = totalProductCount - (productsPerColumn * (calculatedColumns - 1));
-    const fillPercentage = lastColumnProducts / productsPerColumn;
-
-    // If last column is less than 50% full, remove it
-    if (fillPercentage < 0.5 && calculatedColumns > 2) {
-        console.log(`🔄 Column balancing: Last column only ${Math.round(fillPercentage * 100)}% full, reducing columns from ${calculatedColumns} to ${calculatedColumns - 1}`);
-        calculatedColumns = calculatedColumns - 1;
-    }
-
-    // ✅ CRITICAL: Cap at groupCount (CSS distributes groups, not products!)
-    // Allow max +1 column for heavy groups, but never exceed groupCount significantly
-    const maxColumnsForGroups = Math.min(groupCount + 1, groupCount * 1.5);
-    if (calculatedColumns > maxColumnsForGroups) {
-        console.log(`⚠️ Capping columns from ${calculatedColumns} to ${Math.ceil(maxColumnsForGroups)} (groupCount: ${groupCount})`);
-        calculatedColumns = Math.ceil(maxColumnsForGroups);
-    }
+    // ✅ FINAL: Log final column count
+    console.log(`✅ [calculateColumnCount] Final columns: ${calculatedColumns} for ${totalProductCount} products + ${groupCount} groups = ${effectiveProductCount} effective units`);
 
     // Final bounds: 2-6 columns
     return Math.min(6, Math.max(2, calculatedColumns));
@@ -255,12 +261,12 @@ export function validateMenuConfig(config: MenuTemplateConfig): {
     } else {
         const { minFontSize, maxFontSize } = config.fontScaling;
 
-        if (minFontSize < 12 || minFontSize > 72) {
-            errors.push('Minimum font size must be between 12 and 72 pixels');
+        if (minFontSize < 8 || minFontSize > 72) {
+            errors.push('Minimum font size must be between 8 and 72 pixels');
         }
 
-        if (maxFontSize < 12 || maxFontSize > 72) {
-            errors.push('Maximum font size must be between 12 and 72 pixels');
+        if (maxFontSize < 8 || maxFontSize > 72) {
+            errors.push('Maximum font size must be between 8 and 72 pixels');
         }
 
         if (minFontSize >= maxFontSize) {
