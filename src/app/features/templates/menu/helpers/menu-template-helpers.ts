@@ -27,71 +27,63 @@ export function calculateOptimalFontSize(
         return Math.max(constraints.min, Math.min(constraints.max, manualSize));
     }
 
-    // Base font size for average content
-    const BASE_SIZE = 34;
-
-    // ✅ OPTIMIZED penalties for better fit
-    // Penalties for content volume - aggressive scaling
-    const GROUP_PENALTY = 2.0; // Increased from 1.5 - groups take more space (headers!)
-    const GROUP_HEADER_WEIGHT = 1.5; // Each group header ≈ 1.5 products in vertical space
-    const PRODUCT_PENALTY = 0.6; // Increased from 0.5 - more aggressive
-
     console.log(`📏 [calculateOptimalFontSize] START - Groups: ${groupCount}, Products: ${totalProductCount}, Columns: ${columnCount || 'auto'}`);
 
-    // Additional penalty for more columns (less horizontal space per column)
-    let columnPenalty = 0;
+    // ✅ NEW ALGORITHM: Non-linear scaling to prevent negative values
+    // Constants
+    const GROUP_HEADER_WEIGHT = 1.5; // Each group header ≈ 1.5 products in vertical space
+    const MIN_UNITS = 5;  // Minimum expected units (small menu)
+    const MAX_UNITS = 55;  // Maximum expected units (large menu)
+
+    // Calculate effective units (products + group headers)
+    const effectiveUnits = totalProductCount + (groupCount * GROUP_HEADER_WEIGHT);
+    console.log(`📏 [calculateOptimalFontSize] Effective units: ${totalProductCount} products + (${groupCount} groups × ${GROUP_HEADER_WEIGHT}) = ${effectiveUnits.toFixed(1)}`);
+
+    // ✅ Logarithmic scaling for smooth transition
+    // Scale factor: 1.0 (max size) at MIN_UNITS, 0.0 (min size) at MAX_UNITS
+    const clampedUnits = Math.max(MIN_UNITS, Math.min(MAX_UNITS, effectiveUnits));
+    const normalizedUnits = (clampedUnits - MIN_UNITS) / (MAX_UNITS - MIN_UNITS);
+
+    // Logarithmic curve for more aggressive scaling
+    const scaleFactor = 1 - Math.pow(normalizedUnits, 0.3); // 0.3 exponent for aggressive curve
+
+    console.log(`📏 [calculateOptimalFontSize] Scale calculation: units=${clampedUnits.toFixed(1)}, normalized=${normalizedUnits.toFixed(2)}, factor=${scaleFactor.toFixed(2)}`);
+
+    // Calculate base font size from scale factor
+    const fontRange = constraints.max - constraints.min;
+    let calculatedSize = constraints.min + (fontRange * scaleFactor);
+
+    // ✅ Column penalty: Reduce size for more columns (less horizontal space)
+    let columnAdjustment = 0;
     if (columnCount) {
-        if (columnCount >= 5) columnPenalty = 10;  // 5+ columns
-        else if (columnCount === 4) columnPenalty = 5;  // 4 columns
-        else if (columnCount === 3) columnPenalty = 2;  // 3 columns
-        else columnPenalty = 0;  // 2 columns (default)
+        if (columnCount >= 6) columnAdjustment = -4;      // 6+ columns: -4px
+        else if (columnCount === 5) columnAdjustment = -3; // 5 columns: -3px
+        else if (columnCount === 4) columnAdjustment = -2; // 4 columns: -2px
+        else if (columnCount === 3) columnAdjustment = -1; // 3 columns: -1px
+        // 2 columns: no adjustment
+
+        console.log(`📏 [calculateOptimalFontSize] Column adjustment: ${columnCount} columns = ${columnAdjustment}px`);
+        calculatedSize += columnAdjustment;
     }
 
-    // ✅ NEW: Additional penalty for dense columns (when columns are reduced for balance)
-    // If we have few columns but many products, reduce font size more aggressively
-    let densityCompensation = 0;
-    if (columnCount && columnCount <= 3) {
+    // ✅ Density compensation for heavily loaded columns
+    if (columnCount && columnCount <= 3 && totalProductCount > 30) {
         const productsPerColumn = totalProductCount / columnCount;
         if (productsPerColumn > 12) {
-            // Heavy columns need smaller font
-            densityCompensation = Math.min(6, Math.floor((productsPerColumn - 12) * 0.5));
+            const densityAdjustment = -Math.min(3, Math.floor((productsPerColumn - 12) * 0.3));
+            console.log(`📏 [calculateOptimalFontSize] Density adjustment: ${productsPerColumn.toFixed(1)} products/column = ${densityAdjustment}px`);
+            calculatedSize += densityAdjustment;
         }
     }
 
-    // ✅ CRITICAL: Calculate effective product count (including group header weight)
-    const effectiveProductCount = totalProductCount + (groupCount * GROUP_HEADER_WEIGHT);
+    // ✅ Final clamping to ensure we stay within constraints
+    const finalSize = Math.round(Math.max(constraints.min, Math.min(constraints.max, calculatedSize)));
 
-    console.log(`📏 [calculateOptimalFontSize] Effective units: ${totalProductCount} products + (${groupCount} groups × ${GROUP_HEADER_WEIGHT}) = ${effectiveProductCount.toFixed(1)}`);
-
-    // Additional penalty for high density
-    let densityPenalty = 0;
-    if (effectiveProductCount > 20) {
-        // For >20 effective units, add extra penalty to ensure they all fit
-        densityPenalty = Math.floor((effectiveProductCount - 20) * 0.3); // Increased from 0.2
-        console.log(`📏 [calculateOptimalFontSize] High density penalty: ${densityPenalty}px (effective units > 20)`);
-    }
-
-    // Calculate reduction using EFFECTIVE product count
-    const reduction = (groupCount * GROUP_PENALTY) + (effectiveProductCount * PRODUCT_PENALTY) + columnPenalty + densityPenalty;
-
-    console.log(`📏 [calculateOptimalFontSize] Reduction breakdown:`);
-    console.log(`   - Groups: ${groupCount} × ${GROUP_PENALTY} = ${groupCount * GROUP_PENALTY}px`);
-    console.log(`   - Effective products: ${effectiveProductCount.toFixed(1)} × ${PRODUCT_PENALTY} = ${(effectiveProductCount * PRODUCT_PENALTY).toFixed(1)}px`);
-    console.log(`   - Columns: ${columnPenalty}px`);
-    console.log(`   - Density: ${densityPenalty}px`);
-    console.log(`   - TOTAL reduction: ${reduction.toFixed(1)}px`);
-
-    // Calculate final size
-    const calculated = BASE_SIZE - reduction;
-
-    // Clamp to constraints
-    const finalSize = Math.max(constraints.min, Math.min(constraints.max, calculated));
-
-    console.log(`📏 [calculateOptimalFontSize] Result: ${BASE_SIZE} - ${reduction.toFixed(1)} = ${calculated.toFixed(1)}px → clamped to ${finalSize}px (min: ${constraints.min}, max: ${constraints.max})`);
+    console.log(`📏 [calculateOptimalFontSize] Result: base=${calculatedSize.toFixed(1)}px → final=${finalSize}px (min: ${constraints.min}, max: ${constraints.max})`);
+    console.log(`📏 [calculateOptimalFontSize] Breakdown: effectiveUnits=${effectiveUnits.toFixed(1)}, scaleFactor=${scaleFactor.toFixed(2)}, columns=${columnCount || 'N/A'}\n`);
 
     return finalSize;
 }
-
 /**
  * Calculate optimal number of columns based on content volume
  * 
@@ -261,12 +253,12 @@ export function validateMenuConfig(config: MenuTemplateConfig): {
     } else {
         const { minFontSize, maxFontSize } = config.fontScaling;
 
-        if (minFontSize < 12 || minFontSize > 72) {
-            errors.push('Minimum font size must be between 12 and 72 pixels');
+        if (minFontSize < 12 || minFontSize > 48) {
+            errors.push('Minimum font size must be between 12 and 48 pixels');
         }
 
-        if (maxFontSize < 12 || maxFontSize > 72) {
-            errors.push('Maximum font size must be between 12 and 72 pixels');
+        if (maxFontSize < 12 || maxFontSize > 48) {
+            errors.push('Maximum font size must be between 12 and 48 pixels');
         }
 
         if (minFontSize >= maxFontSize) {

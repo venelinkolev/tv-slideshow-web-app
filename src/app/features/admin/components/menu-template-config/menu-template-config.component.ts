@@ -45,6 +45,9 @@ import {
     DEFAULT_MENU_CONFIG
 } from '@core/models/menu-template-config.interface';
 
+// Import helper functions
+import { calculateColumnCount } from '@features/templates/menu/helpers/menu-template-helpers';
+
 /**
  * Menu Template Configuration Component
  * 
@@ -167,12 +170,47 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
         const productCount = this.totalSelectedProducts();
 
         if (this.autoScaleSignal()) {
-            // Simple font scaling algorithm
-            const baseSize = 36;
-            const groupPenalty = 2;
-            const productPenalty = 0.5;
-            const reduction = (groupCount * groupPenalty) + (productCount * productPenalty);
-            return Math.max(16, Math.min(48, baseSize - reduction));
+            // ✅ Synced with calculateOptimalFontSize() - Non-linear algorithm
+            const MIN_SIZE = 12;
+            const MAX_SIZE = 48;
+            const GROUP_HEADER_WEIGHT = 1.5;
+            const MIN_UNITS = 5;
+            const MAX_UNITS = 55;
+
+            // Calculate effective units
+            const effectiveUnits = productCount + (groupCount * GROUP_HEADER_WEIGHT);
+
+            // Calculate expected column count (same logic as display component)
+            const columnCount = calculateColumnCount(groupCount, productCount);
+
+            // Normalize and calculate scale factor
+            const clampedUnits = Math.max(MIN_UNITS, Math.min(MAX_UNITS, effectiveUnits));
+            const normalizedUnits = (clampedUnits - MIN_UNITS) / (MAX_UNITS - MIN_UNITS);
+            const scaleFactor = 1 - Math.pow(normalizedUnits, 0.3);
+
+            // Calculate base size
+            const fontRange = MAX_SIZE - MIN_SIZE;
+            let calculatedSize = MIN_SIZE + (fontRange * scaleFactor);
+
+            // ✅ Column adjustment (same as calculateOptimalFontSize)
+            let columnAdjustment = 0;
+            if (columnCount >= 6) columnAdjustment = -4;
+            else if (columnCount === 5) columnAdjustment = -3;
+            else if (columnCount === 4) columnAdjustment = -2;
+            else if (columnCount === 3) columnAdjustment = -1;
+
+            calculatedSize += columnAdjustment;
+
+            // ✅ Density compensation (same as calculateOptimalFontSize)
+            if (columnCount <= 3 && productCount > 30) {
+                const productsPerColumn = productCount / columnCount;
+                if (productsPerColumn > 12) {
+                    const densityAdjustment = -Math.min(3, Math.floor((productsPerColumn - 12) * 0.3));
+                    calculatedSize += densityAdjustment;
+                }
+            }
+
+            return Math.round(Math.max(MIN_SIZE, Math.min(MAX_SIZE, calculatedSize)));
         } else {
             return this.manualFontSizeSignal();
         }
@@ -329,7 +367,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
      * Handle group selection toggle
      */
     onGroupToggle(groupId: number, isSelected: boolean): void {
-        console.log(`📁 Group ${groupId} ${isSelected ? 'selected' : 'deselected'}`);
+        console.log(`📁 Group ${groupId} ${isSelected ? 'selected' : 'deselected'} `);
 
         const currentIds = this.selectedGroupIdsSignal();
         let newIds: number[];
@@ -352,7 +390,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
      * Handle product selection toggle within a group
      */
     onProductToggle(groupId: number, productId: string, isSelected: boolean): void {
-        console.log(`📦 Product ${productId} in group ${groupId} ${isSelected ? 'selected' : 'deselected'}`);
+        console.log(`📦 Product ${productId} in group ${groupId} ${isSelected ? 'selected' : 'deselected'} `);
 
         const currentProducts = this.selectedProductIdsSignal();
         const groupProducts = currentProducts[groupId] || [];
@@ -515,7 +553,7 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
      * Handle errors
      */
     private handleError(message: string): void {
-        console.error(`❌ MenuTemplateConfig Error: ${message}`);
+        console.error(`❌ MenuTemplateConfig Error: ${message} `);
         this.hasErrorSignal.set(true);
         this.errorMessageSignal.set(message);
     }
