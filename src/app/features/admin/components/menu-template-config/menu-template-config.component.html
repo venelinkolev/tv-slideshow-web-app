@@ -225,6 +225,161 @@
             </mat-card-content>
         </mat-card>
 
+        <!-- ✨ NEW: Column Control Section -->
+        <mat-card class="config-section column-control-section">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>view_column</mat-icon>
+                    Управление на Колони
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <!-- Auto-calculated columns info -->
+                <div class="info-banner">
+                    <mat-icon>info</mat-icon>
+                    <span>Автоматичен брой колони: <strong>{{ autoCalculatedColumns() }}</strong></span>
+                </div>
+
+                <mat-divider style="margin: 16px 0;"></mat-divider>
+
+                <!-- Manual Override Section -->
+                <div class="control-section manual-override-section">
+                    <h3>
+                        <mat-icon>settings</mat-icon>
+                        Ръчен Режим
+                    </h3>
+
+                    <mat-checkbox [checked]="manualOverrideEnabled()" (change)="onManualOverrideToggle($event.checked)"
+                        class="override-toggle">
+                        Активирай ръчна корекция на колоните
+                    </mat-checkbox>
+
+                    @if (manualOverrideEnabled()) {
+                    <div class="override-options" [@slideDown]>
+                        <mat-radio-group [value]="manualAdjustment()" (change)="onManualAdjustmentChange($event.value)"
+                            class="adjustment-radio-group">
+
+                            <mat-radio-button [value]="0">
+                                <span class="radio-label">
+                                    <mat-icon>refresh</mat-icon>
+                                    Автоматично ({{ autoCalculatedColumns() }} колони)
+                                </span>
+                            </mat-radio-button>
+
+                            <mat-radio-button [value]="-1">
+                                <span class="radio-label">
+                                    <mat-icon>remove</mat-icon>
+                                    Премахни 1 колона ({{ autoCalculatedColumns() - 1 }} колони)
+                                </span>
+                            </mat-radio-button>
+
+                            <mat-radio-button [value]="1">
+                                <span class="radio-label">
+                                    <mat-icon>add</mat-icon>
+                                    Добави 1 колона ({{ autoCalculatedColumns() + 1 }} колони)
+                                </span>
+                            </mat-radio-button>
+                        </mat-radio-group>
+                    </div>
+                    }
+                </div>
+
+                <mat-divider style="margin: 20px 0;"></mat-divider>
+
+                <!-- Auto Optimizations Section -->
+                <div class="control-section auto-optimizations-section">
+                    <h3>
+                        <mat-icon>psychology</mat-icon>
+                        Автоматични Оптимизации
+                    </h3>
+
+                    @if (manualOverrideEnabled()) {
+                    <div class="warning-message">
+                        <mat-icon>warning</mat-icon>
+                        <span>Ръчният режим е активен. Автоматичните оптимизации са деактивирани.</span>
+                    </div>
+                    }
+
+                    <div class="optimization-options" [class.disabled]="manualOverrideEnabled()">
+                        <mat-checkbox [checked]="preventEmptyColumns()" [disabled]="manualOverrideEnabled()"
+                            (change)="onPreventEmptyColumnsChange($event.checked)">
+                            <span class="checkbox-label">
+                                <strong>Премахвай празни колони автоматично</strong>
+                                <small>Ако последната колона е почти празна, намали броя колони</small>
+                            </span>
+                        </mat-checkbox>
+
+                        <mat-checkbox [checked]="preventOverflow()" [disabled]="manualOverrideEnabled()"
+                            (change)="onPreventOverflowChange($event.checked)">
+                            <span class="checkbox-label">
+                                <strong>Добавяй колона при препълване</strong>
+                                <small>Ако плътността е твърде висока, увеличи броя колони</small>
+                            </span>
+                        </mat-checkbox>
+
+                        <mat-checkbox [checked]="optimizeFullWidth()" [disabled]="manualOverrideEnabled()"
+                            (change)="onOptimizeFullWidthChange($event.checked)">
+                            <span class="checkbox-label">
+                                <strong>Оптимизирай за пълна ширина</strong>
+                                <small>Коригирай колоните за оптимално използване на екрана</small>
+                            </span>
+                        </mat-checkbox>
+
+                        <!-- Density Threshold Slider -->
+                        <div class="density-slider-container">
+                            <label>
+                                <mat-icon>tune</mat-icon>
+                                Праг за плътност: <strong>{{ (densityThreshold() * 100).toFixed(0) }}%</strong>
+                            </label>
+                            <mat-slider [disabled]="manualOverrideEnabled() || !preventOverflow()" [min]="0.70"
+                                [max]="0.95" [step]="0.05" discrete [displayWith]="formatDensityLabel">
+                                <input matSliderThumb [value]="densityThreshold()"
+                                    (valueChange)="onDensityThresholdChange($event)">
+                            </mat-slider>
+                            <div class="slider-labels">
+                                <span>70% Консервативно</span>
+                                <span>95% Агресивно</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <mat-divider style="margin: 20px 0;"></mat-divider>
+
+                <!-- Real-time Preview -->
+                <div class="preview-section">
+                    <h3>
+                        <mat-icon>preview</mat-icon>
+                        Резултат
+                    </h3>
+                    <div class="result-badge">
+                        <mat-icon>view_column</mat-icon>
+                        <span>Финален брой колони: <strong class="final-columns">{{ finalColumnCount()
+                                }}</strong></span>
+                    </div>
+                    @if (columnControlSummary(); as summary) {
+                    <div class="summary-details">
+                        <small>{{ summary }}</small>
+                    </div>
+                    }
+                </div>
+
+                <!-- Help/Tips Section -->
+                <div class="tips-section">
+                    <mat-icon>lightbulb</mat-icon>
+                    <div class="tips-content">
+                        <strong>Съвети:</strong>
+                        <ul>
+                            <li>Използвай <strong>Ръчен режим</strong> за конкретни корекции</li>
+                            <li>Използвай <strong>Автоматични оптимизации</strong> за динамични менюта</li>
+                            <li>По-висок праг = по-агресивно добавяне на колони</li>
+                        </ul>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
         <!-- Section 4: Configuration Summary -->
         <mat-card class="config-section summary-section">
             <mat-card-header>

@@ -27,6 +27,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatRadioModule } from '@angular/material/radio';
 
 // Core services
 import { ProductApiService } from '@core/services/product-api.service';
@@ -42,6 +43,9 @@ import {
     MenuSlide,
     MenuGroupSelection,
     FontScalingConfig,
+    ColumnControlConfig,
+    ManualOverrideConfig,
+    AutoOptimizationsConfig,
     DEFAULT_MENU_CONFIG
 } from '@core/models/menu-template-config.interface';
 
@@ -83,7 +87,8 @@ import { calculateColumnCount } from '@features/templates/menu/helpers/menu-temp
         MatProgressSpinnerModule,
         MatSnackBarModule,
         MatDividerModule,
-        MatExpansionModule
+        MatExpansionModule,
+        MatRadioModule,
     ],
     templateUrl: './menu-template-config.component.html',
     styleUrl: './menu-template-config.component.scss',
@@ -117,6 +122,14 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     private readonly autoScaleSignal = signal<boolean>(true);
     private readonly manualFontSizeSignal = signal<number>(36);
 
+    // Column Control Signals
+    private readonly manualOverrideEnabledSignal = signal<boolean>(false);
+    private readonly manualAdjustmentSignal = signal<-1 | 0 | 1>(0);
+    private readonly preventEmptyColumnsSignal = signal<boolean>(true);
+    private readonly preventOverflowSignal = signal<boolean>(true);
+    private readonly optimizeFullWidthSignal = signal<boolean>(false);
+    private readonly densityThresholdSignal = signal<number>(0.80);
+
     // Public readonly signals
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly hasError = this.hasErrorSignal.asReadonly();
@@ -128,6 +141,14 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
     readonly selectedProductIds = this.selectedProductIdsSignal.asReadonly();
     readonly autoScale = this.autoScaleSignal.asReadonly();
     readonly manualFontSize = this.manualFontSizeSignal.asReadonly();
+
+    // Column Control Public Accessors
+    readonly manualOverrideEnabled = this.manualOverrideEnabledSignal.asReadonly();
+    readonly manualAdjustment = this.manualAdjustmentSignal.asReadonly();
+    readonly preventEmptyColumns = this.preventEmptyColumnsSignal.asReadonly();
+    readonly preventOverflow = this.preventOverflowSignal.asReadonly();
+    readonly optimizeFullWidth = this.optimizeFullWidthSignal.asReadonly();
+    readonly densityThreshold = this.densityThresholdSignal.asReadonly();
 
     // Computed signals
     readonly availableProducts = computed(() => {
@@ -235,6 +256,60 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
         };
     });
 
+    // Column Control Computed Signals
+    readonly autoCalculatedColumns = computed(() => {
+        const groupCount = this.selectedGroupIdsSignal().length;
+        const productCount = this.totalSelectedProducts();
+
+        // Calculate base columns without any overrides
+        return calculateColumnCount(groupCount, productCount);
+    });
+
+    readonly finalColumnCount = computed(() => {
+        const groupCount = this.selectedGroupIdsSignal().length;
+        const productCount = this.totalSelectedProducts();
+
+        // Calculate with column control applied
+        const columnControl: ColumnControlConfig = {
+            manualOverride: {
+                enabled: this.manualOverrideEnabledSignal(),
+                adjustment: this.manualAdjustmentSignal()
+            },
+            autoOptimizations: {
+                preventEmptyColumns: this.preventEmptyColumnsSignal(),
+                preventOverflow: this.preventOverflowSignal(),
+                optimizeForFullWidth: this.optimizeFullWidthSignal(),
+                densityThreshold: this.densityThresholdSignal()
+            }
+        };
+
+        return calculateColumnCount(groupCount, productCount, undefined, columnControl);
+    });
+
+    readonly columnControlSummary = computed(() => {
+        const autoColumns = this.autoCalculatedColumns();
+        const finalColumns = this.finalColumnCount();
+        const adjustment = finalColumns - autoColumns;
+
+        if (this.manualOverrideEnabledSignal()) {
+            if (adjustment === 0) {
+                return 'Ръчен режим активен: Използва автоматичен брой';
+            }
+            return `Ръчен режим активен: ${adjustment > 0 ? '+' : ''}${adjustment} колона`;
+        }
+
+        if (adjustment === 0) {
+            return 'Автоматични оптимизации: Няма корекции';
+        }
+
+        const reasons: string[] = [];
+        if (this.preventEmptyColumnsSignal()) reasons.push('празни колони');
+        if (this.preventOverflowSignal()) reasons.push('препълване');
+        if (this.optimizeFullWidthSignal()) reasons.push('пълна ширина');
+
+        return `Автоматична корекция: ${adjustment > 0 ? '+' : ''}${adjustment} (${reasons.join(', ')})`;
+    });
+
     ngOnInit(): void {
         console.log('🍽️ MenuTemplateConfigComponent.ngOnInit() - Initializing menu config');
 
@@ -272,6 +347,23 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
             // Load font scaling settings
             this.autoScaleSignal.set(menuConfig.fontScaling.autoScale);
             this.manualFontSizeSignal.set(menuConfig.fontScaling.manualFontSize || 36);
+
+            // Load column control settings
+            if (menuConfig.columnControl) {
+                const columnControl = menuConfig.columnControl;
+
+                // Load manual override
+                this.manualOverrideEnabledSignal.set(columnControl.manualOverride.enabled);
+                this.manualAdjustmentSignal.set(columnControl.manualOverride.adjustment);
+
+                // Load auto optimizations
+                this.preventEmptyColumnsSignal.set(columnControl.autoOptimizations.preventEmptyColumns);
+                this.preventOverflowSignal.set(columnControl.autoOptimizations.preventOverflow);
+                this.optimizeFullWidthSignal.set(columnControl.autoOptimizations.optimizeForFullWidth);
+                this.densityThresholdSignal.set(columnControl.autoOptimizations.densityThreshold);
+
+                console.log('✅ Loaded column control config:', columnControl);
+            }
 
             // Load slide selections (MVP: first slide only)
             const firstSlide = menuConfig.slides[0];
@@ -492,6 +584,75 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
         this.configChange$.next(config);
     }
 
+    // ✨ NEW: Column Control Event Handlers
+
+    /**
+     * Toggle manual override mode
+     */
+    onManualOverrideToggle(enabled: boolean): void {
+        console.log('🎛️ Manual override toggled:', enabled);
+        this.manualOverrideEnabledSignal.set(enabled);
+
+        if (!enabled) {
+            // Reset to automatic when disabled
+            this.manualAdjustmentSignal.set(0);
+        }
+
+        this.emitConfigChange();
+    }
+
+    /**
+     * Change manual column adjustment
+     */
+    onManualAdjustmentChange(adjustment: -1 | 0 | 1): void {
+        console.log('📊 Manual adjustment changed:', adjustment);
+        this.manualAdjustmentSignal.set(adjustment);
+        this.emitConfigChange();
+    }
+
+    /**
+     * Toggle prevent empty columns optimization
+     */
+    onPreventEmptyColumnsChange(checked: boolean): void {
+        console.log('🤖 Prevent empty columns:', checked);
+        this.preventEmptyColumnsSignal.set(checked);
+        this.emitConfigChange();
+    }
+
+    /**
+     * Toggle prevent overflow optimization
+     */
+    onPreventOverflowChange(checked: boolean): void {
+        console.log('🤖 Prevent overflow:', checked);
+        this.preventOverflowSignal.set(checked);
+        this.emitConfigChange();
+    }
+
+    /**
+     * Toggle optimize full width
+     */
+    onOptimizeFullWidthChange(checked: boolean): void {
+        console.log('🤖 Optimize full width:', checked);
+        this.optimizeFullWidthSignal.set(checked);
+        this.emitConfigChange();
+    }
+
+    /**
+     * Change density threshold
+     */
+    onDensityThresholdChange(value: number): void {
+        console.log('🎚️ Density threshold changed:', value);
+        this.densityThresholdSignal.set(value);
+        this.emitConfigChange();
+    }
+
+    /**
+     * Format label for density slider
+     */
+    formatDensityLabel = (value: number): string => {
+        return `${(value * 100).toFixed(0)}%`;
+    };
+
     /**
      * Build MenuTemplateConfig from current state
      */
@@ -515,11 +676,26 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
             maxFontSize: 48
         };
 
+        // Build column control config
+        const columnControl: ColumnControlConfig = {
+            manualOverride: {
+                enabled: this.manualOverrideEnabledSignal(),
+                adjustment: this.manualAdjustmentSignal()
+            },
+            autoOptimizations: {
+                preventEmptyColumns: this.preventEmptyColumnsSignal(),
+                preventOverflow: this.preventOverflowSignal(),
+                optimizeForFullWidth: this.optimizeFullWidthSignal(),
+                densityThreshold: this.densityThresholdSignal()
+            }
+        };
+
         return {
             layout: 'single-slide',
             backgroundProductId: this.backgroundProductIdSignal(),
             slides: [slide],
-            fontScaling
+            fontScaling,
+            columnControl
         };
     }
 

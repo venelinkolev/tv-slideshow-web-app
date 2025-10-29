@@ -2,7 +2,16 @@
 
 import { ProductGroupWithProducts } from '@core/models/api/product-group.interface';
 import { Product } from '@core/models';
-import { MenuGroupSelection, MenuTemplateConfig } from '@core/models';
+import {
+    MenuGroupSelection,
+    MenuTemplateConfig,
+    MenuSlide,
+    FontScalingConfig,
+    ColumnControlConfig,
+    ManualOverrideConfig,
+    AutoOptimizationsConfig
+} from '@core/models';
+
 
 /**
  * Calculate optimal font size based on content volume
@@ -98,7 +107,8 @@ export function calculateOptimalFontSize(
 export function calculateColumnCount(
     groupCount: number,
     totalProductCount: number = 0,
-    screenWidth?: number
+    screenWidth?: number,
+    columnControl?: ColumnControlConfig,
 ): number {
     const width = screenWidth || (typeof window !== 'undefined' ? window.innerWidth : 1920);
     console.log(`\n🔢 [calculateColumnCount] START - Groups: ${groupCount}, Products: ${totalProductCount}, Screen: ${width}px`);
@@ -151,6 +161,18 @@ export function calculateColumnCount(
     if (effectiveProductCount > threshold) {
         console.log(`⚠️ [calculateColumnCount] Products exceed 90% capacity! Adding +1 column`);
         calculatedColumns = Math.min(6, calculatedColumns + 1);
+    }
+
+    if (columnControl) {
+        calculatedColumns = applyColumnControl(
+            calculatedColumns,
+            columnControl,
+            {
+                groupCount,
+                totalProductCount,
+                screenWidth: width
+            }
+        );
     }
 
     // ✅ FINAL: Log final column count
@@ -300,4 +322,183 @@ export function validateMenuConfig(config: MenuTemplateConfig): {
  */
 export function getTotalProductCount(groups: ProductGroupWithProducts[]): number {
     return groups.reduce((total, group) => total + group.group_products.length, 0);
+}
+
+/**
+ * Apply column control (manual override or smart optimizations)
+ * Priority: Manual override takes precedence over auto optimizations
+ */
+function applyColumnControl(
+    autoColumns: number,
+    columnControl: ColumnControlConfig,
+    context: {
+        groupCount: number;
+        totalProductCount: number;
+        screenWidth: number;
+    }
+): number {
+    console.log(`\n🎛️ [applyColumnControl] Starting with ${autoColumns} auto-calculated columns`);
+
+    // Priority 1: Manual Override
+    if (columnControl.manualOverride.enabled) {
+        const adjustment = columnControl.manualOverride.adjustment;
+        const manualColumns = autoColumns + adjustment;
+        const clampedColumns = Math.max(2, Math.min(6, manualColumns));
+
+        console.log(`🎚️ [applyColumnControl] MANUAL OVERRIDE: ${autoColumns} ${adjustment >= 0 ? '+' : ''}${adjustment} = ${clampedColumns} columns`);
+
+        return clampedColumns;
+    }
+
+    // Priority 2: Smart Auto Optimizations
+    console.log(`🤖 [applyColumnControl] Applying smart optimizations...`);
+
+    return applySmartOptimizations(
+        autoColumns,
+        columnControl.autoOptimizations,
+        context
+    );
+}
+
+/**
+ * Apply smart auto-optimizations based on heuristics
+ */
+function applySmartOptimizations(
+    autoColumns: number,
+    options: AutoOptimizationsConfig,
+    context: {
+        groupCount: number;
+        totalProductCount: number;
+        screenWidth: number;
+    }
+): number {
+    let adjustment = 0;
+    const reasons: string[] = [];
+
+    // Heuristic 1: Prevent empty columns
+    if (options.preventEmptyColumns) {
+        const emptyAdjustment = evaluateEmptyColumns(autoColumns, context);
+        if (emptyAdjustment !== 0) {
+            adjustment += emptyAdjustment;
+            reasons.push(`Empty columns: ${emptyAdjustment}`);
+        }
+    }
+
+    // Heuristic 2: Prevent overflow
+    if (options.preventOverflow) {
+        const overflowAdjustment = evaluateOverflowRisk(
+            autoColumns,
+            context,
+            options.densityThreshold
+        );
+        if (overflowAdjustment !== 0) {
+            adjustment += overflowAdjustment;
+            reasons.push(`Overflow risk: ${overflowAdjustment}`);
+        }
+    }
+
+    // Heuristic 3: Optimize for full width
+    if (options.optimizeForFullWidth) {
+        const widthAdjustment = evaluateFullWidthOptimization(autoColumns, context);
+        if (widthAdjustment !== 0) {
+            adjustment += widthAdjustment;
+            reasons.push(`Full width: ${widthAdjustment}`);
+        }
+    }
+
+    const finalColumns = Math.max(2, Math.min(6, autoColumns + adjustment));
+
+    if (reasons.length > 0) {
+        console.log(`🤖 [applySmartOptimizations] Adjustments applied: ${reasons.join(', ')} → ${autoColumns} + ${adjustment} = ${finalColumns} columns`);
+    } else {
+        console.log(`🤖 [applySmartOptimizations] No optimizations needed, keeping ${finalColumns} columns`);
+    }
+
+    return finalColumns;
+}
+
+/**
+ * Heuristic 1: Evaluate if last column would be empty/sparse
+ * Returns: -1 (remove column), 0 (no change)
+ */
+function evaluateEmptyColumns(
+    columns: number,
+    context: { groupCount: number; totalProductCount: number }
+): number {
+    const effectiveUnits = context.totalProductCount + (context.groupCount * 1.5);
+    const avgItemsPerColumn = effectiveUnits / columns;
+    const lastColumnItems = effectiveUnits % avgItemsPerColumn;
+
+    // If last column has less than 2 items, remove it
+    if (lastColumnItems > 0 && lastColumnItems < 2) {
+        console.log(`📊 [evaluateEmptyColumns] Last column sparse (${lastColumnItems.toFixed(1)} items) → Suggest -1 column`);
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * Heuristic 2: Evaluate overflow risk based on density
+ * Returns: +1 (add column), 0 (no change)
+ */
+function evaluateOverflowRisk(
+    columns: number,
+    context: { groupCount: number; totalProductCount: number },
+    densityThreshold: number
+): number {
+    const density = calculateDensity(columns, context);
+
+    // If density exceeds threshold, add a column
+    if (density > densityThreshold) {
+        console.log(`📊 [evaluateOverflowRisk] High density ${(density * 100).toFixed(0)}% > ${(densityThreshold * 100).toFixed(0)}% → Suggest +1 column`);
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Heuristic 3: Optimize for full horizontal width
+ * Returns: +1 (add column), -1 (remove column), 0 (no change)
+ */
+function evaluateFullWidthOptimization(
+    columns: number,
+    context: { screenWidth: number }
+): number {
+    const columnWidth = context.screenWidth / columns;
+    const idealColumnWidth = 350; // Ideal column width in pixels
+    const widthDifference = Math.abs(columnWidth - idealColumnWidth);
+    const widthDifferencePercent = widthDifference / idealColumnWidth;
+
+    // If columns are too wide (>30% wider than ideal), add a column
+    if (columnWidth > idealColumnWidth * 1.3 && columns < 6) {
+        console.log(`📊 [evaluateFullWidthOptimization] Columns too wide (${columnWidth.toFixed(0)}px > ${idealColumnWidth * 1.3}px) → Suggest +1 column`);
+        return 1;
+    }
+
+    // If columns are too narrow (<70% of ideal), remove a column
+    if (columnWidth < idealColumnWidth * 0.7 && columns > 2) {
+        console.log(`📊 [evaluateFullWidthOptimization] Columns too narrow (${columnWidth.toFixed(0)}px < ${idealColumnWidth * 0.7}px) → Suggest -1 column`);
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * Calculate density (how packed the content is)
+ * Returns: 0.0 to 1.0+ (higher = more packed)
+ */
+function calculateDensity(
+    columns: number,
+    context: { groupCount: number; totalProductCount: number }
+): number {
+    const effectiveUnits = context.totalProductCount + (context.groupCount * 1.5);
+    const avgItemsPerColumn = effectiveUnits / columns;
+    const idealItemsPerColumn = 12; // Ideal number of items per column
+
+    const density = avgItemsPerColumn / idealItemsPerColumn;
+
+    return density;
 }

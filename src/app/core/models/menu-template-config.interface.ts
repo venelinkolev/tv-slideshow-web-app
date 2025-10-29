@@ -16,6 +16,9 @@ export interface MenuTemplateConfig {
 
     /** Font scaling settings */
     fontScaling: FontScalingConfig;
+
+    /** Column control configuration */
+    columnControl?: ColumnControlConfig;
 }
 
 /**
@@ -67,6 +70,48 @@ export interface FontScalingConfig {
 
     /** Maximum font size for aesthetic balance */
     maxFontSize: number;
+}
+
+/**
+ * Column Control Configuration
+ * Controls manual and automatic column adjustments
+ */
+export interface ColumnControlConfig {
+    /** Manual override settings */
+    manualOverride: ManualOverrideConfig;
+
+    /** Smart auto-optimization settings */
+    autoOptimizations: AutoOptimizationsConfig;
+}
+
+/**
+ * Manual Override Configuration
+ * Direct user control over column count
+ */
+export interface ManualOverrideConfig {
+    /** Whether manual override is enabled */
+    enabled: boolean;
+
+    /** Column adjustment (-1, 0, +1) */
+    adjustment: -1 | 0 | 1;
+}
+
+/**
+ * Auto Optimizations Configuration
+ * Intelligent automatic column adjustments
+ */
+export interface AutoOptimizationsConfig {
+    /** Automatically remove empty/sparse columns */
+    preventEmptyColumns: boolean;
+
+    /** Add column when density is too high */
+    preventOverflow: boolean;
+
+    /** Optimize for full horizontal width usage */
+    optimizeForFullWidth: boolean;
+
+    /** Density threshold (0.70-0.95) for overflow detection */
+    densityThreshold: number;
 }
 
 /**
@@ -129,5 +174,17 @@ export const DEFAULT_MENU_CONFIG: MenuTemplateConfig = {
         autoScale: true,
         minFontSize: 12,
         maxFontSize: 48
+    },
+    columnControl: {
+        manualOverride: {
+            enabled: false,
+            adjustment: 0
+        },
+        autoOptimizations: {
+            preventEmptyColumns: true,
+            preventOverflow: true,
+            optimizeForFullWidth: false,
+            densityThreshold: 0.80
+        }
     }
 };

@@ -196,7 +196,28 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
         const fontConfig = menuConfig.fontScaling;
 
         // Calculate column count FIRST (considering both groups and products)
-        const columns = calculateColumnCount(groupCount, totalProducts);
+        const columns = calculateColumnCount(
+            groupCount,
+            totalProducts,
+            undefined,  // screenWidth - let function use window.innerWidth
+            menuConfig.columnControl  // ✨ Pass column control config
+        );
+
+        // Log column control details if present
+        if (menuConfig.columnControl) {
+            if (menuConfig.columnControl.manualOverride.enabled) {
+                console.log(`🎛️ Manual column override active: adjustment ${menuConfig.columnControl.manualOverride.adjustment}`);
+            } else {
+                const opts = menuConfig.columnControl.autoOptimizations;
+                console.log(`🤖 Auto optimizations active:`, {
+                    preventEmpty: opts.preventEmptyColumns,
+                    preventOverflow: opts.preventOverflow,
+                    fullWidth: opts.optimizeForFullWidth,
+                    threshold: opts.densityThreshold
+                });
+            }
+        }
+
         console.log(`📊 Column count: ${columns} (groups: ${groupCount}, products: ${totalProducts})`);
         this.columnCountSignal.set(columns);
 
