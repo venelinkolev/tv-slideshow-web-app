@@ -716,6 +716,12 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
                 next: () => {
                     console.log('✅ Menu configuration auto-saved');
                     this.isSavingSignal.set(false);
+
+                    // Minimum 300ms delay for spinner visibility
+                    setTimeout(() => {
+                        this.isSavingSignal.set(false);
+                        this.showSuccess('Меню конфигурацията е запазена автоматично');
+                    }, 300);
                 },
                 error: (error) => {
                     console.error('❌ Failed to auto-save menu configuration:', error);
@@ -732,6 +738,18 @@ export class MenuTemplateConfigComponent implements OnInit, OnDestroy {
         console.error(`❌ MenuTemplateConfig Error: ${message} `);
         this.hasErrorSignal.set(true);
         this.errorMessageSignal.set(message);
+    }
+
+    /**
+     * Show success notification
+     */
+    private showSuccess(message: string): void {
+        this.snackBar.open(message, 'OK', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+        });
     }
 
     /**

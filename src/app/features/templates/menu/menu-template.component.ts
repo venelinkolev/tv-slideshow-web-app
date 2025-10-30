@@ -105,6 +105,14 @@ export class MenuTemplateComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         console.log('🍽️ MenuTemplateComponent.ngOnInit() - Initializing menu template');
         this.loadMenuData();
+
+        // ✅ Listen for config changes from admin panel (cross-tab)
+        this.configService.getConfigChanges$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                console.log('🔔 MenuTemplate: Config changed in admin panel, reloading...');
+                this.loadMenuData();
+            });
     }
 
     ngOnDestroy(): void {
