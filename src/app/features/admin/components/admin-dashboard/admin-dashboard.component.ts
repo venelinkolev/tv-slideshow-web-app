@@ -7,7 +7,9 @@ import {
     inject,
     signal,
     computed,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    ViewChild,
+    ElementRef
 } from '@angular/core';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -78,6 +80,9 @@ import { MenuTemplateConfigComponent } from '../menu-template-config/menu-templa
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
+
+    // Reference to scrollable container
+    @ViewChild('adminContainer') private adminContainer?: ElementRef<HTMLDivElement>;
 
     // Cleanup subscription
     private readonly destroy$ = new Subject<void>();
@@ -587,5 +592,35 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     onMenuConfigValid(isValid: boolean): void {
         console.log('🍽️ Menu Template configuration valid:', isValid);
         // Update validation state if needed
+    }
+
+    /**
+     * Scroll page up by ~350px
+     */
+    scrollUp(): void {
+        const container = this.adminContainer?.nativeElement;
+        if (container) {
+            container.scrollBy({
+                top: -350,
+                behavior: 'smooth'
+            });
+        } else {
+            window.scrollBy({ top: -350, behavior: 'smooth' });
+        }
+    }
+
+    /**
+     * Scroll page down by ~350px
+     */
+    scrollDown(): void {
+        const container = this.adminContainer?.nativeElement;
+        if (container) {
+            container.scrollBy({
+                top: 350,
+                behavior: 'smooth'
+            });
+        } else {
+            window.scrollBy({ top: 350, behavior: 'smooth' });
+        }
     }
 }

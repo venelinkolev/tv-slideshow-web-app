@@ -1,6 +1,6 @@
 <!-- src/app/features/admin/components/admin-dashboard/admin-dashboard.component.html -->
 
-<div class="admin-dashboard">
+<div class="admin-dashboard" #adminContainer>
 
     <!-- Header -->
     <header class="admin-header">
@@ -274,6 +274,18 @@
 
     </div>
     }
+
+    <!-- Scroll Navigation Buttons -->
+    <div class="scroll-buttons">
+        <button mat-fab color="primary" (click)="scrollUp()" class="scroll-button scroll-up"
+            aria-label="Скролирай нагоре">
+            <mat-icon>arrow_upward</mat-icon>
+        </button>
+        <button mat-fab color="primary" (click)="scrollDown()" class="scroll-button scroll-down"
+            aria-label="Скролирай надолу">
+            <mat-icon>arrow_downward</mat-icon>
+        </button>
+    </div>
 
     <!-- Footer -->
     <footer class="admin-footer">
