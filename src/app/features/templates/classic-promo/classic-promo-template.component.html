@@ -1,0 +1,91 @@
+<!-- src/app/features/templates/classic-promo/classic-promo-template.component.html -->
+
+<!-- Classic Promo Template Container -->
+<div class="classic-promo-container" [class.classic-promo-container--loading]="isLoading()"
+    [class.classic-promo-container--error]="hasError()" [class.classic-promo-container--ready]="isReady()"
+    [style.background-color]="layoutBackgroundColor()">
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <div class="classic-promo-loading">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Зареждане на промоция...</p>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError() && !isLoading()) {
+    <div class="classic-promo-error">
+        <div class="error-icon">⚠️</div>
+        <p class="error-message">{{ errorMessage() }}</p>
+    </div>
+    }
+
+    <!-- Main Content (Ready State) -->
+    @if (isReady() && !isLoading() && !hasError()) {
+    <!-- Product Grid -->
+    <div class="product-grid" [style.grid-template-columns]="gridTemplateColumns()"
+        [attr.data-column-count]="columnCount()">
+
+        <!-- Product Columns -->
+        @for (product of slideProducts(); track trackByProductId($index, product)) {
+        <div class="product-column">
+
+            <!-- Product Image Section (60%) -->
+            <div class="product-image-section">
+                <img [src]="product.imageUrl" [alt]="product.name" class="product-image" (error)="onImageError($event)"
+                    loading="eager" />
+
+                <!-- Optional: Category Badge -->
+                @if (product.category) {
+                <div class="product-category-badge">
+                    {{ product.category }}
+                </div>
+                }
+            </div>
+
+            <!-- Product Info Section (40%) -->
+            <div class="product-info-section" [style.color]="layoutTextColor()">
+
+                <!-- Product Name (Orange) -->
+                <h3 class="product-name" [style.color]="layoutAccentColor()">
+                    {{ product.name }}
+                </h3>
+
+                <!-- Product Description (White) -->
+                <p class="product-description" [style.color]="layoutSecondaryTextColor()">
+                    {{ getProductDescription(product) }}
+                </p>
+
+                <!-- Optional: Stock Status -->
+                @if (product.inStock !== undefined) {
+                <div class="product-stock-status" [class.product-stock-status--in-stock]="product.inStock"
+                    [class.product-stock-status--out-of-stock]="!product.inStock">
+                    {{ product.inStock ? '✓ В наличност' : '✗ Няма в наличност' }}
+                </div>
+                }
+            </div>
+
+        </div>
+        }
+
+    </div>
+
+    <!-- Promotional Footer -->
+    <div class="promo-footer" [style.background]="footerGradient()">
+        <span class="promo-price" [style.color]="layoutTextColor()">
+            {{ formattedPromoPrice() }}
+        </span>
+    </div>
+    }
+
+    <!-- Empty State (No Products) -->
+    @if (!isLoading() && !hasError() && slideProducts().length === 0) {
+    <div class="classic-promo-empty">
+        <div class="empty-icon">📦</div>
+        <p class="empty-message">Няма конфигурирани продукти</p>
+        <p class="empty-hint">Използвайте Admin панела за да добавите продукти</p>
+    </div>
+    }
+
+</div>

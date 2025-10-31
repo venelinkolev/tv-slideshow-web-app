@@ -1,5 +1,6 @@
 import { ProductBadge, ProductDiscount } from './product.interface';
 import { MenuTemplateConfig } from './menu-template-config.interface';
+import { ClassicPromoTemplateConfig } from './classic-promo-template-config.interface';
 
 /**
  * Main slideshow configuration interface
@@ -128,7 +129,10 @@ export interface SlideshowTemplateSettings {
     templateSpecificConfig?: {
         /** Menu template configuration */
         menu?: MenuTemplateConfig;
+        /** Classic Promo template configuration */
+        classicPromo?: ClassicPromoTemplateConfig;
         // Future: other templates can add their specific configs here
+
     };
 }
 

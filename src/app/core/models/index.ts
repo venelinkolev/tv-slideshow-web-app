@@ -12,6 +12,9 @@ export * from './slideshow-config.interface';
 // Menu Template configuration exports
 export * from './menu-template-config.interface';
 
+// Classic Promo Template configuration exports
+export * from './classic-promo-template-config.interface';
+
 // API response exports
 export * from './api-response.interface';
 
