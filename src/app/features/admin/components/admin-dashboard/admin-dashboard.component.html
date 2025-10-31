@@ -202,7 +202,7 @@
                         <p>Няма налични продукти</p>
                     </div>
                     } @else {
-                    <mat-selection-list class="product-list">
+                    <mat-selection-list class="product-list" #productList>
                         @for (product of products(); track product.id) {
                         <mat-list-option [selected]="isProductSelected(product.id)" [disabled]="isSaving()"
                             (click)="toggleProductSelection(product.id)">
@@ -219,6 +219,18 @@
                         </mat-list-option>
                         }
                     </mat-selection-list>
+
+                    <!-- Product List Scroll Buttons -->
+                    <div class="product-scroll-buttons">
+                        <button mat-mini-fab color="accent" (click)="scrollProductListUp()"
+                            class="product-scroll-button" aria-label="Скролирай продуктите нагоре">
+                            <mat-icon>arrow_upward</mat-icon>
+                        </button>
+                        <button mat-mini-fab color="accent" (click)="scrollProductListDown()"
+                            class="product-scroll-button" aria-label="Скролирай продуктите надолу">
+                            <mat-icon>arrow_downward</mat-icon>
+                        </button>
+                    </div>
                     }
                 </ng-container>
             </mat-card-content>

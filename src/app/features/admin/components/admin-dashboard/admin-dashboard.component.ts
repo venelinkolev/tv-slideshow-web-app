@@ -83,6 +83,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     // Reference to scrollable container
     @ViewChild('adminContainer') private adminContainer?: ElementRef<HTMLDivElement>;
+    @ViewChild('productList', { read: ElementRef }) private productList?: ElementRef<HTMLElement>;
 
     // Cleanup subscription
     private readonly destroy$ = new Subject<void>();
@@ -621,6 +622,32 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             });
         } else {
             window.scrollBy({ top: 350, behavior: 'smooth' });
+        }
+    }
+
+    /**
+     * Scroll product list up by ~300px
+     */
+    scrollProductListUp(): void {
+        const list = this.productList?.nativeElement;
+        if (list) {
+            list.scrollBy({
+                top: -300,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    /**
+     * Scroll product list down by ~300px
+     */
+    scrollProductListDown(): void {
+        const list = this.productList?.nativeElement;
+        if (list) {
+            list.scrollBy({
+                top: 300,
+                behavior: 'smooth'
+            });
         }
     }
 }
