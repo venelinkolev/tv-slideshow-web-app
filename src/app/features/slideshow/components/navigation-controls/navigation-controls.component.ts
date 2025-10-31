@@ -394,6 +394,7 @@ export class NavigationControlsComponent implements OnInit, OnDestroy {
                 break;
 
             // Keep other keys unchanged
+            case '0':
             case 'f':
             case 'F':
                 event.preventDefault();
