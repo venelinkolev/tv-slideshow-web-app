@@ -1,0 +1,517 @@
+// src/app/features/admin/components/classic-promo-template-config/classic-promo-template-config.component.scss
+
+// ============================================================================
+// CLASSIC PROMO TEMPLATE CONFIG COMPONENT STYLES
+// Admin panel configuration interface for Classic Promo Template
+// ============================================================================
+
+// Variables
+$primary-color: #1976d2;
+$accent-color: #FFA500;
+$success-color: #4caf50;
+$error-color: #f44336;
+$warning-color: #ff9800;
+$text-primary: #212121;
+$text-secondary: #666666;
+$border-color: #e0e0e0;
+$background-light: #fafafa;
+
+// ============================================================================
+// 1. MAIN CONTAINER
+// ============================================================================
+
+.classic-promo-config {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  
+  // Header
+  .config-header {
+    padding: 24px;
+    
+    .config-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: $text-primary;
+      
+      mat-icon {
+        color: $accent-color;
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+      }
+    }
+    
+    .config-subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: $text-secondary;
+    }
+  }
+}
+
+// ============================================================================
+// 2. LOADING & ERROR STATES
+// ============================================================================
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  
+  .loading-text,
+  .error-message {
+    margin-top: 24px;
+    font-size: 16px;
+    color: $text-secondary;
+  }
+  
+  .error-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: $error-color;
+  }
+  
+  .error-title {
+    margin: 16px 0 8px;
+    font-size: 20px;
+    font-weight: 600;
+    color: $error-color;
+  }
+}
+
+// ============================================================================
+// 3. SUMMARY SECTION
+// ============================================================================
+
+.summary-section {
+  display: flex;
+  gap: 16px;
+  padding: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+  
+  .summary-card {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: $background-light;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    
+    &.valid {
+      border-color: $success-color;
+      background: #e8f5e9;
+      
+      mat-icon {
+        color: $success-color;
+      }
+    }
+    
+    &.invalid {
+      border-color: $error-color;
+      background: #ffebee;
+      
+      mat-icon {
+        color: $error-color;
+      }
+    }
+    
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: $primary-color;
+    }
+    
+    .summary-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      
+      .summary-label {
+        font-size: 12px;
+        color: $text-secondary;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .summary-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: $text-primary;
+      }
+    }
+  }
+  
+  .auto-save-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #fff3e0;
+    border-radius: 4px;
+    font-size: 14px;
+    color: $warning-color;
+    font-weight: 500;
+  }
+}
+
+.section-divider {
+  margin: 0 24px;
+}
+
+// ============================================================================
+// 4. SLIDES SECTION
+// ============================================================================
+
+.slides-section {
+  padding: 24px;
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: $text-primary;
+      
+      mat-icon {
+        color: $primary-color;
+      }
+    }
+    
+    .add-slide-button {
+      font-weight: 600;
+      
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 5. SLIDES ACCORDION
+// ============================================================================
+
+.slides-accordion {
+  .slide-panel {
+    margin-bottom: 16px;
+    border: 2px solid $border-color;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &.invalid {
+      border-color: $error-color;
+      background: #ffebee;
+    }
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    ::ng-deep {
+      .mat-expansion-panel-header {
+        padding: 16px 24px;
+        
+        &:hover {
+          background: rgba(0, 0, 0, 0.04);
+        }
+      }
+      
+      .mat-expansion-panel-body {
+        padding: 0;
+      }
+    }
+    
+    .slide-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      
+      mat-icon {
+        &:first-child {
+          color: $success-color;
+          
+          .slide-panel.invalid & {
+            color: $error-color;
+          }
+        }
+      }
+    }
+    
+    .slide-description {
+      font-size: 14px;
+      color: $text-secondary;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+  }
+}
+
+// ============================================================================
+// 6. SLIDE CONTENT
+// ============================================================================
+
+.slide-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  ::ng-deep {
+    .mat-mdc-form-field {
+      .mat-mdc-form-field-hint {
+        font-size: 12px;
+        color: $text-secondary;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 7. VALIDATION ERRORS
+// ============================================================================
+
+.validation-errors {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #ffebee;
+  border-left: 4px solid $error-color;
+  border-radius: 4px;
+  
+  > mat-icon {
+    color: $error-color;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  
+  .errors-list {
+    flex: 1;
+    
+    .error-item {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: $error-color;
+      font-weight: 500;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 8. SLIDE ACTIONS
+// ============================================================================
+
+.slide-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  
+  button {
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+// ============================================================================
+// 9. EMPTY STATE
+// ============================================================================
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  background: $background-light;
+  border-radius: 8px;
+  border: 2px dashed $border-color;
+  
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: $text-secondary;
+    opacity: 0.5;
+    margin-bottom: 16px;
+  }
+  
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: $text-secondary;
+    max-width: 400px;
+  }
+}
+
+// ============================================================================
+// 10. INSTRUCTIONS SECTION
+// ============================================================================
+
+.instructions-section {
+  padding: 24px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  
+  .instructions-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: $primary-color;
+    
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+  
+  .instructions-list {
+    margin: 0;
+    padding-left: 24px;
+    
+    li {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: $text-primary;
+      line-height: 1.6;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// 11. RESPONSIVE DESIGN
+// ============================================================================
+
+@media (max-width: 768px) {
+  .classic-promo-config {
+    .config-header {
+      padding: 16px;
+      
+      .config-title {
+        font-size: 20px;
+      }
+    }
+  }
+  
+  .summary-section {
+    flex-direction: column;
+    padding: 16px;
+    
+    .summary-card {
+      width: 100%;
+    }
+  }
+  
+  .slides-section {
+    padding: 16px;
+    
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+      
+      .add-slide-button {
+        width: 100%;
+      }
+    }
+  }
+  
+  .slide-content {
+    padding: 16px;
+  }
+  
+  .instructions-section {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .classic-promo-config {
+    margin: 0 0 16px;
+  }
+  
+  .slide-actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// ============================================================================
+// 12. MATERIAL DESIGN OVERRIDES
+// ============================================================================
+
+::ng-deep {
+  .classic-promo-config {
+    .mat-mdc-card {
+      border-radius: 12px;
+    }
+    
+    .mat-expansion-panel {
+      box-shadow: none !important;
+    }
+    
+    .mat-mdc-form-field-subscript-wrapper {
+      margin-top: 8px;
+    }
+  }
+}
+
+// ============================================================================
+// END OF STYLES
+// ============================================================================

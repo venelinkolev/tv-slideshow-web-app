@@ -1,0 +1,208 @@
+<!-- src/app/features/admin/components/classic-promo-template-config/classic-promo-template-config.component.html -->
+
+<mat-card class="classic-promo-config">
+
+    <!-- Header -->
+    <mat-card-header class="config-header">
+        <mat-card-title class="config-title">
+            <mat-icon>sell</mat-icon>
+            Classic Promo Template - Конфигурация
+        </mat-card-title>
+        <mat-card-subtitle class="config-subtitle">
+            Настройте промоционални слайдове с 2-4 продукта и обща цена
+        </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-divider></mat-divider>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <mat-card-content class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p class="loading-text">Зареждане на продукти...</p>
+    </mat-card-content>
+    }
+
+    <!-- Error State -->
+    @if (hasError() && !isLoading()) {
+    <mat-card-content class="error-container">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <h3 class="error-title">Грешка при зареждане</h3>
+        <p class="error-message">{{ errorMessage() }}</p>
+    </mat-card-content>
+    }
+
+    <!-- Main Content -->
+    @if (!isLoading() && !hasError()) {
+    <mat-card-content class="config-content">
+
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <div class="summary-card">
+                <mat-icon>slideshow</mat-icon>
+                <div class="summary-info">
+                    <span class="summary-label">Слайдове</span>
+                    <span class="summary-value">{{ slideCount() }}</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <mat-icon>inventory_2</mat-icon>
+                <div class="summary-info">
+                    <span class="summary-label">Налични продукти</span>
+                    <span class="summary-value">{{ allProducts().length }}</span>
+                </div>
+            </div>
+
+            <div class="summary-card" [class.valid]="isConfigValid()" [class.invalid]="!isConfigValid()">
+                <mat-icon>{{ isConfigValid() ? 'check_circle' : 'error' }}</mat-icon>
+                <div class="summary-info">
+                    <span class="summary-label">Статус</span>
+                    <span class="summary-value">{{ isConfigValid() ? 'Валидна' : 'Невалидна' }}</span>
+                </div>
+            </div>
+
+            <!-- Saving Indicator -->
+            @if (isSaving()) {
+            <div class="auto-save-indicator">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>Запазване...</span>
+            </div>
+            }
+        </div>
+
+        <mat-divider class="section-divider"></mat-divider>
+
+        <!-- Slides Section -->
+        <div class="slides-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <mat-icon>view_carousel</mat-icon>
+                    Промоционални Слайдове
+                </h3>
+                <button mat-raised-button color="primary" (click)="addSlide()" [disabled]="isSaving()"
+                    class="add-slide-button">
+                    <mat-icon>add</mat-icon>
+                    Добави Слайд
+                </button>
+            </div>
+
+            <!-- Slides Accordion -->
+            <mat-accordion class="slides-accordion" multi>
+                @for (slide of slides(); track trackBySlideId($index, slide)) {
+                <mat-expansion-panel class="slide-panel" [class.invalid]="!isSlideValid(slide.slideId)">
+
+                    <!-- Panel Header -->
+                    <mat-expansion-panel-header>
+                        <mat-panel-title class="slide-title">
+                            <mat-icon>{{ isSlideValid(slide.slideId) ? 'check_circle' : 'error' }}</mat-icon>
+                            {{ slide.name }}
+                        </mat-panel-title>
+                        <mat-panel-description class="slide-description">
+                            {{ slide.productIds.length }} продукта | {{ slide.promoPrice |
+                            currency:'BGN':'symbol':'1.2-2':'bg' }}
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <!-- Panel Content -->
+                    <div class="slide-content">
+
+                        <!-- Validation Errors -->
+                        @if (!isSlideValid(slide.slideId)) {
+                        <div class="validation-errors">
+                            <mat-icon>warning</mat-icon>
+                            <div class="errors-list">
+                                @for (error of getSlideValidationErrors(slide.slideId); track error) {
+                                <p class="error-item">{{ error }}</p>
+                                }
+                            </div>
+                        </div>
+                        }
+
+                        <!-- Slide Name -->
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Име на слайда</mat-label>
+                            <input matInput [(ngModel)]="slide.name"
+                                (ngModelChange)="onSlideNameChange(slide.slideId, $event)"
+                                placeholder="Например: Комбо Меню 1" maxlength="50">
+                            <mat-icon matPrefix>label</mat-icon>
+                            <mat-hint>Видимо само в админ панела</mat-hint>
+                        </mat-form-field>
+
+                        <!-- Product Selection -->
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Изберете продукти ({{ MIN_PRODUCTS }}-{{ MAX_PRODUCTS }})</mat-label>
+                            <mat-select multiple [(ngModel)]="slide.productIds"
+                                (ngModelChange)="onProductSelectionChange(slide.slideId, $event)"
+                                [disabled]="allProducts().length === 0">
+                                @for (product of allProducts(); track product.id) {
+                                <mat-option [value]="product.id">
+                                    {{ product.name }} - {{ product.price | currency:'BGN':'symbol':'1.2-2':'bg' }}
+                                </mat-option>
+                                }
+                            </mat-select>
+                            <mat-icon matPrefix>inventory_2</mat-icon>
+                            <mat-hint>
+                                Избрани: {{ slide.productIds.length }} / {{ MAX_PRODUCTS }}
+                            </mat-hint>
+                        </mat-form-field>
+
+                        <!-- Promo Price -->
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Промоционална цена</mat-label>
+                            <input matInput type="number" [(ngModel)]="slide.promoPrice"
+                                (ngModelChange)="onPromoPriceChange(slide.slideId, $event)" [min]="MIN_PRICE"
+                                [max]="MAX_PRICE" step="0.01" placeholder="0.00">
+                            <span matPrefix>лв.&nbsp;</span>
+                            <mat-icon matSuffix
+                                matTooltip="Цената която ще се покаже във футъра на слайда">info</mat-icon>
+                            <mat-hint>Минимум: {{ MIN_PRICE | currency:'BGN':'symbol':'1.2-2':'bg' }}</mat-hint>
+                        </mat-form-field>
+
+                        <!-- Slide Actions -->
+                        <div class="slide-actions">
+                            <button mat-stroked-button color="warn" (click)="removeSlide(slide.slideId)"
+                                [disabled]="slideCount() <= 1 || isSaving()">
+                                <mat-icon>delete</mat-icon>
+                                Изтрий Слайд
+                            </button>
+                        </div>
+
+                    </div>
+
+                </mat-expansion-panel>
+                }
+            </mat-accordion>
+
+            <!-- Empty State -->
+            @if (slideCount() === 0) {
+            <div class="empty-state">
+                <mat-icon>slideshow</mat-icon>
+                <h3>Няма създадени слайдове</h3>
+                <p>Използвайте бутона "Добави Слайд" за да създадете промоционален слайд</p>
+            </div>
+            }
+
+        </div>
+
+        <!-- Instructions Section -->
+        <mat-divider class="section-divider"></mat-divider>
+
+        <div class="instructions-section">
+            <h4 class="instructions-title">
+                <mat-icon>help_outline</mat-icon>
+                Инструкции
+            </h4>
+            <ul class="instructions-list">
+                <li>Всеки слайд трябва да има между {{ MIN_PRODUCTS }} и {{ MAX_PRODUCTS }} продукта</li>
+                <li>Промоционалната цена ще се показва в оранжевата ивица във футъра на слайда</li>
+                <li>Продуктите се подреждат в колони (2/3/4 колони според броя)</li>
+                <li>Конфигурацията се запазва автоматично след всяка промяна</li>
+                <li>Можете да добавите множество слайдове с различни продукти и цени</li>
+            </ul>
+        </div>
+
+    </mat-card-content>
+    }
+
+</mat-card>
