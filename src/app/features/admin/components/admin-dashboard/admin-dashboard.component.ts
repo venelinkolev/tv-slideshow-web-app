@@ -41,6 +41,8 @@ import { SlideshowConfig } from '@core/models/slideshow-config.interface';
 import { BaseProductTemplateComponent } from "@features/templates";
 import { MenuTemplateConfig } from '@core/models/menu-template-config.interface';
 import { MenuTemplateConfigComponent } from '../menu-template-config/menu-template-config.component';
+import { ClassicPromoTemplateConfig } from '@core/models/classic-promo-template-config.interface';
+import { ClassicPromoTemplateConfigComponent } from '../classic-promo-template-config/classic-promo-template-config.component';
 
 /**
  * AdminDashboardComponent - MVP Admin Panel
@@ -73,7 +75,8 @@ import { MenuTemplateConfigComponent } from '../menu-template-config/menu-templa
         MatSnackBarModule,
         MatIconModule,
         // BaseProductTemplateComponent
-        MenuTemplateConfigComponent
+        MenuTemplateConfigComponent,
+        ClassicPromoTemplateConfigComponent
     ],
     templateUrl: './admin-dashboard.component.html',
     styleUrl: './admin-dashboard.component.scss',
@@ -131,6 +134,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     // Menu Template specific computed values
     readonly isMenuTemplate = computed(() =>
         this.selectedTemplateId() === 'menu'
+    );
+
+    // Classic Promo Template specific computed values
+    readonly isClassicPromoTemplate = computed(() =>
+        this.selectedTemplateId() === 'classic-promo'
     );
 
     /**
@@ -593,6 +601,39 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     onMenuConfigValid(isValid: boolean): void {
         console.log('🍽️ Menu Template configuration valid:', isValid);
         // Update validation state if needed
+    }
+
+    /**
+     * Handle Classic Promo Template configuration change
+     */
+    onClassicPromoConfigChange(config: ClassicPromoTemplateConfig): void {
+        console.log('🎨 Classic Promo config changed:', config);
+
+        // Update template-specific config in ConfigService
+        this.configService.updateTemplateSettings({
+            templateSpecificConfig: {
+                ...this.configService.config().templates.templateSpecificConfig,
+                classicPromo: config
+            }
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    console.log('✅ Classic Promo configuration saved');
+                    this.showSuccess('Classic Promo конфигурацията е запазена');
+                },
+                error: (error) => {
+                    console.error('❌ Error saving Classic Promo config:', error);
+                    this.showError('Грешка при запазване на Classic Promo конфигурацията');
+                }
+            });
+    }
+
+    /**
+     * Handle Classic Promo Template configuration validation
+     */
+    onClassicPromoConfigValid(isValid: boolean): void {
+        console.log('🎨 Classic Promo config valid:', isValid);
+        // Can be used for enabling/disabling save button or preview
     }
 
     /**

@@ -56,7 +56,9 @@ export enum TemplateCategoryEnum {
     MINIMAL = 'minimal',
     BOLD = 'bold',
     PREMIUM = 'premium',
-    COMPACT = 'compact'
+    COMPACT = 'compact',
+    PROMOTIONAL = 'promotional',
+    MENU = 'menu',
 }
 
 /** Template loading strategies */

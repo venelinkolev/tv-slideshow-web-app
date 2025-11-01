@@ -37,11 +37,11 @@
                     loading="eager" />
 
                 <!-- Optional: Category Badge -->
-                @if (product.category) {
+                <!-- @if (product.category) {
                 <div class="product-category-badge">
                     {{ product.category }}
                 </div>
-                }
+                } -->
             </div>
 
             <!-- Product Info Section (40%) -->
@@ -58,12 +58,12 @@
                 </p>
 
                 <!-- Optional: Stock Status -->
-                @if (product.inStock !== undefined) {
+                <!-- @if (product.inStock !== undefined) {
                 <div class="product-stock-status" [class.product-stock-status--in-stock]="product.inStock"
                     [class.product-stock-status--out-of-stock]="!product.inStock">
                     {{ product.inStock ? '✓ В наличност' : '✗ Няма в наличност' }}
                 </div>
-                }
+                } -->
             </div>
 
         </div>

@@ -25,6 +25,7 @@ import {
     MinimalTemplateComponent,
     BoldTemplateComponent,
     MenuTemplateComponent,
+    ClassicPromoTemplateComponent,
 } from '../../features/templates';
 
 /**
@@ -543,7 +544,7 @@ export class TemplateRegistryService {
             description: 'Меню template за показване на групирани продукти по категории',
             componentName: 'MenuTemplateComponent',
             previewImageUrl: '/assets/images/templates/menu-preview.jpg',
-            category: TemplateCategoryEnum.CLASSIC, // Using CLASSIC category (можеш да добавиш MENU в enum ако искаш)
+            category: TemplateCategoryEnum.MENU,
             isActive: true,
             tvRequirements: {
                 minResolution: { width: 1920, height: 1080 },
@@ -600,6 +601,70 @@ export class TemplateRegistryService {
             }
         };
 
+        // Register Classic Promo Template
+        const classicPromoTemplate: ProductTemplate = {
+            id: 'classic-promo',
+            name: 'Classic Promo Template',
+            description: 'Промоционален темплейт с 2-4 продукта и обща цена',
+            componentName: 'ClassicPromoTemplateComponent',
+            previewImageUrl: '/assets/images/templates/classic-promo-preview.jpg',
+            category: TemplateCategoryEnum.PROMOTIONAL,
+            isActive: true,
+            tvRequirements: {
+                minResolution: { width: 1920, height: 1080 },
+                performance: {
+                    requiresGPU: false,
+                    maxMemoryUsage: 70,
+                    animationComplexity: 0
+                },
+                supportedPlatforms: ['Samsung Tizen', 'LG WebOS', 'Android TV', 'Chrome OS'],
+                browserRequirements: {
+                    chrome: 60,
+                    firefox: 55,
+                    edge: 79
+                }
+            },
+            supportedProperties: {
+                supportsImages: true,
+                supportsSecondaryImages: false,
+                supportsBadges: false,
+                supportsDiscounts: false,
+                supportsLongDescription: false,
+                textLimits: {
+                    productName: 80,
+                    shortDescription: 120
+                }
+            },
+            defaultConfig: {
+                ...defaultConfig,
+                colors: {
+                    primary: '#FFA500', // Orange
+                    secondary: '#FF9800', // Lighter orange
+                    accent: '#FFFFFF',
+                    background: '#000000', // Black
+                    text: '#FFFFFF'
+                },
+                animations: {
+                    enabled: false,
+                    durationMultiplier: 0,
+                    entranceAnimation: 'none',
+                    textAnimation: 'none'
+                },
+                layout: {
+                    safeAreaMultiplier: 1.0,
+                    contentAlignment: 'center',
+                    imageAspectRatio: 'cover'
+                }
+            },
+            metadata: {
+                version: '1.0.0',
+                author: 'Venelin Kolev',
+                createdAt: new Date('2025-01-30'),
+                updatedAt: new Date('2025-01-30'),
+                tags: ['promo', 'promotional', 'multi-product', 'deal', 'tv-optimized'],
+            }
+        };
+
         // ✅ РЕГИСТРИРАЙ КОМПОНЕНТИТЕ
         try {
             this.registerTemplate(classicTemplate, ClassicTemplateComponent).subscribe({
@@ -648,7 +713,19 @@ export class TemplateRegistryService {
                 }
             });
 
-            console.log('🎯 Default templates initialization completed (Classic, Modern, Minimal, Menu)');
+            // Register Classic Promo Template
+            this.registerTemplate(classicPromoTemplate, ClassicPromoTemplateComponent).subscribe({
+                next: (success) => {
+                    if (success) {
+                        console.log('✅ Classic Promo template registered successfully');
+                    }
+                },
+                error: (error) => {
+                    console.error('❌ Failed to register Classic Promo template:', error);
+                }
+            });
+
+            console.log('🎯 Default templates initialization completed (Classic, Modern, Minimal, Menu, Classic Promo)');
 
         } catch (error) {
             console.error('❌ Error during template initialization:', error);
